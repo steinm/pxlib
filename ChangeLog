@@ -1,3 +1,6 @@
+Version 0.0.9
+	- fixed two potential segm faults
+
 Version 0.0.8
 	- more documentation
 	- recoding of data fields with iconv
