@@ -1,3 +1,7 @@
+Version 0.0.5
+	- many memory leaks fixed
+	- proper use of memory allocation functions
+
 Version 0.0.4
   - fixed segm fault if input file does not exist
 	- maxTableSize may now be larger as 32
