@@ -75,8 +75,9 @@ manpage.1: manpage.sgml
 			field names must be allocated by the caller and may not be freed, since
 			the memory is freed when the document is deleted. The field name can be
 			left empty if a primary index file is to be created. The type of the
-			file can be set in the last parameter. Currently only database and
-			primary index files are supported.</para>
+			file can be set in the last parameter. Currently only database
+			(pxfFileTypIndexDB, pxfFileTypNonIndexDB)
+			primary index (pxfFileTypPrimIndex) files are supported.</para>
 		<para>After creating the paradox database you may want to call
 		  PX_set_tablename(3) in order to set the table name as it is stored
 			in the header of the database.</para>
