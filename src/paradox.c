@@ -162,13 +162,25 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc) {
-	if((pxdoc->closefp) && (pxdoc->px_fp != 0))
+	if((pxdoc->closefp) && (pxdoc->px_fp != NULL))
 		fclose(pxdoc->px_fp);
+	pxdoc->px_fp = NULL;
 }
 
 PXLIB_API void PXLIB_CALL
 PX_delete(pxdoc_t *pxdoc) {
-	px_free(pxdoc, pxdoc);
+	pxfield_t *pfield;
+	int i;
+
+	if(pxdoc->px_head->px_tablename) pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
+	pfield = pxdoc->px_head->px_fields;
+	for(i=0; i<pxdoc->px_head->px_numfields; i++) {
+		if(pfield->px_fname) pxdoc->free(pxdoc, pfield->px_fname);
+		pfield++;
+	}
+	pxdoc->free(pxdoc, pxdoc->px_head->px_fields);
+	pxdoc->free(pxdoc, pxdoc->px_head);
+	pxdoc->free(pxdoc, pxdoc);
 }
 
 /******* Function to access Blob files *******/
@@ -177,7 +189,7 @@ PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc) {
 	pxblob_t *pxblob;
 
-	pxblob = px_malloc(pxdoc, sizeof(pxblob_t), _("Couldn't get memory for blob."));
+	pxblob = pxdoc->malloc(pxdoc, sizeof(pxblob_t), _("Couldn't get memory for blob."));
 	if(!pxblob) {
 		return(NULL);
 	} else {
@@ -228,39 +240,40 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	int ret;
 	char *blobdata;
 	char head[9];
+	pxdoc_t *pxdoc = pxblob->pxdoc;
 
 	if(!pxblob || !pxblob->px_fp) {
-		px_error(pxblob->pxdoc, PX_RuntimeError, _("PXDoc may not be NULL."));
+		px_error(pxdoc, PX_RuntimeError, _("PXDoc may not be NULL."));
 		return(NULL);
 	}
 
 	if(size <= 0) {
-		px_error(pxblob->pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
+		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
 		return(NULL);
 	}
 
 	if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
-		px_error(pxblob->pxdoc, PX_RuntimeError, _("Could not fseek"));
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
 		return NULL;
 	}
 
 	if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
-		px_error(pxblob->pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
 		return NULL;
 	}
 
 	if(size != get_long(&head[3])) {
-		px_error(pxblob->pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)"), size, get_long(&head[3]));
+		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)"), size, get_long(&head[3]));
 		return(NULL);
 	}
 
-	blobdata = px_malloc(pxblob->pxdoc, size, _("Couldn't get memory for blob."));
+	blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Couldn't get memory for blob."));
 	if(!blobdata) {
 		return(NULL);
 	}
 
 	if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
-		px_error(pxblob->pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 		return NULL;
 	}
 
