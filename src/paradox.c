@@ -1389,7 +1389,7 @@ PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
 		return -1;
 	}
 
@@ -1483,7 +1483,7 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	pxdoc_t *pxdoc = pxblob->pxdoc;
 
 	if(!pxblob || !pxblob->px_fp) {
-		px_error(pxdoc, PX_RuntimeError, _("PXDoc may not be NULL."));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a blob file."));
 		return(NULL);
 	}
 
