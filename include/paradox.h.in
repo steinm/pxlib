@@ -68,15 +68,15 @@
 #define pxfBytes        0x18
 
 /* File types */
-#define pxfFileTypIndexDB         0
-#define pxfFileTypPrimIndex       1
-#define pxfFileTypNonIndexDB      2
-#define pxfFileTypNonIncSecIndex  3
-#define pxfFileTypSecIndex        4
-#define pxfFileTypIncSecIndex     5
-#define pxfFileTypNonIncSecIndexG 6
-#define pxfFileTypSecIndexG       7
-#define pxfFileTypIncSecIndexG    8
+#define pxfFileTypIndexDB         0   /* .DB */
+#define pxfFileTypPrimIndex       1   /* .PX */
+#define pxfFileTypNonIndexDB      2   /* .DB */
+#define pxfFileTypNonIncSecIndex  3   /* .Xnn */
+#define pxfFileTypSecIndex        4   /* .Ynn */
+#define pxfFileTypIncSecIndex     5   /* .Xnn */
+#define pxfFileTypNonIncSecIndexG 6   /* .XGn */
+#define pxfFileTypSecIndexG       7   /* .YGn */
+#define pxfFileTypIncSecIndexG    8   /* .XGn */
 
 /* File modes */
 #define pxfFileRead   0x1
@@ -266,10 +266,13 @@ PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename);
 
 PXLIB_API int PXLIB_CALL
-PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename);
+PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename, int type);
 
 PXLIB_API int PXLIB_CALL
-PX_create_fp(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, FILE *fp);
+PX_create_fp(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, FILE *fp, int type);
+
+PXLIB_API int PXLIB_CALL
+PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex);
 
 PXLIB_API int PXLIB_CALL
 PX_read_primary_index(pxdoc_t *pindex);

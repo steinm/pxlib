@@ -121,6 +121,7 @@ PX_shutdown(void) {
 }
 
 /* }}} */
+
 /* PX_new3() {{{
  * Create a new Paradox DB file and set memory management, error
  * handling functions and the user data passed to the error handler.
@@ -373,7 +374,7 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
  * Create a new paradox database.
  */
 PXLIB_API int PXLIB_CALL
-PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
+PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int type) {
 	pxhead_t *pxh;
 	pxfield_t *pxf;
 	pxstream_t *pxs;
@@ -385,14 +386,14 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for databae header."));
 		return -1;
 	}
-	pxh->px_filetype = pxfFileTypNonIndexDB;
+	pxh->px_filetype = type; //pxfFileTypNonIndexDB;
 	pxh->px_fileversion = 70;
 	pxh->px_tablename = NULL;
 	pxh->px_numrecords = 0;
 	pxh->px_numfields = numfields;
 	pxh->px_fields = fields;
 	pxh->px_writeprotected = 0;
-	pxh->px_headersize = 0x0800; /* default, will be calculated below */
+	pxh->px_headersize = 0x0800; /* default, will be recalculated below */
 	pxh->px_fileblocks = 0;
 	pxh->px_firstblock = 0;
 	pxh->px_lastblock = 0;
@@ -407,8 +408,11 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxf = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		recordsize += pxf->px_flen;
-		approxheadersize += strlen(pxf->px_fname) + 1;
+		if(pxf->px_fname)
+			approxheadersize += strlen(pxf->px_fname) + 1;
 	}
+	if(type == pxfFileTypPrimIndex)
+		recordsize += 6;
 	pxh->px_recordsize = recordsize;
 	if(recordsize < 30) {
 		pxh->px_maxtablesize = 2;
@@ -417,19 +421,33 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	}
 
 	/* add fixed size part of header */
-	approxheadersize += sizeof(TPxHeader) + sizeof(TPxDataHeader);
+	approxheadersize += sizeof(TPxHeader);
+	/* The following files have a data header as well */
+	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
+		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
+		  (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
+		  (pxh->px_filetype == pxfFileTypIncSecIndex)) &&
+		  (pxh->px_fileversion >= 40)) {
+		approxheadersize += sizeof(TPxDataHeader);
+	}
 	/* add size for field info records */
 	approxheadersize += numfields * sizeof(TFldInfoRec);
-	/* add size for field name pointers */
-	approxheadersize += numfields * sizeof(pchar);
 	/* add size for tablename and tablename pointer */
 	approxheadersize += 261 + sizeof(pchar);
-	/* next would be the field names which has been added already */
-	/* we don't need space for cryptInfo */
-	/* add size of field numbers */
-	approxheadersize += numfields * 2;
-	/* add size for sort order */
-	approxheadersize += 8;
+	/* add size for field name pointers */
+	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
+		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
+		  (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
+		  (pxh->px_filetype == pxfFileTypIncSecIndex)) &&
+		  (pxh->px_fileversion >= 40)) {
+		approxheadersize += numfields * sizeof(pchar);
+		/* next would be the field names which has been added already */
+		/* we don't need space for cryptInfo */
+		/* add size of field numbers */
+		approxheadersize += numfields * 2;
+		/* add size for sort order */
+		approxheadersize += 8;
+	}
 
 	/* calculate header size, which is always a multiple of 0x800 */
 	pxh->px_headersize = ((approxheadersize / 0x800) + 1) * 0x0800;
@@ -465,7 +483,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
  * if the file has been open already with fopen().
  */
 PXLIB_API int PXLIB_CALL
-PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename) {
+PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename, int type) {
 	FILE *fp;
 
 	if(pxdoc == NULL) {
@@ -478,7 +496,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename)
 		return -1;
 	}
 
-	if(0 > PX_create_fp(pxdoc, fields, numfields, fp)) {
+	if(0 > PX_create_fp(pxdoc, fields, numfields, fp, type)) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open paradox database."));
 		fclose(fp);
 		return -1;
@@ -771,6 +789,45 @@ PX_read_primary_index(pxdoc_t *pindex) {
 
 	pindex->free(pindex, data);
 	return 0;
+}
+/* }}} */
+
+/* PX_write_primary_index() {{{
+ * Write the primary index. This function calls build_primary_index()
+ * if it has not been called before.
+ */
+PXLIB_API int PXLIB_CALL
+PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
+	pxpindex_t *indexdata;
+	pxfield_t *pxf;
+	pxhead_t *pxh;
+	char *data;
+	int i, recordsize, indexdatalen, numrecords;
+
+	pxh = pxdoc->px_head;
+	pxf = pxh->px_fields;
+
+	recordsize = pxindex->px_head->px_recordsize;
+	if((data = (char *) pxindex->malloc(pxindex, recordsize, _("Allocate memory for data of index record."))) == NULL) {
+		px_error(pxindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
+		return -1;
+	}
+
+	if(NULL == pxdoc->px_indexdata)
+		build_primary_index(pxdoc);
+	indexdata = pxdoc->px_indexdata;
+	indexdatalen = pxdoc->px_indexdatalen;
+	numrecords = 0;
+	for(i=0; i<indexdatalen; i++) {
+		PX_get_record(pxdoc, i, data);
+		PX_put_data_short(pxindex, &data[recordsize-6], 2, indexdata[i].blocknumber);
+		PX_put_data_short(pxindex, &data[recordsize-4], 2, indexdata[i].numrecords);
+		PX_put_data_short(pxindex, &data[recordsize-2], 2, 0);
+		PX_put_record(pxindex, data);
+		numrecords += indexdata[i].numrecords;
+	}
+	pxindex->free(pxindex, data);
+	return(0);
 }
 /* }}} */
 
