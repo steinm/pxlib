@@ -2,7 +2,7 @@
 #define __PARADOX_GSF_H__
 
 #define PX_HAVE_GSF @PX_HAVE_GSF@
-#if PX_HAVE_GSF
+#ifdef PX_HAVE_GSF
 #include <gsf/gsf-input-stdio.h>
 #include <gsf/gsf-input-memory.h>
 #include <gsf/gsf-output.h>
