@@ -166,7 +166,7 @@ struct px_doc {
 	/* record accounting */
 	int last_position; /* Position (starting at 0) where last record was put. */
 
-	int in_error;
+	int warnings;      /* Turn of/off output of warnings */
 
 	/* output function */
 	size_t (*writeproc)(pxdoc_t *p, void *data, size_t size);
