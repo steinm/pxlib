@@ -16,6 +16,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_open_filename.sgml \
 						 PX_open_fp.sgml \
 						 PX_open_gsf.sgml \
+						 PX_create_file.sgml \
 						 PX_create_fp.sgml \
 						 PX_get_data_short.sgml \
 						 PX_get_data_long.sgml \
