@@ -77,10 +77,11 @@ struct _TMbHeader {
 	byte type;
 	word blocksize;
 	word modcount;
-	byte unknown06x0A[5];
+	byte unknown05x0A[6];
 	word basesize;
 	word subblocksize;
-	word subchunksize;
+	byte unknown0F[1];
+	byte subchunksize;
 	word suballoc;
 	word subthresh;
 };
