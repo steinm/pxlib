@@ -1656,6 +1656,7 @@ PX_new_blob(pxdoc_t *pxdoc) {
 
 	memset(pxblob, 0, sizeof(pxblob_t));
 	pxblob->pxdoc = pxdoc;
+	pxdoc->px_blob = pxblob;
 	return(pxblob);
 }
 /* }}} */
@@ -1762,6 +1763,11 @@ PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
 	pxblob->tell = px_ftell;
 	pxblob->write = px_fwrite;
 
+	if(NULL == (mbh = pxdoc->malloc(pxdoc, sizeof(mbhead_t), _("Allocate memory for header of blob file.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for header of blob file."));
+		return -1;
+	}
+	memset(mbh, 0, sizeof(mbhead_t));
 	if(put_mb_head(pxblob, mbh, pxs) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to put header."));
 		return -1;
@@ -1772,6 +1778,7 @@ PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
 
 	pxblob->mb_name = px_strdup(pxblob->pxdoc, filename);
 	pxblob->mb_stream->close = px_true;
+	pxblob->used_datablocks = 0;
 
 	return 0;
 }
@@ -2011,9 +2018,33 @@ PX_read_graphicdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *
 static size_t
 _px_write_blobdata(pxblob_t *pxblob, const char *data, int len) {
 	pxdoc_t *pxdoc;
+	pxstream_t *pxs;
+	TMbBlockHeader mbbh;
+	int used_blocks;
 
 	if(!pxblob || !pxblob->mb_stream) {
 		return(-1);
+	}
+
+	pxs = pxblob->mb_stream;
+	if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
+		return -1;
+	}
+	if((len+6) % 4096)
+		used_blocks = ((len+6) / 4096) + 1;
+	else
+		used_blocks = ((len+6) / 4096);
+	mbbh.type = 2;
+	put_short_le((char *) &mbbh.numBlocks, used_blocks);
+
+	if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader), &mbbh) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
+		return -1;
+	}
+	if(pxblob->write(pxdoc, pxs, len, data) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write blob data to file."));
+		return -1;
 	}
 }
 /* }}} */
@@ -2651,6 +2682,87 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	}
 
 	memcpy(data, obuf, 17);
+}
+/* }}} */
+
+/* _px_put_data_blob() {{{
+ * Reads data of blob or graphic into memory and returns a pointer to it.
+ * The parameter hsize contains the length of the header right before
+ * the blob/graphic in the .MB file. It is 17 Bytes for graphics and 9
+ * for all other types of blobs (I'm not completely sure about OLE).
+ */
+static int
+_px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int valuelen) {
+	pxblob_t *pxblob;
+	pxstream_t *pxs;
+	TMbBlockHeader mbbh;
+	int used_blocks, leader;
+
+	/* If the (field length - 10) is large enough to hold the blob data,
+	 * we don't need bother writing into the blob file. */
+	leader = len - 10;
+	if(valuelen > leader) {
+		pxblob = pxdoc->px_blob;
+		if(!pxblob || !pxblob->mb_stream) {
+			px_error(pxdoc, PX_RuntimeError, _("Paradox database has no blob file."));
+			return(-1);
+		}
+
+		pxs = pxblob->mb_stream;
+		if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
+			return -1;
+		}
+		/* Calculate how many blocks of 4K this blob will need */
+		if((len+6) % 4096)
+			used_blocks = ((len+6) / 4096) + 1;
+		else
+			used_blocks = ((len+6) / 4096);
+		/* Fill up the structure that precede the blob in the mb file.
+		 * Blocks are currently all of type 2 */
+		mbbh.type = 2;
+		put_short_le((char *) &mbbh.numBlocks, used_blocks);
+		put_long_le((char *) &mbbh.blobLen, valuelen);
+		put_short_le((char *) &mbbh.modNr, ++pxblob->mb_head->modcount);
+
+		/* Write the header of the blob */
+		if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader), &mbbh) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
+			return -1;
+		}
+		/* Write the blob itself */
+		if(pxblob->write(pxdoc, pxs, valuelen, value) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write blob data to file."));
+			return -1;
+		}
+		put_long_le((char *) &data[leader], (pxblob->used_datablocks+1)*4096 + 0xff);
+		put_short_le((char *) &data[leader+8], pxblob->mb_head->modcount);
+		pxblob->used_datablocks += used_blocks;
+	} else {
+		put_long_le((char *) &data[leader], 0);
+		put_short_le((char *) &data[leader+8], 0);
+	}
+	put_long_le((char *) &data[leader+4], valuelen);
+
+	/* Write the info about the blob into the db file.
+	 * The field value always starts with the blob data followed by a
+	 * 10 Byte section. */
+	if(leader) {
+		if(leader <= valuelen)
+			memcpy((char *) data, value, leader);
+		else
+			memcpy((char *) data, value, valuelen);
+	}
+}
+/* }}} */
+
+/* PX_put_data_blob() {{{
+ * Stores bcd number bytes in a data block.
+ * len is the number of decimal numbers.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_blob(pxdoc_t *pxdoc, char *data, int len, char *value, int valuelen) {
+	_px_put_data_blob(pxdoc, data, len, value, valuelen);
 }
 /* }}} */
 
