@@ -1,3 +1,9 @@
+Version 0.1.2
+	- primary index files can be read
+	- added recno to struct px_datablockinfo
+	- PX_get_record returns in referenced parameter deleted whether a
+	  record is deleted or not
+
 Version 0.1.1
 	- fixed segm fault when calling PX_get_record()
 
