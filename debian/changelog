@@ -3,7 +3,7 @@ pxlib (0.4.3-1) unstable; urgency=low
   * New upstream release.
   * pushed shlibs version 0.4.3
 
- -- Uwe Steinmann <steinm@debian.org>  Sat, 18 Dec 2004 15:06:48 +0100
+ -- Uwe Steinmann <steinm@debian.org>  Thu, 30 Dec 2004 13:47:43 +0100
 
 pxlib (0.4.2-2) unstable; urgency=low
 
