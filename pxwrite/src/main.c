@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 		pxf[4].px_flen = 20;
 		pxf[4].px_fdc = 0;
 
-		if(0 > PX_create_db(pxdoc, pxf, numfields, outputfile)) {
+		if(0 > PX_create_file(pxdoc, pxf, numfields, outputfile)) {
 			fprintf(stderr, _("Could not create output file."));
 			fprintf(stderr, "\n");
 			exit(1);
