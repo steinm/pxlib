@@ -145,6 +145,9 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data);
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc);
 
+PXLIB_API void PXLIB_CALL
+PX_delete(pxdoc_t *pxdoc);
+
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc);
 

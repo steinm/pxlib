@@ -1,4 +1,5 @@
 Version 0.0.5
+	- added PX_delete()
 	- many memory leaks fixed
 	- proper use of memory allocation functions
 
