@@ -358,6 +358,8 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxfield_t *pxf;
 	pxstream_t *pxs;
 	int i, recordsize = 0;
+	int approxheadersize = 0; /* The name indicates that this size not accurate,
+							   * actually it is very precise. */
 
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("PX_create_fp: Allocate memory for document header."))) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
@@ -370,7 +372,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxh->px_numfields = numfields;
 	pxh->px_fields = fields;
 	pxh->px_writeprotected = 0;
-	pxh->px_headersize = 0x0800;
+	pxh->px_headersize = 0x0800; /* default, will be calculated below */
 	pxh->px_fileblocks = 0;
 	pxh->px_firstblock = 0;
 	pxh->px_lastblock = 0;
@@ -380,10 +382,12 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxh->px_autoinc = 0;
 	pxh->px_sortorder = 0x62;
 
-	/* Calculate record size */
+	/* Calculate record size and get an idea on how big the header might
+	 * get due to the fieldnames, which is the major none fixed size. */
 	pxf = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		recordsize += pxf->px_flen;
+		approxheadersize += strlen(pxf->px_fname) + 1;
 	}
 	pxh->px_recordsize = recordsize;
 	if(recordsize < 30) {
@@ -391,6 +395,25 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	} else if(recordsize < 120) {
 		pxh->px_maxtablesize = 3;
 	}
+
+	/* add fixed size part of header */
+	approxheadersize += sizeof(TPxHeader) + sizeof(TPxDataHeader);
+	/* add size for field info records */
+	approxheadersize += numfields * sizeof(TFldInfoRec);
+	/* add size for field name pointers */
+	approxheadersize += numfields * sizeof(pchar);
+	/* add size for tablename and tablename pointer */
+	approxheadersize += 261 + sizeof(pchar);
+	/* next would be the field names which has been added already */
+	/* we don't need space for cryptInfo */
+	/* add size of field numbers */
+	approxheadersize += numfields * 2;
+	/* add size for sort order */
+	approxheadersize += 8;
+
+	/* calculate header size, which is always a multiple of 0x800 */
+	pxh->px_headersize = ((approxheadersize / 0x800) + 1) * 0x0800;
+//	fprintf(stderr, "Set headersize to 0x%X (%d)\n", pxh->px_headersize, approxheadersize);
 
 	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream.")))) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
@@ -431,7 +454,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename)
 	}
 
 	if((fp = fopen(filename, "w+")) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not create file of paradox database."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not create file for paradox database."));
 		return -1;
 	}
 
@@ -1001,7 +1024,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize;
 	/* Calculate the number of the data block for this record.
 	 * Datablock numbers start at 1. */
-	datablocknr = (pxh->px_numrecords / recsperdatablock) + 1;
+	datablocknr = ((pxh->px_numrecords) / recsperdatablock) + 1;
 	/* Calculate the position within the datablock */
 	recdatablocknr = (pxh->px_numrecords) % recsperdatablock;
 
@@ -1028,7 +1051,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	 * as the calculated one.
 	 */
 	if(recdatablocknr != itmp) {
-		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block. Expected record nr. %d, but got %d."), recdatablocknr, itmp);
+		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block. Expected record nr. %d, but got %d. %dth record. %dth data block. %d records per block."), recdatablocknr, itmp, pxh->px_numrecords+1, datablocknr, recsperdatablock);
 		return -1;
 	}
 	
