@@ -64,30 +64,69 @@ manpage.1: manpage.sgml
 			primary indexes.
 			</para>
 		<para>pxlib is a C-library with bindings for Python and PHP.
-		  The later is part of PECL (http://pecl.php.net)
+		  The later is part of PECL (http://pecl.php.net).
 		  This documentation will only describe the functions of the C-library,
 			though most of what is said here can be applied to the other language
 			bindings.
 			The PHP extension of pxlib is documented in PEAR. The extension is
 			called Paradox.</para>
+		<para>This library is the base for a gnumeric plugin which has been
+		  officially added to gnumeric in version 1.4.0.</para>
 
   </refsect1>
   <refsect1>
     <title>GETTING STARTED</title>
 
     <para>Programs which want to use pxlib will have to include the
-		  header file <literal>paradox.h</literal>. Before doing any document
-			creation the library should be initialized with
+		  header file <literal>paradox.h</literal> and link against libpx.
+			Before reading or writing a
+			database file the library should be initialized with
 			<function>PX_boot(3)</function>. It will set the locale and selects
 			the messages in your language as defined by the environment variable
 			LC_ALL. The library should
 			be finalized by <function>PS_shutdown(3)</function>.</para>
 		<para>A Paradox database is
-			represented by a pointer to <literal>pxdoc_t</literal>. Such a document
+			represented by a pointer to <literal>pxdoc_t</literal>. Such an object
 			can be created with <function>PX_new(3)</function> and destroyed
 			with <function>PX_delete(3)</function>. <function>PX_new(3)</function> 
-			returns a pointer to <literal>pxdoc_t</literal>. You can handle several
-			documents at the same time. The following example will do the basic
+			returns a pointer to <literal>pxdoc_t</literal>. You can easily handle
+			several documents at the same time, each represented by its own
+			pointer to <literal>pxdoc_t</literal>.</para>
+		<para><literal>pxdoc_t</literal> is a faily large structure with various
+		  information about the paradox file. Most of the needed information is
+			stored in a substructure called <literal>px_head</literal>.
+			<literal>px_head</literal> is defined as the following:</para>
+	  <programlisting>
+typedef struct px_head pxhead_t;
+struct px_head {
+  char *px_tablename;
+  int px_recordsize;
+  char px_filetype;
+  int px_fileversion;
+  int px_numrecords;
+  int px_theonumrecords;
+  int px_numfields;
+  int px_maxtablesize;
+  int px_headersize;
+  int px_fileblocks;
+  int px_firstblock;
+  int px_lastblock;
+  int px_indexfieldnumber;
+  int px_indexroot;
+  int px_numindexlevels;
+  int px_writeprotected;
+  int px_doscodepage;
+  int px_primarykeyfields;
+  char px_modifiedflags1;
+  char px_modifiedflags2;
+  char px_sortorder;
+  int px_autoinc;
+  int px_fileupdatetime;
+  char px_refintegrity;
+  struct px_field *px_fields;
+};
+	  </programlisting>
+		<para>The following example will do the basic
 			preparation without creating nor opening a document on the disk.</para>
 	  <programlisting>
 ...
@@ -124,11 +163,8 @@ main(int argc, char *argv[]) {
 			will use an already open file. Both require a pointer to
 			<literal>pxdoc_t</literal>.</para>
 		<para>Extending the previous example with one of the former two functions
-		  to open a database is just another small step.
-			It has to be closed with <function>PX_close(3)</function>.
-			<function>PX_close(3)</function> will only close the file if it
-			was opened by <function>PX_open_file(3)</function>.
-			</para>
+		  to open a database is just another small step as illustrated in the
+			next example.</para>
 	  <programlisting>
 ...
 #include &lt;paradox.h&gt;
@@ -144,13 +180,478 @@ main(int argc, char *argv[]) {
 	PX_shutdown();
 }
 	  </programlisting>
-		<para>There are more sophisticated funktions to open a Paradox database.
+		<para>The database has to be closed with <function>PX_close(3)</function>.
+			<function>PX_close(3)</function> will only close the file if it
+			was opened by <function>PX_open_file(3)</function>.
+			</para>
+		<para>There are more sophisticated functions to open a Paradox database.
 		  They are used when error handling and memory management
 			shall be controlled by the calling application. Check the manual pages
 			<function>PX_new2(3)</function> and <function>PX_new3(3)</function> for
 			a detailed description or read the section about memory management
 			and error handler below.</para>
+		<para>If you rather like to create a new Paradox database the above example
+		  must call</para>
+    <funcsynopsis>
+      <funcprototype>
+		    <funcdef>int <function>PX_create_file</function></funcdef>
+		    <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+		    <paramdef>pxfield_t *<parameter>fields</parameter></paramdef>
+		    <paramdef>int <parameter>numfields</parameter></paramdef>
+		    <paramdef>const char *<parameter>filename</parameter></paramdef>
+		    <paramdef>int <parameter>type</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+		<para>instead of <function>PX_open_file(3)</function>. Creating a Paradox file
+			requires three further parameters to specify the database layout and the
+			file type, e.g. pxfFileTypNonIndexDB. The function can be used to create
+			both databases and primary index files. Secondary index files are not currently
+			supported. Each field of the database is described by a structure:</para>
+	  <programlisting>
+typedef struct px_field pxfield_t;
+struct px_field {
+  char *px_fname;
+  char px_ftype;
+  int px_flen;
+  int px_fdc;
+};
+	  </programlisting>
+		<para>The memory for the field array must be allocated by the
+		  calling application using pxlibs' memory management functions,
+			but will be freed by pxlib. For a list of available file types see the
+			man page of <function>PX_create_fp(3)</function>.</para>
+
+
   </refsect1>
+
+  <refsect1>
+    <title>READING RECORDS FROM A DATABASE</title>
+
+		<para>Data in a Paradox database is organized in records containing fields.
+		  This is much like in other formats, e.g. dBase or a relational database
+			system. Fields can be of 17 different data types. They are stored in
+			sequencial order in a record. A record is read by one of the functions
+		</para>
+    <funcsynopsis>
+      <funcprototype>
+	      <funcdef>int <function>PX_get_record</function></funcdef>
+	 		<paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+	      <paramdef>int <parameter>recno</parameter></paramdef>
+	      <paramdef>char *<parameter>data</parameter></paramdef>
+	      <paramdef>int <parameter>deleted</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+		<para>or</para>
+    <funcsynopsis>
+      <funcprototype>
+		    <funcdef>int <function>PX_get_record2</function></funcdef>
+				<paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+		    <paramdef>int <parameter>recno</parameter></paramdef>
+		    <paramdef>char *<parameter>data</parameter></paramdef>
+		    <paramdef>int <parameter>deleted</parameter></paramdef>
+		    <paramdef>pxdatablockinfo_t *<parameter>pxdbinfo</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+    <para>The second function returns additional data about the internal location
+			of the record within the file, which is mostly valueable for debuging.
+			Both functions need a record number starting at 0 for the first record
+			and a memory area large enough for the record. The record will read into
+			that piece of memory straight from the database file without modifications.
+			In order to determine the size of a record one can read the variable
+			<literal>pxdoc->px_head->px_recordsize</literal> from the database header
+			which contains the number of bytes per record.</para>
+		<para>
+			Once the record data has been read it can be accessed with a number of
+			different functions depending on the field type. The following
+			lists contains the field type and the function to access.</para>
+    <para>
+		<variablelist>
+		  <varlistentry>
+			 <term>pxfAlpha</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_alpha</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>char **<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+         </para>
+         <para>The field value will be automatically converted from the
+           encoding used in the database file to the encoding set by
+           <function>PX_set_parameter(3)</function> with parameter name
+           set to 'targetencoding`. The string will be null terminated.
+         </para>
+         <para>This function allocates memory for the field data which must
+           be freed by the application.
+			  </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfDate</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_long</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>long *<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+			 </para>
+			 <para>Fields of type date are actually 4 byte interger values counting
+			   days. In order to convert it into 3 single integers for year, month and
+				 day, you will have to add 1721425 the value and call the function
+			 </para>
+			 <para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>void <function>PX_SdnToGregorian</function></funcdef>
+						 <paramdef>long int *<parameter>value</parameter></paramdef>
+						 <paramdef>int *<parameter>year</parameter></paramdef>
+						 <paramdef>int *<parameter>month</parameter></paramdef>
+						 <paramdef>int *<parameter>day</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+			 </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfShort</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_short</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>short int *<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+			   </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfLong, pxfAutoInc</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_long</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>long *<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+			 </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfNumber, pxfCurrency</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_double</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>double *<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+			 </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfLogical</term>
+			 <listitem><para>
+				 <funcsynopsis>
+					 <funcprototype>
+						 <funcdef>int <function>PX_get_data_byte</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>char *<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+       </para>
+			 <para>The extracted value is either 0 (false) or >0 (true).
+			 </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfBLOb, pxfMemoBLOb, pxfFmtMemoBLOb</term>
+			 <listitem><para>
+				 <funcsynopsis>
+					 <funcprototype>
+						 <funcdef>int <function>PX_get_data_blob</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>int *<parameter>modnr</parameter></paramdef>
+						 <paramdef>int *<parameter>blobsize</parameter></paramdef>
+						 <paramdef>char **<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+       </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfOLE</term>
+			 <listitem><para></para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfGraphic</term>
+			 <listitem><para>
+				 <funcsynopsis>
+					 <funcprototype>
+						 <funcdef>int <function>PX_get_data_graphic</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>int *<parameter>modnr</parameter></paramdef>
+						 <paramdef>int *<parameter>blobsize</parameter></paramdef>
+						 <paramdef>char **<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+       </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfTime</term>
+			 <listitem><para>Use <function>PX_get_data_long(3)</function> as documented
+			   with field type pxfDate. The value is the number of milli seconds since
+				 midnight.</para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfTimestamp</term>
+			 <listitem><para>Use <function>PX_get_data_double(3)</function> and convert
+			   the timestamp into a string with</para>
+			 <para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>char *<function>PX_timestamp2string</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>double *<parameter>value</parameter></paramdef>
+						 <paramdef>const char *<parameter>format</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+			 </para>
+			 <para><function>PX_timestamp2string(3)</function> takes a format string
+			   as described in the manual page of the function and returns a string.
+			 </para>
+			 </listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfBCD</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_bcd</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>char **<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+         </para>
+         <para>This function allocates memory for the field data which must
+           be freed by the application.
+         </para></listitem>
+			</varlistentry>
+		  <varlistentry>
+			 <term>pxfBytes</term>
+			 <listitem><para>
+			   <funcsynopsis>
+				   <funcprototype>
+					   <funcdef>int <function>PX_get_data_bytes</function></funcdef>
+						 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+						 <paramdef>char *<parameter>data</parameter></paramdef>
+						 <paramdef>int <parameter>len</parameter></paramdef>
+						 <paramdef>char **<parameter>value</parameter></paramdef>
+					 </funcprototype>
+				 </funcsynopsis>
+         <para>This function behaves like
+           <function>PX_get_data_alpha(3)</function> exept for the character
+           conversion which does not take place. It will always copy
+           exactely <parameter>len</parameter> bytes.
+         </para></listitem>
+			</varlistentry>
+		</variablelist>
+	  </para>
+		<para>Each function takes the current Paradox database object as the first
+			argument.  The second argument is the start of the field data. For the
+			first field this will be the beginning of the whole record. The second
+			field starts at an offset of length(first field), the third field starts
+			at length(first field) plus length(second field) and so on. The
+			<parameter>len</parameter> is the size of the field. The last parameter
+			is a pointer to the data converted to an equivalent C type. Each function either
+      returns 0 on success or a value &lt; 0 in case of an error. Nobody prevents
+      you from
+			accessing the data with the wrong function, or pointing towards the wrong
+			position in the record. Check the manual page of each function for a more
+      detailed description.</para>
+    <para>Sequencialy reading records and fields from a
+			Paradox database is illustrated in the next simplified example.</para>
+	  <programlisting>
+for(j=0; j&lt;pxh-&gt;px_numrecords; j++) {
+  int offset;
+  if(PX_get_record(pxdoc, j, data)) {
+    offset = 0;
+    pxf = pxh-&gt;px_fields;
+    for(i=0; i&lt;pxh-&gt;px_numfields; i++) {
+      switch(pxf-&gt;px_ftype) {
+        case pxfAlpha: {
+          char *value;
+          if(0 &lt; PX_get_data_alpha(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            // ...
+            pxdoc-&gt;free(pxdoc, value);
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfDate: {
+          long value;
+          int year, month, day;
+          if(0 &lt; PX_get_data_long(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            PX_SdnToGregorian(value+1721425, &amp;year, &amp;month, &amp;day);
+            // ...
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfShort: {
+          short int value;
+          if(0 &lt; PX_get_data_short(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            // ...
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfAutoInc:
+        case pxfLong: {
+          long value;
+          if(0 &lt; PX_get_data_long(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            // ...
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfTimestamp: {
+          double value;
+          if(0 &lt; PX_get_data_double(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            char *str = PX_timestamp2string(pxdoc, value, "Y-m-d H:i:s");
+            // ...
+            pxdoc-&gt;free(pxdoc, str);
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfTime: {
+          long value;
+          if(0 &lt; PX_get_data_long(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            // ...
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfCurrency:
+        case pxfNumber: {
+          double value;
+          if(0 &lt; PX_get_data_double(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            // ...
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfLogical: {
+          char value;
+          if(0 &lt; PX_get_data_byte(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;value)) {
+            if(value)
+              // ...
+            else
+              // ...
+          } else {
+            // ...
+          }
+          break;
+        }
+        case pxfBLOb:
+        case pxfGraphic:
+        case pxfOLE:
+        case pxfMemoBLOb:
+        case pxfFmtMemoBLOb: {
+            char *blobdata;
+            int mod_nr, size, ret;
+            if(pxf-&gt;px_ftype == pxfGraphic)
+              ret = PX_get_data_graphic(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;mod_nr, &amp;size, &amp;blobdata);
+            else
+              ret = PX_get_data_blob(pxdoc, &amp;data[offset], pxf-&gt;px_flen, &amp;mod_nr, &amp;size, &amp;blobdata);
+            if(ret &gt; 0) {
+              if(blobdata) {
+                // ...
+                pxdoc-&gt;free(pxdoc, blobdata);
+              } else {
+                // ...
+              }
+            }
+            break;
+        }
+        case pxfBCD: {
+          char *value;
+          int ret;
+          if(0 &lt; (ret = PX_get_data_bcd(pxdoc, &amp;data[offset], pxf-&gt;px_fdc, &amp;value))) {
+            // ..
+            pxdoc-&gt;free(pxdoc, value);
+          } else if(ret == 0) {
+            // ..
+          } else {
+            // ..
+          }
+          break;
+        }
+        case pxfBytes:
+          // ..
+          break;
+        default:
+          break;
+      }
+    }
+    offset += pxf-&gt;px_flen;
+    pxf++;
+  } else {
+    fprintf(stderr, _("Couldn't get record number %d\n"), j);
+  }
+}
+	  </programlisting>
+  </refsect1>
+
+  <refsect1>
+    <title>WRITING RECORDS TO A DATABASE</title>
+
+		<para></para>
+  </refsect1>
+
+  <refsect1>
+    <title>ENCODING</title>
+
+		<para>Exchanging text is not problem as long as both parties use the same
+		  encoding or stipulate to use plain 7 bit ascii. Paradox allows to use
+			any encoding and saves the corresponding dos code page number in the
+			header of the database. You can request this number with
+			<function>PX_get_value(3)</function> by passing `codepage' as the value
+			name. Reading fields of type <literal>pxfAlpha</literal> will return
+			the unmodified value unless the target encoding has been set by
+			<function>PX_set_paramter(3)</function> differently
+			from the one stored in the database header. If the target encoding
+			is set differently <function>PX_get_data_alpha(3)</function> will
+			automatically convert into the requested encoding. This is either
+			done be the iconv or recode library, depending on which one was
+			found when pxlib was configured. If both where available iconv
+			is preferred.</para>
+  </refsect1>
+
   <refsect1>
     <title>MEMORY MANAGEMENT, ERROR HANDLING</title>
 
