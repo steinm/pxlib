@@ -1,3 +1,7 @@
+Version 0.2.10
+	- creating a paradox db without records led to a corrupted file
+	  because the header was not fill with zeros to its full size.
+
 Version 0.2.9
 	- new function PX_strdup() to duplicate a string but use the
 	  memory management functions of the paradox document.
