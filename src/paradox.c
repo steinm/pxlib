@@ -81,7 +81,7 @@ PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 
 	if((pxdoc->px_head = get_px_head(pxdoc, fp)) == NULL) {
-		fprintf(stderr, "Unable to get header\n");
+		px_error(pxdoc, PX_RuntimeError, _("Unable to get header."));
 		return -1;
 	}
 
@@ -119,7 +119,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 
 	/* Go to the start of the data block (skip the header) */
 	if((ret = fseek(pxdoc->px_fp, pxh->px_headersize, SEEK_SET)) < 0) {
-		printf("Could not fseek\n");
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
 		return NULL;
 	}
 
@@ -129,7 +129,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 		int datasize;
 		/* Get the info about this data block */
 		if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-			printf("Could not read\n");
+			px_error(pxdoc, PX_RuntimeError, _("Could not read"));
 			return NULL;
 		}
 		datasize = get_short(&datablock.addDataSize);
@@ -137,7 +137,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 		if(recno*pxh->px_recordsize <= datasize) {
 			found = 1;
 			if((ret = fseek(pxdoc->px_fp, recno*pxh->px_recordsize, SEEK_CUR)) < 0) {
-				printf("Could not fseek\n");
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
 				return NULL;
 			}
 			if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
@@ -146,7 +146,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 		} else { /* skip rest of block */
 //			printf("skippin rest of block %d\n", blockcount);
 			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-6, SEEK_CUR)) < 0) {
-				printf("Could not fseek\n");
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
 				return NULL;
 			}
 		}
@@ -164,6 +164,11 @@ PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc) {
 	if((pxdoc->closefp) && (pxdoc->px_fp != 0))
 		fclose(pxdoc->px_fp);
+}
+
+PXLIB_API void PXLIB_CALL
+PX_delete(pxdoc_t *pxdoc) {
+	px_free(pxdoc, pxdoc);
 }
 
 /******* Function to access Blob files *******/
@@ -235,12 +240,12 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	}
 
 	if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
-		printf("Could not fseek\n");
+		px_error(pxblob->pxdoc, PX_RuntimeError, _("Could not fseek"));
 		return NULL;
 	}
 
 	if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
-		printf("Could not read head of blob data.\n");
+		px_error(pxblob->pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
 		return NULL;
 	}
 
@@ -255,7 +260,7 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	}
 
 	if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
-		printf("Could not read all blob data.\n");
+		px_error(pxblob->pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 		return NULL;
 	}
 
