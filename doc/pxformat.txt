@@ -178,6 +178,8 @@
 |      |        The value of this field seems to the change when records     |
 |      |        or blocks have been added to the table, but I still haven't  |
 |      |        figured it out.                                              |
+|      |        Uwe: This field and 0x2C must be set correctly for a         |
+|      |        .PX file (see note at 0x2C).                                 |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 0014 | byte        modifiedFlags1                                          |
@@ -273,7 +275,8 @@
 +------+---------------------------------------------------------------------+
 | 002B...002C        unknown    (always 0)                                   |
 |      |        0x2C has a value in .PX files. If it is not set Paradox will |
-|      |        with a message like 'the index is not valid anymore'. (Uwe)  |
+|      |        quit with a message like 'the index is not valid anymore'.   |
+|      |        (Uwe)                                                        |
 +------+---------------------------------------------------------------------+
 | 002D | byte        changeCount1                                            |
 |      |                                                                     |
@@ -374,6 +377,12 @@
 |      |        Always zero (Uwe)                                            |
 +------+---------------------------------------------------------------------+
 | 0051...0052        unknown                                                 |
+|      |                                                                     |
+|      |        0x51 is somehow related to fileVersionID in .PX files        |
+|      |        0x51 = 173 fileVersionId = 11                                |
+|      |        0x51 = 99  fileVersionId = 12                                |
+|      |                                                                     |
+|      |        0x51 and 0x52 are the exact size of bytes in the header      |
 +------+---------------------------------------------------------------------+
 | 0053 | byte        unknown                                                 |
 |      |                                                                     |
@@ -453,6 +462,8 @@
 |      |                                                                     |
 |      |        This is related to hiFieldID (above), but I don't really     |
 |      |        know what it's for.                                          |
+|      |        Uwe: This value plus 0x58 is the offset to the start of      |
+|      |        the fieldNumbers.                                            |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 0068 | integer     sometimesNumFields?                                     |
@@ -480,9 +491,14 @@
 |      |        function $66, for more information about this.               |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
-| 006C...006F        unknown                                                 |
+| 006C...006D        unknown                                                 |
 |      |                                                                     |
 |      |        Mostly zero in .PX files. 0x6C is sometimes 88. (Uwe)        |
++------+---------------------------------------------------------------------+
+| 006E | integer     unknown                                                 |
+|      |                                                                     |
+|      |        Uwe: This value + 0x60 is the number of bytes actually       |
+|      |        used in the header.                                          |
 +------+---------------------------------------------------------------------+
 | 0070 | integer     changeCount4                                            |
 +------+---------------------------------------------------------------------+
