@@ -1,4 +1,8 @@
 Version 0.2.0
+	- update to latest autoconf tools
+	- added support form pkg-config
+	- added new function PX_new3() which allows to also set user data which
+	  is passed to the error handler
 	- added generic way to set and get parameters
 	- added support for external read, write, tell, seek functions
 
