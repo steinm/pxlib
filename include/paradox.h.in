@@ -268,10 +268,10 @@ PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp);
 
 PXLIB_API int PXLIB_CALL
-PX_open_file(pxdoc_t *pxdoc, char *filename);
+PX_open_file(pxdoc_t *pxdoc, const char *filename);
 
 PXLIB_API int PXLIB_CALL
-PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename, int type);
+PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, const char *filename, int type);
 
 PXLIB_API int PXLIB_CALL
 PX_create_fp(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, FILE *fp, int type);
@@ -331,13 +331,13 @@ PXLIB_API int PXLIB_CALL
 PX_get_value(pxdoc_t *pxdoc, const char *name, float *value);
 
 PXLIB_API int PXLIB_CALL
-PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding);
+PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding);
 
 PXLIB_API int PXLIB_CALL
-PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding);
+PX_set_inputencoding(pxdoc_t *pxdoc, const char *encoding);
 
 PXLIB_API int PXLIB_CALL
-PX_set_tablename(pxdoc_t *pxdoc, char *tablename);
+PX_set_tablename(pxdoc_t *pxdoc, const char *tablename);
 
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc);
@@ -346,7 +346,7 @@ PXLIB_API int PXLIB_CALL
 PX_open_blob_fp(pxblob_t *pxdoc, FILE *fp);
 
 PXLIB_API int PXLIB_CALL
-PX_open_blob_file(pxblob_t *pxdoc, char *filename);
+PX_open_blob_file(pxblob_t *pxdoc, const char *filename);
 
 PXLIB_API void PXLIB_CALL
 PX_close_blob(pxblob_t *pxdoc);

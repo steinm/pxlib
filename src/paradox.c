@@ -360,7 +360,7 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
  * if the file has been open already with fopen().
  */
 PXLIB_API int PXLIB_CALL
-PX_open_file(pxdoc_t *pxdoc, char *filename) {
+PX_open_file(pxdoc_t *pxdoc, const char *filename) {
 	FILE *fp;
 
 	if(pxdoc == NULL) {
@@ -503,7 +503,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
  * if the file has been open already with fopen().
  */
 PXLIB_API int PXLIB_CALL
-PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename, int type) {
+PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, const char *filename, int type) {
 	FILE *fp;
 
 	if(pxdoc == NULL) {
@@ -1557,7 +1557,7 @@ PX_get_recordsize(pxdoc_t *pxdoc) {
  * the encodings supported by iconv or recode.
  */
 PXLIB_API int PXLIB_CALL
-PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
+PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
 #if PX_USE_RECODE || PX_USE_ICONV
 	char buffer[30];
 
@@ -1611,7 +1611,7 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
  * encoding is not set it will be taken from the paradox header.
  */
 PXLIB_API int PXLIB_CALL
-PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding) {
+PX_set_inputencoding(pxdoc_t *pxdoc, const char *encoding) {
 #if PX_USE_RECODE || PX_USE_ICONV
 	char buffer[30];
 
@@ -1662,7 +1662,7 @@ PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding) {
  * Sets the name of the table as stored in database file.
  */
 PXLIB_API int PXLIB_CALL
-PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
+PX_set_tablename(pxdoc_t *pxdoc, const char *tablename) {
 	char buffer[30];
 
 	if(pxdoc == NULL) {
@@ -1719,7 +1719,7 @@ PX_open_blob_fp(pxblob_t *pxblob, FILE *fp) {
  * Opens a file of a blob with the given filename
  */
 PXLIB_API int PXLIB_CALL
-PX_open_blob_file(pxblob_t *pxblob, char *filename) {
+PX_open_blob_file(pxblob_t *pxblob, const char *filename) {
 	FILE *fp;
 
 	if(!pxblob) {

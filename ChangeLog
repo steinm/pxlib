@@ -1,4 +1,5 @@
 Version 0.2.8
+	- pass const char to API function if possible
 	- updated build process
 	- Better checking whether px file belongs to db file
 
