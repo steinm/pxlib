@@ -66,7 +66,8 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Stores a record in <option>data</option> in a Paradox file.
+    <para>Stores a record in the buffer <option>data</option> into a
+		  Paradox file.
 			<option>data</option> must be constructed with PX_put_data_xxx(3)
 			functions before. It is of the same structure as the record returned
 			by PX_get_record(3) and PX_get_record2(3).</para>
@@ -81,7 +82,9 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_record(3), PX_get_record2(3)</para>
+    <para>PX_get_record(3), PX_get_record2(3), PX_put_data_byte(3),
+		  PX_put_data_short(3), PX_put_data_long(3), PX_put_data_double(3),
+			PX_put_data_alpha(3)</para>
 
   </refsect1>
   <refsect1>
