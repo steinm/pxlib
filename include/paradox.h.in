@@ -276,6 +276,9 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, const char *filena
 PXLIB_API int PXLIB_CALL
 PX_create_fp(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, FILE *fp, int type);
 
+PXLIB_API void* PXLIB_CALL
+PX_get_opaque(pxdoc_t *pxdoc);
+
 PXLIB_API int PXLIB_CALL
 PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex);
 

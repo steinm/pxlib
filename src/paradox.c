@@ -207,6 +207,20 @@ PX_new(void) {
 }
 /* }}} */
 
+/* PX_get_opaque() {{{
+ * Returns the pointer on the user data as it is passed to each call
+ * of the errorhandler.
+ */
+PXLIB_API void* PXLIB_CALL
+PX_get_opaque(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return NULL;
+	}
+	return(pxdoc->errorhandler_user_data);
+}
+/* }}} */
+
 /* build_primary_index() {{{
  * Build a primary index.
  */
@@ -256,6 +270,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	}
 }
 /* }}} */
+
 
 #if PX_HAVE_GSF
 /* PX_open_gsf() {{{
