@@ -206,12 +206,15 @@
 |      |        just a workspace pointer.                                    |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
-| 001E...0020        unknown                                                 |
+| 001E | word        indexRoot    (Added 14.01.04 by Uwe)                    | 
+|      |        Block number of index root                                   |
+|      |        Only used in .PX files.                                      |
 |      |                                                                     |
-|      |        I have only seen these three bytes used in .PX files.        |
++------+---------------------------------------------------------------------+
+| 0020 | byte       numIndexLevels   (Added 14.01.04 by Uwe)                 |
+|      |        Number of index levels                                       |
+|      |        Only used in .PX files.                                      |
 |      |                                                                     |
-
-
 +------+---------------------------------------------------------------------+
 | 0021 | integer     numFields                                               |
 |      |                                                                     |

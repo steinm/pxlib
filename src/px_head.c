@@ -103,6 +103,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 			tablenamelen = 79;
 	}
 	pxh->px_indexfieldnumber = pxhead.indexFieldNumber;
+	pxh->px_indexroot = get_short_le(&pxhead.indexRoot);
+	pxh->px_numindexlevels = pxhead.numIndexLevels;
 	pxh->px_writeprotected = pxhead.writeProtected;
 	pxh->px_modifiedflags1 = pxhead.modifiedFlags1;
 	pxh->px_modifiedflags2 = pxhead.modifiedFlags2;
@@ -255,6 +257,9 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
 	pxhead.writeProtected = pxh->px_writeprotected;
 	put_short_le(&pxhead.numFields, pxh->px_numfields);
+	pxhead.indexFieldNumber = pxh->px_indexfieldnumber;
+	put_short_le(&pxhead.indexRoot, pxh->px_indexroot);
+	pxhead.numIndexLevels = pxh->px_numindexlevels;
 	switch(pxh->px_filetype) {
 		case pxfFileTypIndexDB:
 			put_short_le(&pxhead.primaryKeyFields, pxh->px_primarykeyfields);

@@ -21,7 +21,8 @@ struct _TPxHeader {
 	byte indexFieldNumber;
 	pointer primaryIndexWorkspace;
 	pointer unknownPtr1A;
-	byte unknown1Ex20[3];
+	word indexRoot;
+	byte numIndexLevels;
 	integer numFields;
 	integer primaryKeyFields;
 	longint encryption1;
