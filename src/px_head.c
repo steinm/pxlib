@@ -286,7 +286,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			pxhead.unknown3Ex3F[0] = 0x1f; // this seems to be a fixed value
 			pxhead.unknown3Ex3F[1] = 0x0f; // this seems to be a fixed value
 			pxhead.unknown56x57[0] = 0x20;
-			pxhead.changeCount1 = 1;
+			pxhead.changeCount1 = 2;  // Set this to at least two until pxindex
+			                          // changes the header itself
 			pxhead.changeCount2 = 1;
 			break;
 	}
