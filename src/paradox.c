@@ -158,7 +158,7 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 }
 /* }}} */
 
-/* PX_open_filename() {{{
+/* PX_open_file() {{{
  * Read from a Paradox DB file. Open the file itself. Use PX_open_fp()
  * if the file has been open already with fopen().
  */
@@ -188,32 +188,21 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 }
 /* }}} */
 
-/* PX_create_db() {{{
+/* PX_create_fp() {{{
  * Create a new paradox database.
  */
 PXLIB_API int PXLIB_CALL
-PX_create_db(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename) {
-	FILE *fp;
+PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxhead_t *pxh;
 	pxfield_t *pxf;
 	int i, recordsize = 0;
 
-	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return -1;
-	}
-
-	if((fp = fopen(filename, "w+")) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database."));
-		return -1;
-	}
-
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL) {
 		return -1;
 	}
-	pxh->px_tablename = px_strdup(pxdoc, filename);
 	pxh->px_filetype = pxfFileTypIndexDB;
 	pxh->px_fileversion = 70;
+	pxh->px_tablename = NULL;
 	pxh->px_numrecords = 0;
 	pxh->px_numfields = numfields;
 	pxh->px_fields = fields;
@@ -243,8 +232,38 @@ PX_create_db(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename) {
 	}
 
 	pxdoc->px_head = pxh;
-	pxdoc->px_name = px_strdup(pxdoc, filename);
 	pxdoc->px_fp = fp;
+	pxdoc->px_close_fp = px_false;
+	return 0;
+}
+/* }}} */
+
+/* PX_create_file() {{{
+ * Create a Paradox DB file. Open the file itself. Use PX_create_fp()
+ * if the file has been open already with fopen().
+ */
+PXLIB_API int PXLIB_CALL
+PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename) {
+	FILE *fp;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if((fp = fopen(filename, "w+")) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not create file of paradox database."));
+		return -1;
+	}
+
+	if(0 > PX_create_fp(pxdoc, fields, numfields, fp)) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open paradox database."));
+		fclose(fp);
+		return -1;
+	}
+
+//	pxh->px_tablename = px_strdup(pxdoc, filename);
+	pxdoc->px_name = px_strdup(pxdoc, filename);
 	pxdoc->px_close_fp = px_true;
 	return 0;
 }
@@ -882,6 +901,31 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 #else
 	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for target encoding."));
 #endif
+	return 0;
+}
+/* }}} */
+
+/* PX_set_tablename() {{{
+ * Sets the name of the table as stored in database file.
+ */
+PXLIB_API int PXLIB_CALL
+PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
+	char buffer[30];
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		return -1;
+	}
+
+	if(pxdoc->px_head->px_tablename)
+		px_free(pxdoc, pxdoc->px_head->px_tablename);
+
+	pxdoc->px_head->px_tablename = px_strdup(pxdoc, tablename);
 	return 0;
 }
 /* }}} */
