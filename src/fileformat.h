@@ -18,7 +18,7 @@ struct _TPxHeader {
 	word lastBlock;
 	word unknown12x13;
 	byte modifiedFlags1;
-	byte indexFieldNumber	;
+	byte indexFieldNumber;
 	pointer primaryIndexWorkspace;
 	pointer unknownPtr1A;
 	byte unknown1Ex20[3];
