@@ -14,7 +14,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_new.sgml \
 						 PX_open_filename.sgml \
 						 PX_open_fp.sgml \
-						 PX_create_db.sgml \
+						 PX_create_fp.sgml \
 						 PX_get_data_short.sgml \
 						 PX_get_data_long.sgml \
 						 PX_get_data_double.sgml \
