@@ -513,22 +513,22 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename,
 /* PX_set_value() {{{
  * Sets a numeric value
  */
-PXLIB_API void PXLIB_CALL
-PX_set_value(pxdoc_t *pxdoc, char *name, float value) {
+PXLIB_API int PXLIB_CALL
+PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return;
+		return -1;
 	}
 
 	if(strcmp(name, "numprimkeys") == 0) {
 		pxdoc->px_head->px_primarykeyfields = (int) value;
 		if(pxdoc->px_stream->mode & pxfFileWrite) {
 			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
-				return;
+				return -1;
 			}
 		} else {
 			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
-			return;
+			return -1;
 		}
 	}
 
@@ -539,7 +539,7 @@ PX_set_value(pxdoc_t *pxdoc, char *name, float value) {
  * Gets a numeric value
  */
 PXLIB_API float PXLIB_CALL
-PX_get_value(pxdoc_t *pxdoc, char *name) {
+PX_get_value(pxdoc_t *pxdoc, const char *name) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
@@ -554,8 +554,8 @@ PX_get_value(pxdoc_t *pxdoc, char *name) {
 /* PX_set_parameter() {{{
  * Sets a string value
  */
-PXLIB_API void PXLIB_CALL
-PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
+PXLIB_API int PXLIB_CALL
+PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
@@ -641,7 +641,7 @@ PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
  * Gets a string value
  */
 PXLIB_API const char * PXLIB_CALL
-PX_get_parameter(pxdoc_t *pxdoc, char *name) {
+PX_get_parameter(pxdoc_t *pxdoc, const char *name) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return NULL;
