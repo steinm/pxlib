@@ -2,6 +2,14 @@
 
 INCLUDES = -I@srcdir@/../include -I./include -DLOCALEDIR=\""$(datadir)/locale"\"
 
+EXTRA_DIST = fileformat.h \
+             px_error.h \
+             px_head.h \
+             px_intern.h \
+             px_memory.h \
+             px_misc.h \
+             sdncal.h
+
 bin_PROGRAMS =
 
 bin_SCRIPTS=
@@ -15,7 +23,8 @@ libpx_la_SOURCES = \
 		px_head.c \
 		px_misc.c \
 		px_memory.c \
-		px_error.c
+		px_error.c \
+		gregor.c
 
 BUILD_LIBS = -lm
 
