@@ -26,12 +26,12 @@ char *px_strdup(pxdoc_t *p, const char *str) {
 	char *buf;
 
 	if (str == NULL) {
-		p->errorhandler(p, PX_Warning, "NULL string in px_strdup");
+		px_error(p, PX_Warning, "NULL string in px_strdup");
 		return(NULL);
 	}
 	len = px_strlen(str)+1;
 	if(NULL == (buf = (char *) p->malloc(p, len, "ps_strdup"))) {
-		p->errorhandler(p, PX_MemoryError, "Could not allocate memory for string");
+		px_error(p, PX_MemoryError, "Could not allocate memory for string");
 		return(NULL);
 	}
 	memcpy(buf, str, len);
