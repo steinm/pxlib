@@ -26,14 +26,23 @@ char *px_strdup(pxdoc_t *p, const char *str) {
 	char *buf;
 
 	if (str == NULL) {
-		px_error(p, PX_Warning, "NULL string in px_strdup");
+		px_error(p, PX_Warning, _("Passed NULL string to px_strdup()."));
 		return(NULL);
 	}
 	len = px_strlen(str)+1;
 	if(NULL == (buf = (char *) p->malloc(p, len, "ps_strdup"))) {
-		px_error(p, PX_MemoryError, "Could not allocate memory for string");
+		px_error(p, PX_MemoryError, _("Could not allocate memory for string."));
 		return(NULL);
 	}
 	memcpy(buf, str, len);
 	return(buf);
 }
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */

@@ -32,8 +32,10 @@ PX_mp_malloc(pxdoc_t *p, size_t size, const char *caller) {
 	while((i < MAXMEM) && (memlist[i].ptr != NULL)) {
 		i++;
 	}
-	if(i == MAXMEM)
-		fprintf(stderr, "Aiii, no more space for new memory block\n");
+	if(i == MAXMEM) {
+		fprintf(stderr, _("Aiii, no more space for new memory block."));
+		fprintf(stderr, "\n");
+	}
 	memlist[i].ptr = a;
 	memlist[i].size = size;
 	summem += size;
@@ -57,8 +59,10 @@ PX_mp_realloc(pxdoc_t *p, void *mem, size_t size, const char *caller) {
 			memlist[i].caller = strdup(caller);
 		}
 	}
-	if(i == MAXMEM)
-		fprintf(stderr, "Aiii, did not find memory block at 0x%X to enlarge\n", mem);
+	if(i == MAXMEM) {
+		fprintf(stderr, _("Aiii, did not find memory block at 0x%X to enlarge."), mem);
+		fprintf(stderr, "\n");
+	}
 	return(a);
 }
 
@@ -69,9 +73,10 @@ PX_mp_free(pxdoc_t *p, void *mem) {
 	while((i < MAXMEM) && (memlist[i].ptr != mem)) {
 		i++;
 	}
-	if(i == MAXMEM)
-		fprintf(stderr, "Aiii, did not find memory block at 0x%X to free\n", mem);
-	else {
+	if(i == MAXMEM) {
+		fprintf(stderr, _("Aiii, did not find memory block at 0x%X to free."), mem);
+		fprintf(stderr, "\n");
+	} else {
 		memlist[i].ptr = NULL;
 		summem -= memlist[i].size;
 		memlist[i].size = 0;
@@ -86,12 +91,23 @@ PX_mp_list_unfreed() {
 	i = j = 0;
 	while(i < MAXMEM) {
 		if(memlist[i].ptr) {
-			fprintf(stderr, "%d. Memory at address 0x%X (%d) not freed: '%s'\n", j, memlist[i].ptr, memlist[i].size, memlist[i].caller);
+			fprintf(stderr, _("%d. Memory at address 0x%X (%d) not freed: '%s'."), j, memlist[i].ptr, memlist[i].size, memlist[i].caller);
+			fprintf(stderr, "\n");
 			j++;
 		}
 		i++;
 	}
-	fprintf(stderr, "Remaining unfreed memory: %d Bytes\n", summem);
-	fprintf(stderr, "Max. amount of memory used: %d Bytes\n", peakmem);
+	fprintf(stderr, _("Remaining unfreed memory: %d Bytes."), summem);
+	fprintf(stderr, "\n");
+	fprintf(stderr, _("Max. amount of memory used: %d Bytes."), peakmem);
+	fprintf(stderr, "\n");
 }
 
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */
