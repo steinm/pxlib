@@ -1,3 +1,18 @@
+Version 0.1.0
+	- New function PX_get_record2() which has two extra parameter.
+	  One to enable reading of deleted records and one to return
+		internal data about the data block from which the record has
+		been read.
+	- added pxh->theonumrecords which is the number of records which
+	  theoretically fit into all data blocks. This number can be
+		much bigger that the number of records in the header. Also
+		increases the max. record number to theonumrecords
+		when reading a record.
+	- DB files can contain many more records than the number of records
+	  in the header. The remaining records are left overs, which were
+		deleted but not removed from the file. pxlib can now handle those
+		files.
+
 Version 0.0.9
 	- man pages are not created if docbook-to-man is missing
 	- fixed many endianess bugs
