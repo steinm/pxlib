@@ -1,0 +1,5 @@
+Makefile
+Makefile.in
+paradox-gsf.h
+paradox.h
+pxversion.h

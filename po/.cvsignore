@@ -1,3 +1,5 @@
 Makefile
 Makefile.in
-*.3
+POTFILES
+*.gmo
+*.pot
