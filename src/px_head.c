@@ -263,6 +263,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	switch(pxh->px_filetype) {
 		case pxfFileTypIndexDB:
 			put_short_le(&pxhead.primaryKeyFields, pxh->px_primarykeyfields);
+			put_long_le(&pxhead.primaryIndexWorkspace, basehead-100);  /* just to set a value */
 			break;
 		case pxfFileTypNonIncSecIndex:
 		case pxfFileTypIncSecIndex:
@@ -271,15 +272,20 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			put_short_le(&pxhead.primaryKeyFields, 2);
 			break;
 	}
-	put_long_le(&pxhead.encryption1, 0xFF00FF00);
+	switch(pxh->px_filetype) {
+		case pxfFileTypIndexDB:
+		case pxfFileTypNonIndexDB:
+			put_long_le(&pxhead.encryption1, 0xFF00FF00);
+			pxhead.unknown3Ex3F[0] = 0x1f; // this seems to be a fixed value
+			pxhead.unknown3Ex3F[1] = 0x0f; // this seems to be a fixed value
+			pxhead.unknown56x57[0] = 0x20;
+			pxhead.changeCount1 = 1;
+			pxhead.changeCount2 = 1;
+			break;
+	}
 	pxhead.sortOrder = pxh->px_sortorder;
-	pxhead.changeCount1 = 1;
-	pxhead.changeCount2 = 1;
-	pxhead.unknown3Ex3F[0] = 0x1f; // this seems to be a fixed value
-	pxhead.unknown3Ex3F[1] = 0x0f; // this seems to be a fixed value
 	pxhead.unknown50x54[1] = 0x15;
 	pxhead.unknown50x54[2] = 0x01;
-	pxhead.unknown56x57[0] = 0x20;
 	if(!isindex && (pxh->px_fileversion >= 40)) {
 		dataheadoffset = 0x78;
 	} else {
