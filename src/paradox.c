@@ -29,6 +29,7 @@
 #include "px_memory.h"
 #include "px_head.h"
 #include "px_error.h"
+#include "px_misc.h"
 
 PXLIB_API int PXLIB_CALL
 PX_get_majorversion(void) {
@@ -548,6 +549,7 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 		for(k=0; k<len; k++)
 			data[k] = ~data[k];
 	} else {
+		*value = 0;
 		return 0;
 	}
 	*value = get_double_be(data); //*((double *)data);
