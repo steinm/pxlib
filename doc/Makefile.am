@@ -13,4 +13,7 @@ man_MANS = PX_get_majorversion.3\
            PX_get_minorversion.3 \
            PX_get_subminorversion.3 \
            PX_open_file.3 \
-           PX_open_fp.3
+           PX_open_fp.3 \
+           PX_get_data_short.3 \
+           PX_get_data_long.3 \
+           PX_get_data_double.3 
