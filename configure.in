@@ -100,6 +100,14 @@ else
 	AC_MSG_RESULT([not needed, using iconv])
 fi
 
+AC_CHECK_PROG(DOC_TO_MAN, docbook-to-man, docbook-to-man)
+if test ! "$DOC_TO_MAN" ; then
+	DOCDIR=
+	AC_MSG_RESULT([docbook-to-man could not be found. I will not build man pages!])
+else
+	DOCDIR=doc
+fi
+
 AC_ARG_WITH(debug, [  --with-debug            Add the debugging module (on)])
 if test "$with_debug" = "no" ; then
     echo Disabling DEBUG support
@@ -127,6 +135,9 @@ AC_SUBST(PX_HAVE_RECODE)
 AC_SUBST(PX_HAVE_ICONV)
 
 AC_SUBST(M_LIBS)
+
+AC_SUBST(DOCDIR)
+AC_SUBST(DOC_TO_MAN)
 
 dnl AC_DEFINE_UNQUOTED(PXLIB_MAJOR_VERSION, "$PXLIB_MAJOR_VERSION", PXLIB_MAJOR_VERSION)
 dnl AC_DEFINE_UNQUOTED(PXLIB_MINOR_VERSION, "$PXLIB_MINOR_VERSION", PXLIB_MINOR_VERSION)
