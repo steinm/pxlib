@@ -237,6 +237,12 @@ PX_has_gsf_support(void);
 PXLIB_API int PXLIB_CALL
 PX_is_bigendian(void);
 
+PXLIB_API void PXLIB_CALL
+PX_boot(void);
+
+PXLIB_API void PXLIB_CALL
+PX_shutdown(void);
+
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),

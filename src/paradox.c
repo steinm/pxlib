@@ -101,6 +101,26 @@ PX_is_bigendian(void) {
 }
 /* }}} */
 
+/* PX_boot() {{{
+ * Make some initial preparations for the whole library, e.g. set text domain.
+ */
+PXLIB_API void PXLIB_CALL
+PX_boot(void) {
+#ifdef ENABLE_NLS
+	setlocale(LC_ALL, "");
+	bindtextdomain(GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
+#endif
+}
+/* }}} */
+
+/* PX_boot() {{{
+ * Make some final cleanup for the whole library. Counter part to PX_boot().
+ */
+PXLIB_API void PXLIB_CALL
+PX_shutdown(void) {
+}
+
+/* }}} */
 /* PX_new3() {{{
  * Create a new Paradox DB file and set memory management, error
  * handling functions and the user data passed to the error handler.
@@ -119,9 +139,9 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 		errorhandler = px_errorhandler; 
 
 	if(allocproc == NULL) {
-		allocproc = px_malloc;
-		reallocproc = px_realloc;
-		freeproc  = px_free;
+		allocproc = _px_malloc;
+		reallocproc = _px_realloc;
+		freeproc  = _px_free;
 	} else if(allocproc != NULL && (reallocproc == NULL || freeproc == NULL)) {
 		(*errorhandler)(NULL, PX_RuntimeError, _("Must be set all memory management functions or none"), errorhandler_user_data);
 		return(NULL);
@@ -513,7 +533,7 @@ PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
 
 	if(strcmp(name, "tablename") == 0) {
 		if(pxdoc->px_head->px_tablename)
-			px_free(pxdoc, pxdoc->px_head->px_tablename);
+			pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
 
 		pxdoc->px_head->px_tablename = px_strdup(pxdoc, value);
 		if(pxdoc->px_stream->mode & pxfFileWrite) {
@@ -1074,15 +1094,17 @@ PX_close(pxdoc_t *pxdoc) {
 		return;
 	}
 
-	if((pxdoc->px_stream->close) && (pxdoc->px_stream->s.fp != NULL))
+	if(pxdoc->px_stream && pxdoc->px_stream->close && (pxdoc->px_stream->s.fp != NULL))
 		fclose(pxdoc->px_stream->s.fp);
-	pxdoc->px_stream->s.fp = NULL;
+	pxdoc->free(pxdoc, pxdoc->px_stream);
+	pxdoc->px_stream = NULL;
 }
 /* }}} */
 
 /* PX_delete() {{{
  * Frees all memory use by the Paradox file. If PX_close() had not
  * been called before, it will be now.
+ * FIXME: Many calls of free should rather be done PX_close()
  */
 PXLIB_API void PXLIB_CALL
 PX_delete(pxdoc_t *pxdoc) {
@@ -1120,6 +1142,8 @@ PX_delete(pxdoc_t *pxdoc) {
 		pxdoc->free(pxdoc, pxdoc->targetencoding);
 	if(pxdoc->inputencoding)
 		pxdoc->free(pxdoc, pxdoc->inputencoding);
+	if(pxdoc->px_name)
+		pxdoc->free(pxdoc, pxdoc->px_name);
 
 	if(pxdoc->px_head != NULL) {
 		if(pxdoc->px_head->px_tablename) pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
@@ -1370,7 +1394,7 @@ PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
 	}
 
 	if(pxdoc->px_head->px_tablename)
-		px_free(pxdoc, pxdoc->px_head->px_tablename);
+		pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
 
 	pxdoc->px_head->px_tablename = px_strdup(pxdoc, tablename);
 	if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
@@ -1545,7 +1569,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		obuf = data;
 	}
 	/* Copy the encoded string into memory which belongs to pxlib */
-	buffer = (char *) pxdoc->malloc(pxdoc, olen+1,  _("Could not allocate memory for field data."));
+	buffer = (char *) pxdoc->malloc(pxdoc, olen+1, _("Allocate memory for field data."));
 	if(!buffer) {
 		if(pxdoc->targetencoding != NULL) {
 			free(obuf);
