@@ -74,6 +74,10 @@
 #define pxfFileTypSecIndexG       7
 #define pxfFileTypIncSecIndexG    8
 
+/* File modes */
+#define pxfFileRead   0x1
+#define pxfFileWrite  0x2
+
 struct px_field {
 	char *px_fname;
 	char px_ftype;
@@ -119,6 +123,7 @@ struct px_doc {
 	FILE *px_fp;       /* File pointer of file */
 	char *px_name;     /* Name of file */
 	int px_close_fp;   /* set to true if file pointer must be closed */
+	int px_filemode;   /* set to pxfFileRead|pxfFileWrite */
 	pxhead_t *px_head; /* Pointer to header of file */
 	void *px_data;     /* Pointer to data of file (used in prim. index for
 						* index data, used in db files for an self build

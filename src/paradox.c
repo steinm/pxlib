@@ -161,6 +161,7 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 	}
 
 	pxdoc->px_fp = fp;
+	pxdoc->px_filemode = pxfFileRead;
 
 	/* Build primary index. This index misses all index blocks with a level
 	 * greater than 1. Since they are not used currently this is of no harm.
@@ -277,6 +278,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxdoc->px_head = pxh;
 	pxdoc->px_fp = fp;
 	pxdoc->px_close_fp = px_false;
+	pxdoc->px_filemode = pxfFileWrite;
 	return 0;
 }
 /* }}} */
@@ -310,6 +312,128 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename)
 	pxdoc->px_name = px_strdup(pxdoc, filename);
 	pxdoc->px_close_fp = px_true;
 	return 0;
+}
+/* }}} */
+
+/* PX_set_value() {{{
+ * Sets a numeric value
+ */
+PXLIB_API void PXLIB_CALL
+PX_set_value(pxdoc_t *pxdoc, char *name, float value) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		return;
+	}
+}
+/* }}} */
+
+/* PX_get_value() {{{
+ * Gets a numeric value
+ */
+PXLIB_API float PXLIB_CALL
+PX_get_value(pxdoc_t *pxdoc, char *name) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		return;
+	}
+}
+/* }}} */
+
+/* PX_set_parameter() {{{
+ * Sets a string value
+ */
+PXLIB_API void PXLIB_CALL
+PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		return;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		return;
+	}
+
+	if(strcmp(name, "tablename") == 0) {
+		if(pxdoc->px_head->px_tablename)
+			px_free(pxdoc, pxdoc->px_head->px_tablename);
+
+		pxdoc->px_head->px_tablename = px_strdup(pxdoc, value);
+		if(pxdoc->px_filemode & pxfFileWrite) {
+			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_fp) < 0) {
+				return;
+			}
+		} else {
+			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
+			return;
+		}
+	} else if(strcmp(name, "targetencoding") == 0) {
+#if PX_USE_RECODE || PX_USE_ICONV
+		if(pxdoc->targetencoding)
+			pxdoc->free(pxdoc, pxdoc->targetencoding);
+		pxdoc->targetencoding = px_strdup(pxdoc, value);
+		if(pxdoc->targetencoding) {
+			char buffer[30];
+#if PX_USE_RECODE
+			sprintf(buffer, "CP%d/CR-LF..%s", pxdoc->px_head->px_doscodepage, pxdoc->targetencoding);
+			recode_scan_request(pxdoc->out_recode_request, buffer);
+#else
+#if PX_USE_ICONV
+			sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
+			if(pxdoc->out_iconvcd > 0)
+				iconv_close(pxdoc->out_iconvcd);
+			if((iconv_t)(-1) == (pxdoc->out_iconvcd = iconv_open(pxdoc->targetencoding, buffer))) {
+				pxdoc->free(pxdoc, pxdoc->targetencoding);
+				pxdoc->targetencoding = NULL;
+				px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
+				return;
+			}
+#endif
+#endif
+		}
+#else
+		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
+#endif
+	} else if(strcmp(name, "inputencoding") == 0) {
+#if PX_USE_RECODE || PX_USE_ICONV
+		if(pxdoc->inputencoding)
+			pxdoc->free(pxdoc, pxdoc->inputencoding);
+		pxdoc->inputencoding = px_strdup(pxdoc, value);
+		if(pxdoc->inputencoding) {
+			char buffer[30];
+#if PX_USE_RECODE
+			sprintf(buffer, "%s..CP%d/CR-LF", pxdoc->inputencoding, pxdoc->px_head->px_doscodepage);
+			recode_scan_request(pxdoc->in_recode_request, buffer);
+#else
+#if PX_USE_ICONV
+			sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
+			if(pxdoc->in_iconvcd > 0)
+				iconv_close(pxdoc->in_iconvcd);
+			if((iconv_t)(-1) == (pxdoc->in_iconvcd = iconv_open(buffer, pxdoc->inputencoding))) {
+				pxdoc->free(pxdoc, pxdoc->inputencoding);
+				pxdoc->inputencoding = NULL;
+				px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
+				return;
+			}
+#endif
+#endif
+		}
+#else
+		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
+#endif
+	}
+}
+/* }}} */
+
+/* PX_get_parameter() {{{
+ * Gets a string value
+ */
+PXLIB_API const char * PXLIB_CALL
+PX_get_parameter(pxdoc_t *pxdoc, char *name) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		return;
+	}
 }
 /* }}} */
 
