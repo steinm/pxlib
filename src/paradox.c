@@ -2127,6 +2127,26 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 }
 /* }}} */
 
+/* PX_get_data_timestamp() {{{
+ * Extracts a timestamp from a data block
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_timestamp(pxdoc_t *pxdoc, char *data, int len, long long *value) {
+	char tmp[8];
+	memcpy(&tmp, data, 8);
+	if(tmp[0] & 0x80) {
+		tmp[0] &= 0x7f;
+	} else if(*((long long *)tmp) != 0) {
+		tmp[0] |= 0x80;
+	} else {
+		*value = 0;
+		return 0;
+	}
+	*value = get_longlong_be(tmp);
+	return 1;
+}
+/* }}} */
+
 /* PX_get_data_long() {{{
  * Extracts a long integer from a data block
  */
@@ -2522,6 +2542,25 @@ PX_put_data_double(pxdoc_t *pxdoc, char *data, int len, double value) {
 }
 /* }}} */
 
+/* PX_put_data_timestamp() {{{
+ * Stores a timestamp in a data block.
+ * A len of 0 means to store a NULL value.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_timestamp(pxdoc_t *pxdoc, char *data, int len, long long value) {
+	if(len == 0) {
+		memset(data, 0, 8);
+	} else {
+		put_longlong_be(data, value);
+		if(value >= 0) {
+			data[0] |= 0x80;
+		} else {
+			data[0] &= 0x7f;
+		}
+	}
+}
+/* }}} */
+
 /* PX_put_data_long() {{{
  * Stores an integer in a data block.
  * A len of 0 means to store a NULL value.
@@ -2705,18 +2744,26 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			/* Do we have subblock already? Does the block has enough space? */
 			if(pxblob->subblockoffset == 0 || ((pxblob->subblockfree*16) < valuelen)) {
 				TMbBlockHeader3 mbbh;
+				int i, nullint=0;
 
 				if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
 					return -1;
 				}
 
+				memset(&mbbh, 0, sizeof(TMbBlockHeader3));
 				mbbh.type = 3;
 				put_short_le((char *) &mbbh.numBlocks, 1);
 				/* Write the header of the blob */
 				if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader3), &mbbh) < 1) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
 					return -1;
+				}
+				for(i=0; i<4096-sizeof(TMbBlockHeader3); i++) {
+					if(pxblob->write(pxdoc, pxs, 1, &nullint) < 1) {
+						px_error(pxdoc, PX_RuntimeError, _("Could not write remaining of a type 3 block."));
+						return -1;
+					}
 				}
 				pxblob->used_datablocks++;
 				pxblob->subblockoffset = pxblob->used_datablocks;
@@ -2738,7 +2785,12 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			if(valuelen % 16) {
 				mbbhtab.length++;
 			}
-			put_short_le((char *) &mbbhtab.modNr, 1);
+			/* FIXME: Using subblockblobcount is probably not sufficient. It
+			 * maybe a counter over the whole file and not just the block.
+			 * Uwe 17.12.2004: Tried (pxblob->mb_head->modcount+1) instead of
+			 * (pxblob->subblockblobcount+1)
+			 */
+			put_short_le((char *) &mbbhtab.modNr, pxblob->mb_head->modcount+1);
 			mbbhtab.lengthmod = (valuelen % 16) == 0 ? 16 : (valuelen % 16);
 			/* Write the blob table entry */
 			if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader3Table), &mbbhtab) < 1) {
