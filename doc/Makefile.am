@@ -62,6 +62,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_value.sgml \
 						 PX_close.sgml \
 						 PX_delete.sgml \
+						 PX_timestamp2string.sgml \
 						 PX_strdup.sgml
 
 EXTRA_DIST = ${SGML_FILES} pxformat.txt paradox4.txt
