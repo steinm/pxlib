@@ -1241,7 +1241,7 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 	}
 	
 	if(itmp != recdatablocknr) {
-		px_error(pxdoc, PX_Warning, _("Position within record has been recalculated. Requested position was %d, new position is %d."), recpos, (datablocknr-1) * recsperdatablock + itmp);
+		px_error(pxdoc, PX_Warning, _("Position of record has been recalculated. Requested position was %d, new position is %d."), recpos, (datablocknr-1) * recsperdatablock + itmp);
 	}
 
 	/* Update header */
