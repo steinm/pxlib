@@ -61,14 +61,17 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>pxdoc_t* &funcname;(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg), void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller), void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller), void  (*freeproc)(pxdoc_t *p, void *mem))</para>
+		<para>pxdoc_t* &funcname;(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data), void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller), void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller), void  (*freeproc)(pxdoc_t *p, void *mem))</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Creates a new instance of a Paradox file. This function or PX_new(3)
+    <para>Creates a new instance of a Paradox file. This function, PX_new(3)
+		  or PX_new3(3)
 		  must be called before any other functions. If the caller has its own
 			error and memory management functions they can be passed.</para>
+		<para>Calling PX_new2(3) is identical to calling PX_new3(3) with the
+		  last parameter set to NULL.</para>
 
   </refsect1>
   <refsect1>
@@ -79,7 +82,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_new(3), PX_open_file(3), PX_open_fp(3)</para>
+    <para>PX_new(3), PX_new3(3), PX_open_file(3), PX_open_fp(3)</para>
 
   </refsect1>
   <refsect1>
