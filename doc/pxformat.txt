@@ -610,6 +610,11 @@
 |      |                                                                     |
 |      |           numRecsInBlock = (addDataSize / recordSize) + 1           |
 |      |                                                                     |
+|      |        Uwe: I have seen DB files with bogus addDataSize which were  |
+|      |        both too large or too small. This is an indication of        |
+|      |        records being deleted without removing the record from the   |
+|      |        file.                                                        |
+|      |                                                                     |
 ==============================================================================
 | 0006.......      fileData                                                  |
 |                                                                            |
