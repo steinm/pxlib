@@ -1,5 +1,6 @@
 #include "config.h"
 #include <stdio.h>
+#include <string.h>
 #include "px_intern.h"
 #include "paradox.h"
 #include "px_error.h"
