@@ -1,4 +1,7 @@
 Version 0.1.9
+	- encoding for data, that is to be written in a record can be set
+	- build internal primary index for faster access. This will not
+	  speed up searching but accessing records by record number.
 	- fixed reading of primary index, now that I understand how it works
 	- fixed data block handling (still not perfect, but works if records are
 	  stored sequentially)
