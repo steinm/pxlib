@@ -1781,12 +1781,12 @@ PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blo
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
 
-	*blobsize = size = get_long_le(&data[leader+4]);
 	offset = get_long_le(&data[leader]) & 0xffffff00;
 	if(offset == 0) {
 		*blobsize = 0;
 		return(NULL);
 	}
+	*blobsize = size = get_long_le(&data[leader+4]);
 	index = get_long_le(&data[leader]) & 0x000000ff;
 	*mod = mod_nr = get_short_le(&data[leader+8]);
 //	fprintf(stderr, "offset=%ld ", offset);
@@ -2055,6 +2055,65 @@ PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	}
 	*value = *data;
 	return 0;
+}
+/* }}} */
+
+/* PX_get_data_bcd() {{{
+ * Extracts a bcd number in a data block
+ * len is the number bytes consumed by a bcd value, which is always 17
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
+	int i, j;
+	unsigned char sign;
+	unsigned char nibble;
+	int size;
+	int lz;   /* 1 as long as leading zeros are found */
+	char *buffer;
+
+	if(data[0] == '\0') {
+		*value = NULL;
+		return 0;
+	}
+	buffer = (char *) pxdoc->malloc(pxdoc, len*2+3, _("Allocate memory for field data."));
+	if(!buffer) {
+		*value = NULL;
+		return -1;
+	}
+
+	j = 0;
+	if(data[0] & 0x80) {
+		sign = 0x00;
+	} else  {
+		buffer[j++] = '-';
+		sign = 0x0F;
+	}
+	size = data[0] & 0x3f;
+	lz = 1;
+	for(i=2; i<34-size; i++) {
+		if(i%2)
+			nibble = data[i/2] & 0x0f;
+		else
+			nibble = (data[i/2] >> 4) & 0x0f;
+		if(lz && (nibble^sign))
+			lz = 0;
+		if(lz == 0)
+			buffer[j++] = (nibble^sign)+48;
+	}
+	if(lz)
+		buffer[j++] = '0';
+	buffer[j++] = '.';
+	for(; i<34; i++) {
+		if(i%2)
+			nibble = data[i/2] & 0x0f;
+		else
+			nibble = (data[i/2] >> 4) & 0x0f;
+		buffer[j++] = (nibble^sign)+48;
+	}
+	buffer[j] = '\0';
+	*value = buffer;
+
+	return 1;
 }
 /* }}} */
 

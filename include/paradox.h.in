@@ -378,6 +378,9 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value);
 PXLIB_API int PXLIB_CALL
 PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value);
 
+PXLIB_API int PXLIB_CALL
+PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value);
+
 /* Funktion to add data to a record */
 PXLIB_API void PXLIB_CALL
 PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value);
