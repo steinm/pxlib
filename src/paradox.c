@@ -402,12 +402,15 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 		return -1;
 	}
 	pxh->px_filetype = type; //pxfFileTypNonIndexDB;
-	pxh->px_fileversion = 50;
+	pxh->px_fileversion = 70;
 	pxh->px_tablename = NULL;
 	pxh->px_numrecords = 0;
 	pxh->px_numfields = numfields;
 	pxh->px_fields = fields;
 	pxh->px_writeprotected = 0;
+	pxh->px_indexfieldnumber = 0;
+	pxh->px_numindexlevels = 0;
+	pxh->px_indexroot = 0;
 	pxh->px_headersize = 0x0800; /* default, will be recalculated below */
 	pxh->px_fileblocks = 0;
 	pxh->px_firstblock = 0;
