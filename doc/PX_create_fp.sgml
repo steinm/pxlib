@@ -72,8 +72,9 @@ manpage.1: manpage.sgml
 			(w+) with fopen(3). <option>fields</option> is an array
 			of <option>numfields</option> field specifications to set the
 			schema of the database. The memory for the field specifications and
-			field names must be allocated by the caller by may not be freed, since
-			the memory is freed when the document is deleted. The type of the
+			field names must be allocated by the caller and may not be freed, since
+			the memory is freed when the document is deleted. The field name can be
+			left empty if a primary index file is to be created. The type of the
 			file can be set in the last parameter. Currently only database and
 			primary index files are supported.</para>
 		<para>After creating the paradox database you may want to call
