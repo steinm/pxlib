@@ -1,4 +1,5 @@
 Version 0.1.9
+	- new functions to manipulate record data
 	- made many error message better understandable
 	- initial support to write db files
 
