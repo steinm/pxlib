@@ -739,6 +739,12 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 	memset(&mbhead, 0, sizeof(TMbHeader));
 	put_short_le(&mbhead.blocksize, 1);
 	put_short_le(&mbhead.modcount, 1);
+	mbhead.unknown05 = 0x82;
+	mbhead.unknown06 = 0x73;
+	mbhead.unknown07 = 0x02;
+	mbhead.unknown08 = 0x0;
+	mbhead.unknown09 = 0x29;
+	mbhead.unknown0A = 0x0;
 	put_short_le(&mbhead.basesize, 0x1000);
 	put_short_le(&mbhead.subblocksize, 0x1000);
 	mbhead.subchunksize = 0x10;
