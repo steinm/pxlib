@@ -148,6 +148,12 @@ PX_get_minorversion(void);
 PXLIB_API int PXLIB_CALL
 PX_get_subminorversion(void);
 
+PXLIB_API int PXLIB_CALL
+PX_has_recode_support(void);
+
+PXLIB_API int PXLIB_CALL
+PX_is_bigendian(void);
+
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),

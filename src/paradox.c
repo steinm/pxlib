@@ -45,6 +45,27 @@ PX_get_subminorversion(void) {
 	return(PXLIB_MICRO_VERSION);
 }
 
+PXLIB_API int PXLIB_CALL
+PX_has_recode_support(void) {
+#if PX_USE_RECODE
+	return(1);
+#else
+#if PX_USE_ICONV
+	return(2);
+#endif
+#endif
+	return(0);
+}
+
+PXLIB_API int PXLIB_CALL
+PX_is_bigendian(void) {
+#if WORDS_BIGENDIAN
+	return(1);
+#else
+	return(0);
+#endif
+}
+
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
