@@ -31,7 +31,7 @@ char *px_strdup(pxdoc_t *p, const char *str) {
 		return(NULL);
 	}
 	len = px_strlen(str)+1;
-	if(NULL == (buf = (char *) p->malloc(p, len, "ps_strdup"))) {
+	if(NULL == (buf = (char *) p->malloc(p, len, "px_strdup"))) {
 		px_error(p, PX_MemoryError, _("Could not allocate memory for string."));
 		return(NULL);
 	}
