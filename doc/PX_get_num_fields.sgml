@@ -27,7 +27,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
   <!ENTITY dhucpackage "<refentrytitle>PX_GET_NUM_FIELDS</refentrytitle>">
-  <!ENTITY funcname    "PX_get_num_fieldx">
+  <!ENTITY funcname    "PX_get_num_fields">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -76,7 +76,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_num_record(3), PX_get_fields(3), PX_get_field(3)</para>
+    <para>PX_get_num_records(3), PX_get_fields(3), PX_get_field(3)</para>
 
   </refsect1>
   <refsect1>
