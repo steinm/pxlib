@@ -2,3 +2,4 @@ Version 0.0.4
   - fixed segm fault if input file does not exist
 	- maxTableSize may now be larger as 32
 	- add check for endianess
+	- added data conversion functions
