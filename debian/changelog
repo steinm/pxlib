@@ -1,7 +1,6 @@
 pxlib (0.4.3-1) unstable; urgency=low
 
   * New upstream release.
-  * shlibs version now 0.4.3 because upstream has changed api
 
  -- Uwe Steinmann <steinm@debian.org>  Sat, 18 Dec 2004 15:06:48 +0100
 
