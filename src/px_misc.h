@@ -1,3 +1,5 @@
+#ifndef __PX_MISC_H__
+#define __PX_MISC_H__
 extern void put_long_le(char *cp, long lval);
 extern long get_long_le(const char *cp);
 extern short int get_short_le(const char *cp);
@@ -21,4 +23,4 @@ extern int px_date_day(char *cp);
 extern char *px_cur_date(char *cp);
 extern int px_get_date(char *cp);
 extern void hex_dump(FILE *outfp, char *p, int len);
-
+#endif
