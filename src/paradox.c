@@ -591,6 +591,51 @@ PX_get_value(pxdoc_t *pxdoc, const char *name, float *value) {
 	if(strcmp(name, "numprimkeys") == 0) {
 		*value = (float) pxdoc->px_head->px_primarykeyfields;
 		return(0);
+	} else if(strcmp(name, "filetype") == 0) {
+		*value = (float) pxdoc->px_head->px_filetype;
+		return(0);
+	} else if(strcmp(name, "numfields") == 0) {
+		*value = (float) pxdoc->px_head->px_numfields;
+		return(0);
+	} else if(strcmp(name, "primarykeyfields") == 0) {
+		*value = (float) pxdoc->px_head->px_primarykeyfields;
+		return(0);
+	} else if(strcmp(name, "numrecords") == 0) {
+		*value = (float) pxdoc->px_head->px_numrecords;
+		return(0);
+	} else if(strcmp(name, "recordsize") == 0) {
+		*value = (float) pxdoc->px_head->px_recordsize;
+		return(0);
+	} else if(strcmp(name, "theonumrecords") == 0) {
+		*value = (float) pxdoc->px_head->px_theonumrecords;
+		return(0);
+	} else if(strcmp(name, "fileversion") == 0) {
+		*value = (float) pxdoc->px_head->px_fileversion/10.0;
+		return(0);
+	} else if(strcmp(name, "headersize") == 0) {
+		*value = (float) pxdoc->px_head->px_headersize;
+		return(0);
+	} else if(strcmp(name, "maxtablesize") == 0) {
+		*value = (float) pxdoc->px_head->px_maxtablesize;
+		return(0);
+	} else if(strcmp(name, "numblocks") == 0) {
+		*value = (float) pxdoc->px_head->px_fileblocks;
+		return(0);
+	} else if(strcmp(name, "firstblock") == 0) {
+		*value = (float) pxdoc->px_head->px_firstblock;
+		return(0);
+	} else if(strcmp(name, "lastblock") == 0) {
+		*value = (float) pxdoc->px_head->px_lastblock;
+		return(0);
+	} else if(strcmp(name, "codepage") == 0) {
+		*value = (float) pxdoc->px_head->px_doscodepage;
+		return(0);
+	} else if(strcmp(name, "autoinc") == 0) {
+		*value = (float) pxdoc->px_head->px_autoinc;
+		return(0);
+	} else if(strcmp(name, "sortorder") == 0) {
+		*value = (float) pxdoc->px_head->px_sortorder;
+		return(0);
 	}
 	px_error(pxdoc, PX_Warning, _("No such value name."));
 	return(-2);
@@ -653,6 +698,12 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 #else
 		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 #endif
+	} else if(strcmp(name, "warning") == 0) {
+		if(strcmp(value, "true") == 0) {
+			pxdoc->warnings = px_true;
+		} else {
+			pxdoc->warnings = px_false;
+	    }
 	}
 	return 0;
 }
@@ -1834,7 +1885,13 @@ PX_set_blob_file(pxdoc_t *pxdoc, const char *filename) {
 		return -1;
 	}
 
+	if(pxdoc->px_stream == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Paradox database has not been opened or created when setting the blob file."));
+		return -1;
+	}
+
 	if(pxdoc->px_blob != NULL) {
+		px_error(pxdoc, PX_Warning, _("Blob file has been set already. I will delete the existing one."));
 		PX_delete_blob(pxdoc->px_blob);
 		pxdoc->px_blob = NULL;
 	}
@@ -1844,9 +1901,17 @@ PX_set_blob_file(pxdoc_t *pxdoc, const char *filename) {
 		return -1;
 	}
 
-	if(0 > PX_open_blob_file(pxblob, filename)) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file."));
-		return -1;
+	/* If the paradox database was opend for reading the blob will be too. */
+	if(pxdoc->px_stream->mode == pxfFileRead) {
+		if(0 > PX_open_blob_file(pxblob, filename)) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not open blob file."));
+			return -1;
+		}
+	} else {
+		if(0 > PX_create_blob_file(pxblob, filename)) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not create blob file."));
+			return -1;
+		}
 	}
 
 	pxdoc->px_blob = pxblob;
@@ -2096,13 +2161,19 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
-
+	char *buffer;
 	if(data[0] == '\0') {
 //		*value = NULL;
 		return 0;
 	}
 
-	memcpy(*value, data, len);
+	buffer = (char *) pxdoc->malloc(pxdoc, len, _("Allocate memory for field data."));
+	if(!buffer) {
+		*value = NULL;
+		return -1;
+	}
+	memcpy(buffer, data, len);
+	*value = buffer;
 
 	return 1;
 }
@@ -2308,7 +2379,7 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 
 	/* Since the blob data is not in the record we will need a blob file */
 	if(!pxblob || !pxblob->mb_stream) {
-		px_error(pxdoc, PX_RuntimeError, _("Blob data is not contained in record and a blob file is not set."));
+		px_error(pxdoc, PX_Warning, _("Blob data is not contained in record and a blob file is not set."));
 		*value = NULL;
 		return -1;
 	}
@@ -2648,10 +2719,12 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 /* }}} */
 
 /* _px_put_data_blob() {{{
- * Reads data of blob or graphic into memory and returns a pointer to it.
- * The parameter hsize contains the length of the header right before
- * the blob/graphic in the .MB file. It is 17 Bytes for graphics and 9
- * for all other types of blobs (I'm not completely sure about OLE).
+ * Writes data of blob or graphic from memory into a file.
+ * The parameter data is a pointer to the position in the data record.
+ * len is the space available for the blob in the data record.
+ * value is the pointer to the blob with length valuelen.
+ * The function determines if the blob data fits into the data record.
+ * If it does, it will not need an open blob file.
  */
 static int
 _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int valuelen) {
@@ -2660,7 +2733,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 	int leader;
 
 	/* If the (field length - 10) is large enough to hold the blob data,
-	 * we don't need bother writing into the blob file. */
+	 * we don't need to bother writing into the blob file. */
 	leader = len - 10;
 	if(valuelen > leader) {
 		pxblob = pxdoc->px_blob;
@@ -2673,7 +2746,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			TMbBlockHeader2 mbbh;
 			int used_blocks;
 
-			fprintf(stderr, "Blob goes into type 2 block\n");
+//			fprintf(stderr, "Blob goes into type 2 block\n");
 			if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
 				return -1;
