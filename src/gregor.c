@@ -142,50 +142,50 @@ SdnToGregorian(
     int      *pMonth,
     int      *pDay)
 {
-    int       century;
-    int       year;
-    int       month;
-    int       day;
-    long int  temp;
-    int       dayOfYear;
-
-    if (sdn <= 0) {
-        *pYear = 0;
-        *pMonth = 0;
-        *pDay = 0;
-        return;
-    }
-
-    temp = (sdn + SDN_OFFSET) * 4 - 1;
-
-    /* Calculate the century (year/100). */
-    century = temp / DAYS_PER_400_YEARS;
-
-    /* Calculate the year and day of year (1 <= dayOfYear <= 366). */
-    temp = ((temp % DAYS_PER_400_YEARS) / 4) * 4 + 3;
-    year = (century * 100) + (temp / DAYS_PER_4_YEARS);
-    dayOfYear = (temp % DAYS_PER_4_YEARS) / 4 + 1;
-
-    /* Calculate the month and day of month. */
-    temp = dayOfYear * 5 - 3;
-    month = temp / DAYS_PER_5_MONTHS;
-    day = (temp % DAYS_PER_5_MONTHS) / 5 + 1;
-
-    /* Convert to the normal beginning of the year. */
-    if (month < 10) {
-        month += 3;
-    } else {
-        year += 1;
-        month -= 9;
-    }
-
-    /* Adjust to the B.C./A.D. type numbering. */
-    year -= 4800;
-    if (year <= 0) year--;
-
-    *pYear = year;
-    *pMonth = month;
-    *pDay = day;
+	int       century;
+	int       year;
+	int       month;
+	int       day;
+	long int  temp;
+	int       dayOfYear;
+	
+	if (sdn <= 0) {
+		*pYear = 0;
+		*pMonth = 0;
+		*pDay = 0;
+		return;
+	}
+	
+	temp = (sdn + SDN_OFFSET) * 4 - 1;
+	
+	/* Calculate the century (year/100). */
+	century = temp / DAYS_PER_400_YEARS;
+	
+	/* Calculate the year and day of year (1 <= dayOfYear <= 366). */
+	temp = ((temp % DAYS_PER_400_YEARS) / 4) * 4 + 3;
+	year = (century * 100) + (temp / DAYS_PER_4_YEARS);
+	dayOfYear = (temp % DAYS_PER_4_YEARS) / 4 + 1;
+	
+	/* Calculate the month and day of month. */
+	temp = dayOfYear * 5 - 3;
+	month = temp / DAYS_PER_5_MONTHS;
+	day = (temp % DAYS_PER_5_MONTHS) / 5 + 1;
+	
+	/* Convert to the normal beginning of the year. */
+	if (month < 10) {
+		month += 3;
+	} else {
+		year += 1;
+		month -= 9;
+	}
+	
+	/* Adjust to the B.C./A.D. type numbering. */
+	year -= 4800;
+	if (year <= 0) year--;
+	
+	*pYear = year;
+	*pMonth = month;
+	*pDay = day;
 }
 
 long int
@@ -194,77 +194,54 @@ GregorianToSdn(
     int inputMonth,
     int inputDay)
 {
-    int year;
-    int month;
-
-    /* check for invalid dates */
-    if (inputYear == 0 || inputYear < -4714 ||
-        inputMonth <= 0 || inputMonth > 12 ||
-        inputDay <= 0 || inputDay > 31)
-    {
-        return(0);
-    }
-
-    /* check for dates before SDN 1 (Nov 25, 4714 B.C.) */
-    if (inputYear == -4714) {
-        if (inputMonth < 11) {
-            return(0);
-        }
-        if (inputMonth == 11 && inputDay < 25) {
-            return(0);
-        }
-    }
-
-    /* Make year always a positive number. */
-    if (inputYear < 0) {
-        year = inputYear + 4801;
-    } else {
-        year = inputYear + 4800;
-    }
-
-    /* Adjust the start of the year. */
-    if (inputMonth > 2) {
-        month = inputMonth - 3;
-    } else {
-        month = inputMonth + 9;
-        year--;
-    }
-
-    return( ((year / 100) * DAYS_PER_400_YEARS) / 4
-            + ((year % 100) * DAYS_PER_4_YEARS) / 4
-            + (month * DAYS_PER_5_MONTHS + 2) / 5
-            + inputDay
-            - SDN_OFFSET );
+	int year;
+	int month;
+	
+	/* check for invalid dates */
+	if (inputYear == 0 || inputYear < -4714 ||
+	    inputMonth <= 0 || inputMonth > 12 ||
+	    inputDay <= 0 || inputDay > 31)
+	{
+		return(0);
+	}
+	
+	/* check for dates before SDN 1 (Nov 25, 4714 B.C.) */
+	if (inputYear == -4714) {
+		if (inputMonth < 11) {
+			return(0);
+		}
+		if (inputMonth == 11 && inputDay < 25) {
+			return(0);
+		}
+	}
+	
+	/* Make year always a positive number. */
+	if (inputYear < 0) {
+		year = inputYear + 4801;
+	} else {
+		year = inputYear + 4800;
+	}
+	
+	/* Adjust the start of the year. */
+	if (inputMonth > 2) {
+		month = inputMonth - 3;
+	} else {
+		month = inputMonth + 9;
+		year--;
+	}
+	
+	return( ((year / 100) * DAYS_PER_400_YEARS) / 4
+	        + ((year % 100) * DAYS_PER_4_YEARS) / 4
+	        + (month * DAYS_PER_5_MONTHS + 2) / 5
+	        + inputDay
+	        - SDN_OFFSET );
 }
 
-char *MonthNameShort[13] = {
-    "",
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-};
-
-char *MonthNameLong[13] = {
-    "",
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
-};
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */
