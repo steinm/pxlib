@@ -2125,7 +2125,7 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 		*value = 0;
 		return 0;
 	}
-	*value = get_double_be(tmp); //*((double *)tmp);
+	*value = get_double_be(tmp); // *((double *)tmp);
 	return 1;
 }
 /* }}} */
@@ -2792,6 +2792,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 		else
 			memcpy((char *) data, value, valuelen);
 	}
+	return 0;
 }
 /* }}} */
 
@@ -2799,9 +2800,9 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
  * Stores bcd number bytes in a data block.
  * len is the number of decimal numbers.
  */
-PXLIB_API void PXLIB_CALL
+PXLIB_API int PXLIB_CALL
 PX_put_data_blob(pxdoc_t *pxdoc, char *data, int len, char *value, int valuelen) {
-	_px_put_data_blob(pxdoc, data, len, value, valuelen);
+	return(_px_put_data_blob(pxdoc, data, len, value, valuelen));
 }
 /* }}} */
 
