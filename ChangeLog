@@ -1,4 +1,5 @@
 Version 0.2.8
+	- new function PX_get_opaque()
 	- fixed all references to PX_open_filename which is now PX_open_file
 	- pass const char to API function if possible
 	- updated build process
