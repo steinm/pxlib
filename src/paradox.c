@@ -100,8 +100,8 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	}
 	if (errorhandler == NULL)
 		errorhandler = px_errorhandler; 
-	if(NULL == (pxdoc = (pxdoc_t *) (* allocproc) (NULL, sizeof(pxdoc_t), "PS new"))) {
-		(*errorhandler)(NULL, PX_MemoryError, _("Couldn't allocate PS object"));
+	if(NULL == (pxdoc = (pxdoc_t *) (* allocproc) (NULL, sizeof(pxdoc_t), "PX_new2: Allocate memory for px document."))) {
+		(*errorhandler)(NULL, PX_MemoryError, _("Couldn't allocate PX object"));
 		return(NULL);
 	}
 	memset((void *)pxdoc, 0, (size_t) sizeof(pxdoc_t));
@@ -197,7 +197,8 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxfield_t *pxf;
 	int i, recordsize = 0;
 
-	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL) {
+	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("PX_create_fp: Allocate memory for document header."))) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
 		return -1;
 	}
 	pxh->px_filetype = pxfFileTypIndexDB;
@@ -263,6 +264,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename)
 	}
 
 //	pxh->px_tablename = px_strdup(pxdoc, filename);
+	PX_set_tablename(pxdoc, filename);
 	pxdoc->px_name = px_strdup(pxdoc, filename);
 	pxdoc->px_close_fp = px_true;
 	return 0;
@@ -660,22 +662,22 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	/* Check if record still fits into a existing data block */
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize;
 	/* Calculate the number of the data block for this record */
-	datablocknr = (pxh->px_numrecords+1) / recsperdatablock;
+	datablocknr = (pxh->px_numrecords) / recsperdatablock;
 	/* Calculate the position within the datablock */
-	recdatablocknr = pxh->px_numrecords % recsperdatablock;
+	recdatablocknr = (pxh->px_numrecords) % recsperdatablock;
 
-	fprintf(stderr, "Data goes into block %d at record no %d (%d)\n", datablocknr, recdatablocknr, recsperdatablock);
+//	fprintf(stderr, "Data goes into block %d at record no %d (%d)\n", datablocknr, recdatablocknr, recsperdatablock);
 	/* Check if we need a new datablock */
 	if(datablocknr >= pxh->px_fileblocks) {
-		fprintf(stderr, "We need an new datablock\n");
+//		fprintf(stderr, "We need an new datablock\n");
 		itmp = put_px_datablock(pxdoc, pxh, pxdoc->px_fp);
-		fprintf(stderr, "Added data block no. %d\n", itmp);
+//		fprintf(stderr, "Added data block no. %d\n", itmp);
 	
 		/* The datablock number return by px_put_datablock() should be
 		 * the same as the calculated datablocknr.
 		 */
 		if(datablocknr != itmp) {
-			px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing data block."));
+			px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing data block. Expected data block nr. %d, but got %d."), datablocknr, itmp);
 			return -1;
 		}
 
@@ -689,8 +691,8 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	 * as the calculated one.
 	 */
 	if(recdatablocknr != itmp) {
-		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block."));
-//		return -1;
+		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block. Expected record nr. %d, but got %d."), recdatablocknr, itmp);
+		return -1;
 	}
 	
 	/* Update header */
@@ -926,6 +928,9 @@ PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
 		px_free(pxdoc, pxdoc->px_head->px_tablename);
 
 	pxdoc->px_head->px_tablename = px_strdup(pxdoc, tablename);
+	if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_fp) < 0) {
+		return -1;
+	}
 	return 0;
 }
 /* }}} */
@@ -1222,6 +1227,19 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 }
 /* }}} */
 
+/* PX_put_data_bytes() {{{
+ * Stores raw bytes in a data block.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_bytes(pxdoc_t *pxdoc, char *data, int len, char *value) {
+	char *obuf = NULL;
+	size_t olen;
+	int res;
+
+	memcpy(data, value, len);
+}
+/* }}} */
+
 /* PX_put_data_double() {{{
  * Stores a double in a data block.
  * A len of 0 means to store a NULL value.
@@ -1272,6 +1290,25 @@ PX_put_data_short(pxdoc_t *pxdoc, char *data, int len, short int value) {
 		memset(data, 0, 2);
 	} else {
 		put_short_be(data, value);
+		if(value >= 0) {
+			data[0] |= 0x80;
+		} else {
+			data[0] &= 0x7f;
+		}
+	}
+}
+/* }}} */
+
+/* PX_put_data_byte() {{{
+ * Stores a byte in a data block.
+ * A len of 0 means to store a NULL value.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_byte(pxdoc_t *pxdoc, char *data, int len, char value) {
+	if(len == 0) {
+		memset(data, 0, 1);
+	} else {
+		*data = value;
 		if(value >= 0) {
 			data[0] |= 0x80;
 		} else {
