@@ -217,7 +217,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	pxfield_t *pxf;
 	char *ptr;
 	int nullint = 0;
-	int i, len = 0;
+	int i, len;
+	int sumfieldlen;   /* sum of all field name length include the 0 */
 	char *basehead;
 	int base, offset, dataheadoffset;
 	short int tmp;
@@ -304,6 +305,19 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			tablenamelen = 79;
 			break;
 	}
+	pxf = pxh->px_fields;
+	sumfieldlen = 0;
+	for(i=0; i<pxh->px_numfields; i++, pxf++) {
+		sumfieldlen += strlen(pxf->px_fname)+1;
+	}
+	/* +9 is for sortOrderID and trailing 0 */
+	switch(pxh->px_filetype) {
+		case pxfFileTypPrimIndex:
+			put_short_le(&pxhead.unknown50x54[1], dataheadoffset+pxh->px_numfields*2+4+tablenamelen);
+			break;
+		default:
+			put_short_le(&pxhead.unknown50x54[1], dataheadoffset+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+9);
+	}
 	/* The datahead is only in .DB and .Xnn files. If it exists the
 	 * common file header will continue at 0x78
 	 */
@@ -331,6 +345,9 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		dummy = (long) time();
 		put_long_le(&pxdatahead.fileUpdateTime, dummy);
 		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
+		put_short_le(&pxdatahead.hiFieldIDinfo, 0x20+pxh->px_numfields*(2+4)+4+tablenamelen+sumfieldlen);
+		/* +8 is for sortOrderID */
+		put_short_le(&pxdatahead.unknown6Cx6F[2], 0x18+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+8);
 		put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
 		switch(pxh->px_filetype) {
 			case pxfFileTypIndexDB:
