@@ -7,7 +7,7 @@ distclean: clean
 clean:
 	rm -f ${man_MANS}
 
-EXTRA_DIST = PX_get_majorversion.sgml \
+SGML_FILES = PX_get_majorversion.sgml \
              PX_get_minorversion.sgml \
 						 PX_get_subminorversion.sgml \
 						 PX_new2.sgml \
@@ -36,5 +36,7 @@ EXTRA_DIST = PX_get_majorversion.sgml \
 						 PX_close.sgml \
 						 PX_delete.sgml
 
-man_MANS = $(EXTRA_DIST:.sgml=.3)
+EXTRA_DIST = ${SGML_FILES} pxformat.txt paradox4.txt
+
+man_MANS = $(SGML_FILES:.sgml=.3)
 
