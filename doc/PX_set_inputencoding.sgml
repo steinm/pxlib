@@ -80,7 +80,7 @@ manpage.1: manpage.sgml
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns -2 if recoding is not supported and a value < 0 in case of
+    <para>Returns -2 if recoding is not supported and a value &lt; 0 in case of
 		  an error, otherwise 0.</para>
   </refsect1>
   <refsect1>
