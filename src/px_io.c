@@ -28,7 +28,14 @@ int px_gsfread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
 }
 
 int px_gsfseek(pxdoc_t *p, pxstream_t *stream, long offset, int whence) {
-	return(gsf_input_seek(stream->s.gsfin, offset, whence));
+	GSeekType gsfwhence = G_SEEK_SET;
+
+	switch(whence) {
+		case SEEK_CUR: gsfwhence = G_SEEK_CUR; break;
+		case SEEK_END: gsfwhence = G_SEEK_END; break;
+		case SEEK_SET: gsfwhence = G_SEEK_SET; break;
+	}
+	return(gsf_input_seek(stream->s.gsfin, offset, gsfwhence));
 }
 
 long px_gsftell(pxdoc_t *p, pxstream_t *stream) {
