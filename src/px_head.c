@@ -1,10 +1,13 @@
 #include "config.h"
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
-#include <paradox.h>
-#include <px_intern.h>
-#include <px_memory.h>
-#include <px_io.h>
+#include <time.h>
+#include "paradox.h"
+#include "px_intern.h"
+#include "px_memory.h"
+#include "px_io.h"
+#include "px_error.h"
 
 /* TMPBUFFSIZE must be larger than 261 because the tablename must fit into
  * the buffer. It is also the maximum length of a field name. Field names
@@ -224,7 +227,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	int base, offset, dataheadoffset;
 	short int tmp;
 	int isindex;
-	int tablenamelen;
+	int tablenamelen = 79;
 	long dummy;
 
 	memset(&pxhead, 0, sizeof(pxhead));
@@ -308,7 +311,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			pxhead.fileVersionID = 0x0C;
 			tablenamelen = 261;
 			break;
-		case 50:
+		default:
 			pxhead.fileVersionID = 0x0B;
 			tablenamelen = 79;
 			break;
@@ -353,7 +356,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		 */
 		put_long_le(&pxdatahead.encryption2, 0);
 		put_long_le(&pxdatahead.fileUpdateTime, 0x12345678);
-		dummy = (long) time();
+		dummy = (long) time(NULL);
 		put_long_le(&pxdatahead.fileUpdateTime, dummy);
 		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
 		put_short_le(&pxdatahead.hiFieldIDinfo, 0x20+pxh->px_numfields*(2+4)+4+tablenamelen+sumfieldlen);
@@ -762,6 +765,7 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 			return -1;
 		}
 	}
+	return 0;
 }
 /* }}} */
 
