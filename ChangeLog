@@ -1,3 +1,7 @@
+Version 0.4.2
+	- fixed possible errors in header of mb files
+	- added support for type 3 blocks in mb files
+
 Version 0.4.1
 	- various updates of debian files
 	- small changes to the build process

@@ -1,3 +1,11 @@
+pxlib (0.4.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * Added libgsf-1-dev to BuildDepend (Closes: #283067)
+  * Removed debian/shlibs.pxlib1
+
+ -- Uwe Steinmann <steinm@debian.org>  Fri, 12 Nov 2004 12:20:04 +0100
+
 pxlib (0.4.1-1) unstable; urgency=low
 
   * New upstream release.
