@@ -221,6 +221,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	short int tmp;
 	int isindex;
 	int tablenamelen;
+	long dummy;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
@@ -308,7 +309,10 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		 * Update: The error has disappeared. Maybe this has been fixed
 		 * when the header size was calculated properly.
 		 */
-		put_long_le(&pxdatahead.fileUpdateTime, (long) time());
+		put_long_le(&pxdatahead.encryption2, 0);
+		put_long_le(&pxdatahead.fileUpdateTime, 0x12345678);
+		dummy = (long) time();
+		put_long_le(&pxdatahead.fileUpdateTime, dummy);
 		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
 		put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
 		pxdatahead.unknown6Cx6F[0] = 0x01;
