@@ -758,6 +758,9 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 
 /******* Function to access Blob files *******/
 
+/* PX_new_blob() {{{
+ * Create a new blob document
+ */
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc) {
 	pxblob_t *pxblob;
@@ -770,13 +773,21 @@ PX_new_blob(pxdoc_t *pxdoc) {
 		return(pxblob);
 	}
 }
+/* }}} */
 
+/* PX_open_blob_fp() {{{
+ * Opens a blob with a given already open file pointer
+ */
 PXLIB_API int PXLIB_CALL
 PX_open_blob_fp(pxblob_t *pxblob, FILE *fp) {
 
 	pxblob->px_fp = fp;
 }
+/* }}} */
 
+/* PX_open_blob_file() {{{
+ * Opens a file of a blob with the given filename
+ */
 PXLIB_API int PXLIB_CALL
 PX_open_blob_file(pxblob_t *pxblob, char *filename) {
 	FILE *fp;
@@ -798,7 +809,11 @@ PX_open_blob_file(pxblob_t *pxblob, char *filename) {
 	pxblob->px_close_fp = px_true;
 	return 0;
 }
+/* }}} */
 
+/* PX_close_blob() {{{
+ * Close a blob file
+ */
 PXLIB_API void PXLIB_CALL
 PX_close_blob(pxblob_t *pxblob) {
 	if((pxblob->px_close_fp) && (pxblob->px_fp != 0)) {
@@ -807,7 +822,11 @@ PX_close_blob(pxblob_t *pxblob) {
 		pxblob->pxdoc = NULL;
 	}
 }
+/* }}} */
 
+/* PX_read_blobdata() {{{
+ * Reads data of blob into memory and returns a pointer to it
+ */
 PXLIB_API char* PXLIB_CALL
 PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	int ret;
@@ -852,7 +871,11 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 
 	return(blobdata);
 }
+/* }}} */
 
+/* PX_get_data_alpha() {{{
+ * Extracts an alpha field value from a data block
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	char *buffer, *obuf = NULL;
@@ -914,7 +937,11 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 
 	return 1;
 }
+/* }}} */
 
+/* PX_get_double_long() {{{
+ * Extracts a double from a data block
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	if(data[0] & 0x80) {
@@ -930,7 +957,11 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	*value = get_double_be(data); //*((double *)data);
 	return 1;
 }
+/* }}} */
 
+/* PX_get_data_long() {{{
+ * Extracts a long integer from a data block
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
 	if(data[0] & 0x80) {
@@ -943,7 +974,11 @@ PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
 	*value = get_long_be(data); //*((long int *)data);
 	return 1;
 }
+/* }}} */
 
+/* PX_get_data_short() {{{
+ * Extracts a short integer in a data block
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 	if(data[0] & 0x80) {
@@ -956,4 +991,5 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 	*value = get_short_be(data);
 	return 1;
 }
+/* }}} */
 
