@@ -2196,6 +2196,7 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 	unsigned char nibble;
 	int size;
 	int lz;   /* 1 as long as leading zeros are found */
+	struct lconv *lc;
 	char *buffer;
 
 	if(data[0] == '\0') {
@@ -2233,7 +2234,11 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 	}
 	if(lz)
 		buffer[j++] = '0';
-	buffer[j++] = '.';
+	lc = localeconv();
+	if(lc)
+		buffer[j++] = lc->decimal_point[0];
+	else
+		buffer[j++] = '.';
 	for(; i<34; i++) {
 		if(i%2)
 			nibble = data[i/2] & 0x0f;
@@ -2281,7 +2286,7 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 //	fprintf(stderr, "mod_nr=%d \n", mod_nr);
 
 	if(*blobsize <= 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
+//		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
 		*value = NULL;
 		return -1;
 	}
