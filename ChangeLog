@@ -1,4 +1,5 @@
 Version 0.0.7
+	- added spec file to build rpms
 	- alpha fields are automatically recoded if required
 	- function to access alpha field data
 
