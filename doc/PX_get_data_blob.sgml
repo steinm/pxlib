@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2004</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -73,8 +73,9 @@ manpage.1: manpage.sgml
 			the field to operate on and add it to the base pointer of the
 			record. You should use this function instead of accessing the data
 			directly.</para>
-		<para>&funcname; returns blob data stored in the record itself, and in
-		  MB files.</para>
+		<para>&funcname; returns blob data stored in the record itself, or in
+		  an MB files which must have been set with
+			<function>PX_set_blob_file(3)</function>.</para>
 		<para>The function allocates memory for the data returned in
 		  <option>*value</option>. This memory has to be freed by the application.
 			The amount of memory for the blob is returned in
