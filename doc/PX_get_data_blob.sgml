@@ -93,7 +93,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_data_graphic(3), PX_get_data_bcd(3), PX_get_data_byte(3), PX_get_data_long(3), PX_get_data_short(3), PX_get_data_double(3)</para>
+    <para>PX_get_data_graphic(3), PX_get_data_bcd(3), PX_get_data_byte(3), PX_get_data_long(3), PX_get_data_short(3), PX_get_data_double(3), PX_get_data_byte(3), PX_get_data_bytes(3)</para>
 
   </refsect1>
   <refsect1>
