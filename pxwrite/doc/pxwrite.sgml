@@ -1,0 +1,262 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
+     less'.  A typical entry in a Makefile or Makefile.am is:
+
+manpage.1: manpage.sgml
+	docbook-to-man $< > $@
+
+    
+	The docbook-to-man binary is found in the docbook-to-man package.
+	Please remember that if you create the nroff version in one of the
+	debian/rules file targets (such as build), you will need to include
+	docbook-to-man in your Build-Depends control field.
+
+  -->
+
+  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
+  <!ENTITY dhfirstname "<firstname>Uwe</firstname>">
+  <!ENTITY dhsurname   "<surname>Steinmann</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>April 29, 2003</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhusername  "Uwe Steinmann">
+  <!ENTITY dhucpackage "<refentrytitle>PXVIEW</refentrytitle>">
+  <!ENTITY dhpackage   "pxwrite">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2003</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>pxwrite creates paradox database files from various input</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+
+      <arg><option>-h | --help <replaceable></replaceable></option></arg>
+
+      <arg><option>-i | --info <replaceable></replaceable></option></arg>
+      <arg><option>-c | --csv <replaceable></replaceable></option></arg>
+      <arg><option>-t | --test <replaceable></replaceable></option></arg>
+      <arg><option>-v | --verbose <replaceable></replaceable></option></arg>
+      <arg><option>--mode=MODE <replaceable></replaceable></option></arg>
+      <arg><option>-o FILE | --output=FILE <replaceable></replaceable></option></arg>
+      <arg><option>-n FILE | --primary-index-file=FILE <replaceable></replaceable></option></arg>
+      <arg><option>-r ENCODING | --recode=ENCODING <replaceable></replaceable></option></arg>
+      <arg><option>--separator=CHAR <replaceable></replaceable></option></arg>
+      <arg><option>--enclosure=CHAR <replaceable></replaceable></option></arg>
+      <arg><option>--tablename=NAME <replaceable></replaceable></option></arg>
+      <arg>FILE </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para>This manual page documents the
+      <command>&dhpackage;</command> command.</para>
+
+    <para>&dhpackage; reads Paradox files and prints information about
+		  the file or dumps the records to stdout or a file. &dhpackage; is mostly
+			applied on Paradox .DB files but can also be used to show
+			information about other Paradox files. It can also read associated
+			blob files (.MB) and write each blob into a separate file.
+      </para>
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    <para>The program follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option>
+          <option>--help</option>
+        </term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-v</option>
+          <option>--version</option>
+        </term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-o</option>
+          <option>--output</option>
+        </term>
+        <listitem>
+          <para>All output except for usage information and error messages
+					 will be written to the given file instead of stdout.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-t</option>
+          <option>--test</option>
+        </term>
+        <listitem>
+          <para>Create a test database.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-v</option>
+          <option>--verbose</option>
+        </term>
+        <listitem>
+          <para>Output some more information from the header. This option is only
+					 needed if you want see some internal information which are usually
+					 not of any interessed.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option>
+          <option>--csv</option>
+        </term>
+        <listitem>
+          <para>Dump data records in CSV format. This
+						option is the short form for --mode=csv.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--mode=MODE</option>
+        </term>
+        <listitem>
+          <para>Sets the ouput mode. This options provides a different way
+					 to set the output format. --mode=sql is equivalent to --sql,
+					 --mode=csv to --csv, --mode=html to --html and --mode=schema
+					 to --schema.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-o FILE</option>
+          <option>--output=FILE</option>
+        </term>
+        <listitem>
+          <para>Dump records into given file instead of stdout.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-n FILE</option>
+          <option>--primary-index-file=FILE</option>
+        </term>
+        <listitem>
+          <para>Read the primary index from file. This option is only valid
+					  it you are reading a database file.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-r ENCODING</option>
+          <option>--recode=ENCODING</option>
+        </term>
+        <listitem>
+          <para>Recode all fields of type alpha to the given encoding. You will
+					 have to specify the encoding similar to the
+					 <application>recode</application> command, by passing only the part
+					 on the right hand side of the `..' of what you usually pass to
+					 recode.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--separator=CHAR</option>
+        </term>
+        <listitem>
+          <para>If the database is exported in csv format the given character
+					 will be used to separate field values. Other output formats will not
+					 be affected by this option.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--enclosure=CHAR</option>
+        </term>
+        <listitem>
+          <para>If the database is exported in csv format the given character
+					 will be used to enclose field values if the field is of type char().
+					 The enclosure will only take place if the delimiter between fields
+					 is part of the field value.  Other output formats will not
+					 be affected by this option.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+		<para>The none optional parameter FILE is the Paradox file which shall
+		 be read.</para>
+		<para>If you pass two or more options to set the output format then
+		 each format
+		 will be output one after the other starting with csv followed by
+		 html and finally sql.</para>
+		<para>The default field separator if exporting csv format is a tabulator.
+		 Fields will be enclosed in " if required.</para>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>pxview(1), recode(1), iconv(1)</para>
+
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+
+    <para>This manual page was written by &dhusername; &lt;&dhemail;&gt;.
+      Permission is
+      granted to copy, distribute and/or modify this document under
+      the terms of the &gnu; Free Documentation
+      License, Version 1.1 or any later version published by the Free
+      Software Foundation; with no Invariant Sections, no Front-Cover
+      Texts and no Back-Cover Texts.</para>
+
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
+
+
