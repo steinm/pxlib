@@ -1,4 +1,6 @@
 Version 0.2.5
+	- fixed man pages of PX_set_value|parameter. Both functions return int now.
+	- PX_set_parameter() returns -1 on error and 0 otherwise
 	- Issue a warning if setting a value which does not exist
 	- better error checking when setting the number of primary keys
 	- fixed some errors in writing primary index files
