@@ -203,11 +203,14 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	char *ptr;
 	int nullint = 0;
 	int i, len = 0;
+	char *basehead;
+	int base, offset;
+	short int tmp;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
 
-	char *basehead = (char *) &pxhead;
+	basehead = (char *) &pxhead;
 
 	put_short_le(&pxhead.recordSize, pxh->px_recordsize);
 	put_short_le(&pxhead.headerSize, pxh->px_headersize);
@@ -301,9 +304,9 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		return -1;
 	}
 	/* write fieldNamePtrArray */
-	int base = (int) basehead+0x78+pxh->px_numfields*2*2+4+261;
+	base = (int) basehead+0x78+pxh->px_numfields*2*2+4+261;
 	pxf = pxh->px_fields;
-	int offset = 0;
+	offset = 0;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		put_long_le(&ptr, base+offset);
 		offset += strlen(pxf->px_fname)+1;
@@ -349,7 +352,6 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	}
 
 	/* write fieldNumbers */
-	short int tmp;
 	for(i=0; i<pxh->px_numfields; i++) {
 		put_short_le(&tmp, i+1);
 		if(pxdoc->write(pxdoc, pxs, 2, &tmp) < 1) {
