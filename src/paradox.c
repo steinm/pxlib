@@ -80,17 +80,28 @@ PX_new(void) {
 PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
 	if((pxdoc->px_head = get_px_head(pxdoc, fp)) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to get header."));
 		return -1;
 	}
 
 	pxdoc->px_fp = fp;
+	return 0;
 }
 
 PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	FILE *fp;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
 
 	if((fp = fopen(filename, "r")) == NULL) {
 		return -1;
@@ -112,14 +123,25 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 	TDataBlock datablock;
 	pxhead_t *pxh;
 
-	if((pxdoc == NULL) || (pxdoc->px_head == NULL)) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return NULL;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
 		return NULL;
 	}
 	pxh = pxdoc->px_head;
 
+	if((recno < 0) || (recno >= pxh->px_numrecords)) {
+		px_error(pxdoc, PX_RuntimeError, _("Record number out of range"));
+		return NULL;
+	}
+
 	/* Go to the start of the data block (skip the header) */
 	if((ret = fseek(pxdoc->px_fp, pxh->px_headersize, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of data block"));
 		return NULL;
 	}
 
@@ -162,6 +184,11 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return;
+	}
+
 	if((pxdoc->closefp) && (pxdoc->px_fp != NULL))
 		fclose(pxdoc->px_fp);
 	pxdoc->px_fp = NULL;
@@ -172,15 +199,96 @@ PX_delete(pxdoc_t *pxdoc) {
 	pxfield_t *pfield;
 	int i;
 
-	if(pxdoc->px_head->px_tablename) pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
-	pfield = pxdoc->px_head->px_fields;
-	for(i=0; i<pxdoc->px_head->px_numfields; i++) {
-		if(pfield->px_fname) pxdoc->free(pxdoc, pfield->px_fname);
-		pfield++;
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return;
 	}
-	pxdoc->free(pxdoc, pxdoc->px_head->px_fields);
-	pxdoc->free(pxdoc, pxdoc->px_head);
+
+	if(pxdoc->px_head != NULL) {
+		if(pxdoc->px_head->px_tablename) pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
+		pfield = pxdoc->px_head->px_fields;
+		if(pfield != NULL) {
+			for(i=0; i<pxdoc->px_head->px_numfields; i++) {
+				if(pfield->px_fname) pxdoc->free(pxdoc, pfield->px_fname);
+				pfield++;
+			}
+			pxdoc->free(pxdoc, pxdoc->px_head->px_fields);
+		}
+		pxdoc->free(pxdoc, pxdoc->px_head);
+	}
 	pxdoc->free(pxdoc, pxdoc);
+}
+
+PXLIB_API pxfield_t* PXLIB_CALL
+PX_get_fields(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return NULL;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		return NULL;
+	}
+
+	return(pxdoc->px_head->px_fields);
+}
+
+PXLIB_API pxfield_t* PXLIB_CALL
+PX_get_field(pxdoc_t *pxdoc, int fieldno) {
+	pxhead_t *pxh;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return NULL;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		return NULL;
+	}
+
+	pxh = pxdoc->px_head;
+
+	if((fieldno < 0) || (fieldno >= pxh->px_numfields)) {
+		px_error(pxdoc, PX_RuntimeError, _("Field number out of range"));
+		return NULL;
+	}
+
+	pxfield_t *pfield = pxh->px_fields;
+	pfield += fieldno;
+
+	return(pfield);
+}
+
+PXLIB_API int PXLIB_CALL
+PX_get_num_fields(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		return -1;
+	}
+
+	return(pxdoc->px_head->px_numfields);
+}
+
+PXLIB_API int PXLIB_CALL
+PX_get_num_records(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		return -1;
+	}
+
+	return(pxdoc->px_head->px_numrecords);
 }
 
 /******* Function to access Blob files *******/

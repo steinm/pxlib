@@ -1,3 +1,9 @@
+Version 0.0.6
+	- more documentation
+	- more functions to access database schema (PX_get_field(), PX_get_fields())
+	- much better check for errors as not passing a document or out of
+	  range values
+
 Version 0.0.5
 	- added PX_delete()
 	- many memory leaks fixed
