@@ -1,0 +1,21 @@
+Source: pxlib
+Priority: optional
+Maintainer: Uwe Steinmann <uwe@steinmann.cx>
+Build-Depends: debhelper (>> 4.0.0)
+Standards-Version: 3.5.8
+
+Package: pxlib-dev
+Section: devel
+Architecture: any
+Depends: pxlib1 (= ${Source-Version})
+Description: library to read Paradox database files
+ Library wiht C API to read Paradox DB files. All versions
+ of Paradox are supported.
+
+Package: pxlib1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends} ${misc:Depends}
+Description: library to read Paradox database files
+ Library wiht C API to read Paradox DB files. All versions
+ of Paradox are supported.
