@@ -184,6 +184,7 @@ src/Makefile
 doc/Makefile
 include/pxversion.h
 include/paradox.h
+include/paradox-gsf.h
 ])
 
 echo
