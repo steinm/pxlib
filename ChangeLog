@@ -1,4 +1,9 @@
 Version 0.2.4
+	- added prototypes for PX_[get|set]_[parameter|value]()
+	- all strings passed to PX_[get|set]_[parameter|value]() are of
+	  type const char
+	- PX_get_[parameter|value]() return value in passed parameter and
+	  return an error code instead
 	- Implemented function PX_get_parameter()
 	- All PX_get_data_xxx() functions return -1 on error, 0 if the
 	  field value is NULL and 1 otherwise.
