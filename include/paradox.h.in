@@ -310,14 +310,14 @@ PX_get_num_records(pxdoc_t *pxdoc);
 PXLIB_API int PXLIB_CALL
 PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value);
 
-PXLIB_API const char * PXLIB_CALL
-PX_get_parameter(pxdoc_t *pxdoc, const char *name);
+PXLIB_API int PXLIB_CALL
+PX_get_parameter(pxdoc_t *pxdoc, const char *name, char **value);
 
 PXLIB_API int PXLIB_CALL
 PX_set_value(pxdoc_t *pxdoc, const char *name, float value);
 
-PXLIB_API float PXLIB_CALL
-PX_get_value(pxdoc_t *pxdoc, const char *name);
+PXLIB_API int PXLIB_CALL
+PX_get_value(pxdoc_t *pxdoc, const char *name, float *value);
 
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding);

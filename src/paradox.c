@@ -538,16 +538,19 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 /* PX_get_value() {{{
  * Gets a numeric value
  */
-PXLIB_API float PXLIB_CALL
-PX_get_value(pxdoc_t *pxdoc, const char *name) {
+PXLIB_API int PXLIB_CALL
+PX_get_value(pxdoc_t *pxdoc, const char *name, float *value) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return;
+		return -1;
 	}
 
 	if(strcmp(name, "numprimkeys") == 0) {
-		return((float) pxdoc->px_head->px_primarykeyfields);
+		*value = (float) pxdoc->px_head->px_primarykeyfields;
+		return(0);
 	}
+	px_error(pxdoc, PX_Warning, _("No such value name."));
+	return(-2);
 }
 /* }}} */
 
@@ -640,26 +643,30 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 /* PX_get_parameter() {{{
  * Gets a string value
  */
-PXLIB_API const char * PXLIB_CALL
-PX_get_parameter(pxdoc_t *pxdoc, const char *name) {
+PXLIB_API int PXLIB_CALL
+PX_get_parameter(pxdoc_t *pxdoc, const char *name, char **value) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return NULL;
+		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
-		return NULL;
+		return -1;
 	}
 
 	if(strcmp(name, "tablename") == 0) {
-		return(pxdoc->px_head->px_tablename);
+		*value = pxdoc->px_head->px_tablename;
+		return(0);
 	} else if(strcmp(name, "targetencoding") == 0) {
-		return(pxdoc->targetencoding);
+		*value = pxdoc->targetencoding;
+		return(0);
 	} else if(strcmp(name, "inputencoding") == 0) {
-		return(pxdoc->inputencoding);
+		*value = pxdoc->inputencoding;
+		return(0);
 	}
-	return(NULL);
+	px_error(pxdoc, PX_Warning, _("No such parameter name."));
+	return(-2);
 }
 /* }}} */
 
