@@ -26,8 +26,8 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_get_numrecords</refentrytitle>">
-  <!ENTITY funcname    "PX_get_numrecords">
+  <!ENTITY dhucpackage "<refentrytitle>PX_get_num_fields</refentrytitle>">
+  <!ENTITY funcname    "PX_get_num_fieldx">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -57,7 +57,7 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>Returns number of records in a Paradox file</refpurpose>
+    <refpurpose>Returns number of fields in a Paradox file</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
@@ -66,7 +66,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Returns the number of records in a Paradox file.</para>
+    <para>Returns the number of fields in a Paradox file.</para>
 
   </refsect1>
   <refsect1>
@@ -76,7 +76,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_numfields(3), PX_get_record(3)</para>
+    <para>PX_get_num_record(3), PX_get_fields(3), PX_get_field(3)</para>
 
   </refsect1>
   <refsect1>
