@@ -1,3 +1,8 @@
+Version 0.2.3
+	- updated many error messages
+	- fixed segm fault when PX_close() was called more than once
+	- initial support for writing a primary index (experimental)
+
 Version 0.2.2
 	- initial multi language support
 	- added memory profiling
