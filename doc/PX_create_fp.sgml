@@ -73,7 +73,11 @@ manpage.1: manpage.sgml
 			of <option>numfields</option> field specifications to set the
 			schema of the database. The memory for the field specifications and
 			field names must be allocated by the caller and may not be freed, since
-			the memory is freed when the document is deleted. The field name can be
+			the memory is freed when the document is deleted. Make sure to use the
+			same memory allocation function as passed to
+			<function>PX_new(3)</function>. The memory for the field names is
+			usually allocated with <function>PX_strdup(3)</function>.
+			The field name can be
 			left empty if a primary index file is to be created. The type of the
 			file can be set in the last parameter. Currently only database
 			(pxfFileTypIndexDB, pxfFileTypNonIndexDB)
