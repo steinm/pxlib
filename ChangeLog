@@ -1,4 +1,6 @@
 Version 0.4.3
+	- added PX_timestamp2string() for conversion of paradox timestamps
+	  into a readable representation
 	- various fixed for writing blob files
 	- return value for bcd fields uses decimal_point from locale
 	- added spanish translations (thanks to jrodriguez@innox.com.mx)
