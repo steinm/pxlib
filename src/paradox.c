@@ -261,3 +261,48 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 
 	return(blobdata);
 }
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_double(char *data, int len, double *value) {
+	if(data[0] & 0x80) {
+		data[0] &= 0x7f;
+		*value = *((double *)data);
+		return 1;
+	} else if(*((long long int *)data) != 0) {
+		int k = 0;
+		for(k=0; k<len; k++)
+			data[k] = ~data[k];
+		*value = *((double *)data);
+		return 1;
+	}
+	return 0;
+}
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_long(char *data, int len, long *value) {
+	if(data[0] & 0x80) {
+		data[0] &= 0x7f;
+		*value = *((long int *)data);
+		return 1;
+	} else if(*((long int *)data) != 0) {
+		data[0] |= 0x80;
+		*value = *((long int *)data);
+		return 1;
+	} 
+	return 0;
+}
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_short(char *data, int len, short int *value) {
+	if(data[0] & 0x80) {
+		data[0] &= 0x7f;
+		*value = *((short int *)data);
+		return 1;
+	} else if(*((short int *)data) != 0) {
+		data[0] |= 0x80;
+		*value = *((short int *)data);
+		return 1;
+	} 
+	return 0;
+}
+

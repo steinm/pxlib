@@ -160,4 +160,13 @@ PX_close_blob(pxblob_t *pxdoc);
 PXLIB_API char* PXLIB_CALL
 PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size);
 
+/* Data conversion functions */
+PXLIB_API int PXLIB_CALL
+PX_get_data_double(char *data, int len, double *value);
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_long(char *data, int len, long *value);
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_short(char *data, int len, short int *value);
 #endif
