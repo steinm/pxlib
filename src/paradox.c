@@ -519,6 +519,19 @@ PX_set_value(pxdoc_t *pxdoc, char *name, float value) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
+
+	if(strcmp(name, "numprimkeys") == 0) {
+		pxdoc->px_head->px_primarykeyfields = (int) value;
+		if(pxdoc->px_stream->mode & pxfFileWrite) {
+			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
+				return;
+			}
+		} else {
+			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
+			return;
+		}
+	}
+
 }
 /* }}} */
 
@@ -530,6 +543,10 @@ PX_get_value(pxdoc_t *pxdoc, char *name) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
+	}
+
+	if(strcmp(name, "numprimkeys") == 0) {
+		return((float) pxdoc->px_head->px_primarykeyfields);
 	}
 }
 /* }}} */
