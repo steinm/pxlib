@@ -9,6 +9,7 @@ noinst_HEADERS = fileformat.h \
                  px_intern.h \
                  px_memory.h \
                  px_misc.h \
+                 px_encode.h \
                  sdncal.h
 
 ## bin_PROGRAMS =
@@ -27,6 +28,7 @@ libpx_la_SOURCES = \
 		px_memory.c \
 		px_memprof.c \
 		px_error.c \
+		px_encode.c\
 		gregor.c
 
 libpx_la_LIBADD = @RECODE_LIBS@ @GSF_LIBS@
