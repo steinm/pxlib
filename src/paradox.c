@@ -586,12 +586,12 @@ PXLIB_API int PXLIB_CALL
 PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return;
+		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
-		return;
+		return -1;
 	}
 
 	if(strcmp(name, "tablename") == 0) {
@@ -601,11 +601,11 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 		pxdoc->px_head->px_tablename = px_strdup(pxdoc, value);
 		if(pxdoc->px_stream->mode & pxfFileWrite) {
 			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
-				return;
+				return -1;
 			}
 		} else {
 			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
-			return;
+			return -1;
 		}
 	} else if(strcmp(name, "targetencoding") == 0) {
 #if PX_USE_RECODE || PX_USE_ICONV
@@ -626,7 +626,7 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 				pxdoc->free(pxdoc, pxdoc->targetencoding);
 				pxdoc->targetencoding = NULL;
 				px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
-				return;
+				return -1;
 			}
 #endif
 #endif
@@ -653,7 +653,7 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 				pxdoc->free(pxdoc, pxdoc->inputencoding);
 				pxdoc->inputencoding = NULL;
 				px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
-				return;
+				return -1;
 			}
 #endif
 #endif
@@ -662,6 +662,7 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 #endif
 	}
+	return 0;
 }
 /* }}} */
 
