@@ -1,10 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src pxview
+SUBDIRS = include src pxview
 
 spec = $(PACKAGE).spec
 
-EXTRA_DIST = px_intern.h pxlib-config.1 pxlib.4 # $(spec)
+EXTRA_DIST = 
 
 #all-local: $(spec)
 

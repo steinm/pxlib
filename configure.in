@@ -94,6 +94,7 @@ AC_DEFINE_UNQUOTED(PXLIB_MICRO_VERSION, "$PXLIB_MICRO_VERSION", PXLIB_MICRO_VERS
 dnl pxlib.spec
 AC_OUTPUT([
 Makefile
+include/Makefile
 src/Makefile
 pxview/Makefile
 include/pxversion.h
