@@ -1,0 +1,237 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
+     less'.  A typical entry in a Makefile or Makefile.am is:
+
+manpage.1: manpage.sgml
+	docbook-to-man $< > $@
+
+    
+	The docbook-to-man binary is found in the docbook-to-man package.
+	Please remember that if you create the nroff version in one of the
+	debian/rules file targets (such as build), you will need to include
+	docbook-to-man in your Build-Depends control field.
+
+  -->
+
+  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>January 24, 2005</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
+  <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhusername  "Uwe Steinmann">
+  <!ENTITY dhucpackage "<refentrytitle>PXLIB</refentrytitle>">
+  <!ENTITY funcname    "pxlib">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright> <year>2005</year> <holder>&dhusername;</holder> </copyright> &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&funcname;</refname>
+
+    <refpurpose>Library to read and write Paradox databases</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para>pxlib is a library to read and write Paradox databases. It is far
+		  from being complete but should be very helpful for those working on
+			unix and having the need to handle paradox databases, blob files and
+			primary indexes.
+			</para>
+		<para>pxlib is a C-library with bindings for Python and PHP.
+		  The later is part of PECL (http://pecl.php.net)
+		  This documentation will only describe the functions of the C-library,
+			though most of what is said here can be applied to the other language
+			bindings.
+			The PHP extension of pxlib is documented in PEAR. The extension is
+			called Paradox.</para>
+
+  </refsect1>
+  <refsect1>
+    <title>GETTING STARTED</title>
+
+    <para>Programs which want to use pxlib will have to include the
+		  header file <literal>paradox.h</literal>. Before doing any document
+			creation the library should be initialized with
+			<function>PX_boot(3)</function>. It will set the locale and selects
+			the messages in your language as defined by the environment variable
+			LC_ALL. The library should
+			be finalized by <function>PS_shutdown(3)</function>.</para>
+		<para>A Paradox database is
+			represented by a pointer to <literal>pxdoc_t</literal>. Such a document
+			can be created with <function>PX_new(3)</function> and destroyed
+			with <function>PX_delete(3)</function>. <function>PX_new(3)</function> 
+			returns a pointer to <literal>pxdoc_t</literal>. You can handle several
+			documents at the same time. The following example will do the basic
+			preparation without creating nor opening a document on the disk.</para>
+	  <programlisting>
+...
+#include &lt;paradox.h&gt;
+
+main(int argc, char *argv[]) {
+	pxdoc_t *pxdoc;
+
+	PX_boot();
+	pxdoc = PX_new();
+	PX_delete(pxdoc);
+	PX_shutdown();
+}
+	  </programlisting>
+		<para>In order to actually read a Paradox database from disk you will
+		  have to call</para>
+    <funcsynopsis>
+      <funcprototype>
+		    <funcdef>int <function>PX_open_file</function></funcdef>
+		    <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+		    <paramdef>const char *<parameter>filename</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+		<para>or</para>
+    <funcsynopsis>
+      <funcprototype>
+		    <funcdef>int <function>PX_open_fp</function></funcdef>
+		    <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+		    <paramdef>FILE *<parameter>fp</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+		<para><function>PX_open_file(3)</function> will open an existing file
+		  with the given file name, while <function>PX_open_fp(3)</function>
+			will use an already open file. Both require a pointer to
+			<literal>pxdoc_t</literal>.</para>
+		<para>Extending the previous example with one of the former two functions
+		  to open a database is just another small step.
+			It has to be closed with <function>PX_close(3)</function>.
+			<function>PX_close(3)</function> will only close the file if it
+			was opened by <function>PX_open_file(3)</function>.
+			</para>
+	  <programlisting>
+...
+#include &lt;paradox.h&gt;
+
+main(int argc, char *argv[]) {
+	PSDoc *pxdoc;
+
+	PX_boot();
+	pxdoc = PS_new();
+	PX_open_file(pxdoc, "test.db");
+	PX_close(pxdoc);
+	PX_delete(pxdoc);
+	PX_shutdown();
+}
+	  </programlisting>
+		<para>There are more sophisticated funktions to open a Paradox database.
+		  They are used when error handling and memory management
+			shall be controlled by the calling application. Check the manual pages
+			<function>PX_new2(3)</function> and <function>PX_new3(3)</function> for
+			a detailed description or read the section about memory management
+			and error handler below.</para>
+  </refsect1>
+  <refsect1>
+    <title>MEMORY MANAGEMENT, ERROR HANDLING</title>
+
+    <para>pxlib uses by default its on memory management and error handling
+		  functions. In many cases the calling application has its own memory
+			management and error handling. pxlib can be told to use those
+			functions by calling <function>PX_new3(3)</function> instead of
+			<function>PX_new(3)</function>.</para>
+    <funcsynopsis>
+      <funcprototype>
+		    <funcdef>int <function>PX_new3</function></funcdef>
+		    <paramdef>pxdoc_t *<parameter>psdoc</parameter></paramdef>
+		    <paramdef>(errorhandler *) <parameter>(pxdoc_t *p, int type, const char *msg, void *data)</parameter></paramdef>
+		    <paramdef>(allocproc *) <parameter>(pxdoc_t *p, size_t size, const char *caller)</parameter></paramdef>
+		    <paramdef>(reallocproc *) <parameter>(pxdoc_t *p, void *mem, size_t size, const char *caller)</parameter></paramdef>
+		    <paramdef>(freeproc *) <parameter>(pxdoc_t *p, void *mem)</parameter></paramdef>
+		    <paramdef>void *<parameter>errorhandler_user_data</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+		<para>The errorhandler and the last parameter
+			<parameter>errorhandler_user_data</parameter> allow to pass arbitrary
+			data as the last parameter to its own errorhandler. This is quite often
+			used if errors are being output in a widget of a graphical toolkit. The
+			pointer to that widget can be passed as
+			<parameter>errorhandler_user_data</parameter> and pxlib will pass it
+			forward to the error handler.</para>
+
+  </refsect1>
+  <refsect1>
+    <title>DOCUMENT INFORMATION</title>
+
+    <para>PostScript documents usually contain a header made of comments
+		  with information about the document. The printer usually disregards
+			this information but many PostScript viewer use it. Besides that,
+			one can also place pdfmarks into the PostScript document which contain
+			the title, keywords, author and other information. pslib provides the
+			function <function>PS_set_info(3)</function> to set those fields.</para>
+    <funcsynopsis>
+      <funcprototype>
+		    <funcdef>int <function>PS_set_info</function></funcdef>
+		    <paramdef>PSDoc *<parameter>psdoc</parameter></paramdef>
+		    <paramdef>const char *<parameter>key</parameter></paramdef>
+		    <paramdef>const char *<parameter>value</parameter></paramdef>
+      </funcprototype>
+	  </funcsynopsis>
+    <para><function>PS_set_info(3)</function> must be called before the
+		  first page. Calling it later will have no effect and produces a warning.
+			The function may also be used to set the bounding box of the document.
+			Usually there is no need for it, because the dimension of the first
+			page will be used for the bounding box.</para>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>The detailed manual pages for each function of the library.</para>
+
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+
+    <para>This manual page was written by &dhusername; &dhemail;.</para>
+
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
+
+
