@@ -196,6 +196,9 @@ PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename);
 
 PXLIB_API int PXLIB_CALL
+PX_create_db(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename);
+
+PXLIB_API int PXLIB_CALL
 PX_read_primary_index(pxdoc_t *pindex);
 
 PXLIB_API int PXLIB_CALL
@@ -206,6 +209,9 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data);
 
 PXLIB_API char * PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo);
+
+PXLIB_API int PXLIB_CALL
+PX_put_record(pxdoc_t *pxdoc, char *data);
 
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc);

@@ -167,19 +167,67 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	FILE *fp;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if((fp = fopen(filename, "r")) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database."));
 		return -1;
 	}
 
 	if(0 > PX_open_fp(pxdoc, fp)) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open paradox database."));
 		fclose(fp);
 		return -1;
 	}
 
+	pxdoc->px_name = px_strdup(pxdoc, filename);
+	pxdoc->px_close_fp = px_true;
+	return 0;
+}
+/* }}} */
+
+/* PX_create_db() {{{
+ * Create a new paradox database.
+ */
+PXLIB_API int PXLIB_CALL
+PX_create_db(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename) {
+	FILE *fp;
+	pxhead_t *pxh;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if((fp = fopen(filename, "w")) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database."));
+		return -1;
+	}
+
+	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL) {
+		return -1;
+	}
+	pxh->px_tablename = px_strdup(pxdoc, filename);
+	pxh->px_filetype = pxfFileTypIndexDB;
+	pxh->px_fileversion = 70;
+	pxh->px_numrecords = 0;
+	pxh->px_numfields = numfields;
+	pxh->px_fields = pxf;
+	pxh->px_writeprotected = 0;
+	pxh->px_headersize = 0x0800;
+	pxh->px_maxtablesize = 16;
+	pxh->px_doscodepage = 1251;
+	pxh->px_primarykeyfields = 0;
+	pxh->px_autoinc = 0;
+
+	if(put_px_head(pxdoc, pxh, fp) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Unable to put header."));
+		return -1;
+	}
+
+	pxdoc->px_head = pxh;
 	pxdoc->px_name = px_strdup(pxdoc, filename);
 	pxdoc->px_close_fp = px_true;
 	return 0;
@@ -491,7 +539,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 }
 /* }}} */
 
-/* PX_get_record() {{{
+/* PX_get_record2() {{{
  * Reads one record from a Paradox file. This function can be used
  * for different types of Paradox files. The function will return
  * information about the datablock where the record is stored.
@@ -549,6 +597,36 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 		return data;
 	} else
 		return NULL;
+}
+/* }}} */
+
+/* PX_put_record() {{{
+ * Store a record into the paradox file.
+ */
+PXLIB_API int PXLIB_CALL
+PX_put_record(pxdoc_t *pxdoc, char *data) {
+	pxhead_t *pxh;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return NULL;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		return NULL;
+	}
+	pxh = pxdoc->px_head;
+
+	/* Find position in file for next data block */
+
+	/* write data */
+	
+	/* update data block header */
+
+	/* Update header */
+
+	return 0;
 }
 /* }}} */
 
@@ -993,3 +1071,11 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 }
 /* }}} */
 
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */

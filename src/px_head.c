@@ -5,9 +5,9 @@
 #include <px_intern.h>
 #include <px_memory.h>
 
-/*
+/* get_px_head() {{{
  * get the header info from the file
- *	basic header info & field descriptions
+ * basic header info & field descriptions
  */
 pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 {
@@ -21,9 +21,10 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL)
 		return NULL;
-	if(fseek(fp, 0, 0) < 0)
+	if(fseek(fp, 0, SEEK_SET) < 0)
 		return NULL;
 	if((ret = fread(&pxhead, sizeof(TPxHeader), 1, fp)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
 	}
@@ -185,4 +186,116 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	return pxh;
 }
+/* }}} */
 
+/* put_px_head() {{{
+ * writes the header and field information into a new file.
+ */
+int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
+	TPxHeader pxhead;
+	TPxDataHeader pxdatahead;
+	TFldInfoRec pxinfo;
+	pxfield_t *pxf;
+	int nullint = 0;
+	int recordsize = 0;
+	int i;
+
+	memset(&pxhead, 0, sizeof(pxhead));
+	memset(&pxdatahead, 0, sizeof(pxdatahead));
+
+	/* Calculate record size */
+	pxf = pxh->px_fields;
+	for(i=0; i<pxh->px_numfields; i++, pxf++) {
+		recordsize += pxf->px_flen;
+	}
+	put_short_le(&pxhead.recordSize, recordsize);
+	put_short_le(&pxhead.headerSize, pxh->px_headersize);
+	pxhead.fileType = pxh->px_filetype;
+	pxhead.maxTableSize = pxh->px_maxtablesize;
+	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
+	pxhead.writeProtected = pxh->px_writeprotected;
+	put_short_le(&pxhead.numFields, pxh->px_numfields);
+	switch(pxh->px_fileversion) {
+		case 70:
+			pxhead.fileVersionID = 0x0C;
+			put_short_le(&pxdatahead.fileVerID3, 0x010C);
+			put_short_le(&pxdatahead.fileVerID4, 0x010C);
+			break;
+	}
+
+	put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
+	put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
+
+	/* Goto the begining of the file */
+	if(fseek(fp, 0, SEEK_SET) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to begining paradox file."));
+		return -1;
+	}
+
+	if(fwrite(&pxhead, sizeof(TPxHeader), 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
+		return -1;
+	}
+
+	if(fwrite(&pxdatahead, sizeof(TPxDataHeader), 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
+		return -1;
+	}
+
+	pxf = pxh->px_fields;
+	for(i=0; i<pxh->px_numfields; i++, pxf++) {
+		pxinfo.fType = pxf->px_ftype;
+		pxinfo.fSize = pxf->px_flen;
+		if(fwrite(&pxinfo, sizeof(TFldInfoRec), 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+			return -1;
+		}
+		
+	}
+
+	/* write tableNamePtr */
+	if(fwrite(&nullint, 4, 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+		return -1;
+	}
+	/* write fieldNamePtrArray */
+	for(i=0; i<pxh->px_numfields; i++) {
+		if(fwrite(&nullint, 4, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+			return -1;
+		}
+	}
+
+	/* write tablename */
+	if(fwrite(pxh->px_tablename, strlen(pxh->px_tablename), 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+		return -1;
+	}
+
+	/* write zeros to fill space for tablename */
+	for(i=0; i<261-strlen(pxh->px_tablename); i++) {
+		if(fwrite(&nullint, 1, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+			return -1;
+		}
+	}
+	pxf = pxh->px_fields;
+	for(i=0; i<pxh->px_numfields; i++, pxf++) {
+		if(fwrite(pxf->px_fname, strlen(pxf->px_fname)+1, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+			return -1;
+		}
+	}
+
+	return 0;
+}
+/* }}} */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */
