@@ -1,3 +1,7 @@
+Version 0.1.9
+	- made many error message better understandable
+	- initial support to write db files
+
 Version 0.1.2
 	- primary index files can be read
 	- added recno to struct px_datablockinfo
