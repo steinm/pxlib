@@ -1,3 +1,8 @@
+Version 0.2.5
+	- fixed some errors in writing primary index files
+		level 2 index entries are now supported
+	- readded time of modification when writing the header
+
 Version 0.2.4
 	- Paradox tables can be read by the Paradox software if the
 	  database is stored as version 5.0
