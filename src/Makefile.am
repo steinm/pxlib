@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = -I@srcdir@/../include -I./include @RECODE_INCLUDEDIR@ @GSF_INCLUDEDIR@ -DLOCALEDIR=\""$(datadir)/locale"\"
+INCLUDES = -I@srcdir@/../include -I./include -DPACKAGE_LOCALE_DIR=\""$(datadir)/locale"\" @RECODE_INCLUDEDIR@ @GSF_INCLUDEDIR@
 
 noinst_HEADERS = fileformat.h \
                  px_error.h \
@@ -25,6 +25,7 @@ libpx_la_SOURCES = \
 		px_misc.c \
 		px_io.c \
 		px_memory.c \
+		px_memprof.c \
 		px_error.c \
 		gregor.c
 
