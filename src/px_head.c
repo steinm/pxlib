@@ -100,10 +100,10 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	pxh->px_modifiedflags2 = pxhead.modifiedFlags2;
 	pxh->px_primarykeyfields = get_short_le(&pxhead.primaryKeyFields);
 
-	if(((pxh->px_filetype == 0) ||
-		  (pxh->px_filetype == 2) ||
-		  (pxh->px_filetype == 3) ||
-		  (pxh->px_filetype == 5)) &&
+	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
+		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
+		  (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
+		  (pxh->px_filetype == pxfFileTypIncSecIndex)) &&
 		  (pxh->px_fileversion >= 40)) {
 		if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) < 0) {
 			pxdoc->free(pxdoc, pxh);
@@ -212,13 +212,18 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	int nullint = 0;
 	int i, len = 0;
 	char *basehead;
-	int base, offset;
+	int base, offset, dataheadoffset;
 	short int tmp;
+	int isindex;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
 
 	basehead = (char *) &pxhead;
+	isindex = !((pxh->px_filetype == pxfFileTypIndexDB) ||
+		        (pxh->px_filetype == pxfFileTypNonIndexDB) ||
+		        (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
+		        (pxh->px_filetype == pxfFileTypIncSecIndex));
 
 	put_short_le(&pxhead.recordSize, pxh->px_recordsize);
 	put_short_le(&pxhead.headerSize, pxh->px_headersize);
@@ -243,6 +248,17 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
 	pxhead.writeProtected = pxh->px_writeprotected;
 	put_short_le(&pxhead.numFields, pxh->px_numfields);
+	switch(pxh->px_filetype) {
+		case pxfFileTypIndexDB:
+			put_short_le(&pxhead.primaryKeyFields, pxh->px_primarykeyfields);
+			break;
+		case pxfFileTypNonIncSecIndex:
+		case pxfFileTypIncSecIndex:
+		case pxfFileTypNonIncSecIndexG:
+		case pxfFileTypIncSecIndexG:
+			put_short_le(&pxhead.primaryKeyFields, 2);
+			break;
+	}
 	put_long_le(&pxhead.encryption1, 0xFF00FF00);
 	pxhead.sortOrder = pxh->px_sortorder;
 	pxhead.changeCount1 = 1;
@@ -252,27 +268,38 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	pxhead.unknown50x54[1] = 0x97;
 	pxhead.unknown50x54[2] = 0x01;
 	pxhead.unknown56x57[0] = 0x20;
+	if(!isindex && (pxh->px_fileversion >= 40)) {
+		dataheadoffset = 0x78;
+	} else {
+		dataheadoffset = 0x58;
+	}
 	/* All the pointers, though we probably don't need them for a valid file */
-	put_long_le(&pxhead.fldInfoPtr, basehead+0x78);
-	put_long_le(&pxhead.tableNamePtrPtr, basehead+0x78+pxh->px_numfields*2);
+	put_long_le(&pxhead.fldInfoPtr, basehead+dataheadoffset);
+	put_long_le(&pxhead.tableNamePtrPtr, basehead+dataheadoffset+pxh->px_numfields*2);
 	switch(pxh->px_fileversion) {
 		case 70:
 			pxhead.fileVersionID = 0x0C;
-			put_short_le(&pxdatahead.fileVerID3, 0x010C);
-			put_short_le(&pxdatahead.fileVerID4, 0x010C);
 			break;
 	}
+	if(dataheadoffset == 0x78) {
+		switch(pxh->px_fileversion) {
+			case 70:
+				put_short_le(&pxdatahead.fileVerID3, 0x010C);
+				put_short_le(&pxdatahead.fileVerID4, 0x010C);
+				break;
+		}
 
-	/* Writing the file update time leads to random writes at other
-	 * postions in the file (usually either right after the field,
-	 * or some bytes before). Strange: the order of bytes is always
-	 * reversed.
-	put_long_le(&pxdatahead.fileUpdateTime, (long) time());
-	 */
-	put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
-	put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
-	pxdatahead.unknown6Cx6F[0] = 0x01;
-	pxdatahead.unknown6Cx6F[1] = 0x01;
+		/* Writing the file update time leads to random writes at other
+		 * postions in the file (usually either right after the field,
+		 * or some bytes before). Strange: the order of bytes is always
+		 * reversed.
+		put_long_le(&pxdatahead.fileUpdateTime, (long) time());
+		 */
+		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
+		put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
+		pxdatahead.unknown6Cx6F[0] = 0x01;
+		pxdatahead.unknown6Cx6F[1] = 0x01;
+	}
 
 	/* Goto the begining of the file */
 	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0) {
@@ -285,9 +312,11 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		return -1;
 	}
 
-	if(pxdoc->write(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
-		return -1;
+	if(dataheadoffset == 0x78) {
+		if(pxdoc->write(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
+			return -1;
+		}
 	}
 
 	pxf = pxh->px_fields;
@@ -302,11 +331,12 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	}
 
 	/* write tableNamePtr */
-	/* 78 Bytes is the header. The continued header at 0x78 starts
+	/* dataheadoffset Bytes is the header. The continued header at
+	 * dataheadoffset starts
 	 * with numfields fields specifications (each 2 Bytes), followed
 	 * by this pointer (tableNamePtr) and numfield pointers to the
 	 * fieldnames. */
-	put_long_le(&ptr, basehead+0x78+pxh->px_numfields*2*2+4);
+	put_long_le(&ptr, basehead+dataheadoffset+pxh->px_numfields*(2+4)+4);
 	if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write tableName pointer."));
 		return -1;
@@ -315,15 +345,17 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	/* base = 'Paradox Common File Header' + numfields * sizeof(TFldInfoRec) +
 	 * numfields sizeof(* Fieldname) + sizeof(* Tablename) + strlen(tablename)
 	 */
-	base = (int) basehead+0x78+pxh->px_numfields*(2+4)+4+261;
-	pxf = pxh->px_fields;
-	offset = 0;
-	for(i=0; i<pxh->px_numfields; i++, pxf++) {
-		put_long_le(&ptr, base+offset);
-		offset += strlen(pxf->px_fname)+1;
-		if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not write fieldName pointer."));
-			return -1;
+	if(!isindex) {
+		base = (int) basehead+dataheadoffset+pxh->px_numfields*(2+4)+4+261;
+		pxf = pxh->px_fields;
+		offset = 0;
+		for(i=0; i<pxh->px_numfields; i++, pxf++) {
+			put_long_le(&ptr, base+offset);
+			offset += strlen(pxf->px_fname)+1;
+			if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write fieldName pointer."));
+				return -1;
+			}
 		}
 	}
 
@@ -346,35 +378,38 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			return -1;
 		}
 	}
-	pxf = pxh->px_fields;
-	for(i=0; i<pxh->px_numfields; i++, pxf++) {
-		if(pxf->px_fname != NULL) {
-			if(pxdoc->write(pxdoc, pxs, strlen(pxf->px_fname)+1, pxf->px_fname) < 1) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
-				return -1;
+
+	if(!isindex) {
+		pxf = pxh->px_fields;
+		for(i=0; i<pxh->px_numfields; i++, pxf++) {
+			if(pxf->px_fname != NULL) {
+				if(pxdoc->write(pxdoc, pxs, strlen(pxf->px_fname)+1, pxf->px_fname) < 1) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+					return -1;
+				}
+			} else {
+				px_error(pxdoc, PX_Warning, _("Column name is NULL"));
+				if(pxdoc->write(pxdoc, pxs, 1, &nullint) != 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+					return -1;
+				}
 			}
-		} else {
-			px_error(pxdoc, PX_Warning, _("Column name is NULL"));
-			if(pxdoc->write(pxdoc, pxs, 1, &nullint) != 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+		}
+
+		/* write fieldNumbers */
+		for(i=0; i<pxh->px_numfields; i++) {
+			put_short_le(&tmp, i+1);
+			if(pxdoc->write(pxdoc, pxs, 2, &tmp) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
 				return -1;
 			}
 		}
-	}
 
-	/* write fieldNumbers */
-	for(i=0; i<pxh->px_numfields; i++) {
-		put_short_le(&tmp, i+1);
-		if(pxdoc->write(pxdoc, pxs, 2, &tmp) < 1) {
+		/* write sortOrderID */
+		if(pxdoc->write(pxdoc, pxs, 8, "ANSIINTL") < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
 			return -1;
 		}
-	}
-
-	/* write sortOrderID */
-	if(pxdoc->write(pxdoc, pxs, 8, "ANSIINTL") < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
-		return -1;
 	}
 
 	return 0;
