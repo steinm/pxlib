@@ -21,6 +21,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #if defined(WIN32) || defined(OS2)
 #include <fcntl.h>
 #endif
@@ -39,6 +40,7 @@
 #include "px_io.h"
 #include "px_error.h"
 #include "px_misc.h"
+#include "px_encode.h"
 
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
@@ -261,6 +263,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 		blockcount++;
 		blocknumber = get_short_le((char *) &datablockhead.nextBlock);
 	}
+	return 0;
 }
 /* }}} */
 
@@ -783,11 +786,11 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
  */
 PXLIB_API int PXLIB_CALL
 PX_read_primary_index(pxdoc_t *pindex) {
-	pxpindex_t *pindex_data, pdata;
+	pxpindex_t *pindex_data;
 	pxhead_t *pxh;
 	pxfield_t *pxf;
 	char *data;
-	int i, j, swap, datalen;
+	int i, j, datalen;
 
 	if(pindex == NULL ||
 	   pindex->px_head == NULL ||
@@ -876,7 +879,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	} else {
 		int firstblock = pindex_data[0].myblocknumber;
 		int numrecords = 0;
-		for(j=0; j<pxh->px_numrecords, pindex_data[j].myblocknumber == firstblock; j++) {
+		for(j=0; j<pxh->px_numrecords && pindex_data[j].myblocknumber == firstblock; j++) {
 			numrecords += pindex_data[j].numrecords;
 			pindex_data[j].level = 2;
 		}
@@ -931,7 +934,9 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 	}
 
 	if(NULL == pxdoc->px_indexdata)
-		build_primary_index(pxdoc);
+		if(build_primary_index(pxdoc) < 0) {
+			return -1;
+		}
 	indexdata = pxdoc->px_indexdata;
 	indexdatalen = pxdoc->px_indexdatalen;
 
@@ -1068,7 +1073,7 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
  */
 int
 px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
-	int ret, found, blockcount, blocknumber;
+	int found, blockcount, blocknumber;
 	TDataBlock datablock;
 	pxhead_t *pxh;
 
@@ -1174,7 +1179,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
  */
 PXLIB_API char* PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo) {
-	int ret, found, blockcount;
+	int ret, found;
 	pxhead_t *pxh;
 	pxdatablockinfo_t tmppxdbinfo;
 
@@ -1873,7 +1878,7 @@ PX_has_blob_file(pxdoc_t *pxdoc) {
 static char*
 _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *mod, int *blobsize) {
 	int ret;
-	char *blobdata;
+	char *blobdata = NULL;
 	unsigned char head[12];
 	pxdoc_t *pxdoc = pxblob->pxdoc;
 	size_t size, offset, mod_nr, index;
@@ -2091,9 +2096,6 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
-	char *obuf = NULL;
-	size_t olen;
-	int res;
 
 	if(data[0] == '\0') {
 //		*value = NULL;
@@ -2263,7 +2265,7 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 static int
 _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod, int *blobsize, char **value) {
 	int ret;
-	char *blobdata;
+	char *blobdata = NULL;
 	char head[20];
 	pxblob_t *pxblob = pxdoc->px_blob;
 	size_t size, offset, mod_nr, index;
@@ -2499,10 +2501,6 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
  */
 PXLIB_API void PXLIB_CALL
 PX_put_data_bytes(pxdoc_t *pxdoc, char *data, int len, char *value) {
-	char *obuf = NULL;
-	size_t olen;
-	int res;
-
 	memcpy(data, value, len);
 }
 /* }}} */
