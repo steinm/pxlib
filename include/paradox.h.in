@@ -97,6 +97,7 @@ struct px_head {
 	int px_primarykeyfields;
 	char px_sortorder;
 	int px_autoinc;
+	char px_refintegrity;
 	struct px_field *px_fields;
 };
 
