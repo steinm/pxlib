@@ -1,6 +1,6 @@
 Makefile
 Makefile.in
 .libs
-.debs
+.deps
+pxwrite
 *.o
-
