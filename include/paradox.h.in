@@ -13,14 +13,6 @@
 #endif
 #endif
 
-#define PX_HAVE_GSF @PX_HAVE_GSF@
-#if PX_HAVE_GSF
-#include <gsf/gsf-input-stdio.h>
-#include <gsf/gsf-input-memory.h>
-#include <gsf/gsf-output.h>
-#endif
-
-
 #ifdef WIN32
 
 #define PXLIB_CALL __cdecl
@@ -54,7 +46,6 @@
 
 /* IO Stream types */
 #define pxfIOFile 1
-#define pxfIOGsf  2
 
 /* Field types */
 #define pxfAlpha        0x01
@@ -250,11 +241,6 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new(void);
-
-#ifdef PX_HAVE_GSF
-PXLIB_API int PXLIB_CALL
-PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf);
-#endif
 
 PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp);

@@ -32,7 +32,7 @@
 
 #include "pxversion.h"
 #include "px_intern.h"
-#include "paradox.h"
+#include "paradox-gsf.h"
 #include "px_memory.h"
 #include "px_head.h"
 #include "px_io.h"
@@ -199,7 +199,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 }
 /* }}} */
 
-#ifdef PX_HAVE_GSF
+#if PX_HAVE_GSF
 /* PX_open_gsf() {{{
  * Read from a Paradox DB file, which has already been opend with gsf.
  */
