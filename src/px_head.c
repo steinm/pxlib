@@ -45,22 +45,22 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		return NULL;
 	}
 
-	pxh->px_recordsize = get_short(&pxhead.recordSize);
+	pxh->px_recordsize = get_short_le(&pxhead.recordSize);
 	if(pxh->px_recordsize == 0) {
 		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero record size."));
 		return NULL;
 	}
-	pxh->px_headersize = get_short(&pxhead.headerSize);
+	pxh->px_headersize = get_short_le(&pxhead.headerSize);
 	if(pxh->px_headersize == 0) {
 		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero header size."));
 		return NULL;
 	}
 	pxh->px_filetype = pxhead.fileType;
-	pxh->px_numrecords = get_long(&pxhead.numRecords);
-	pxh->px_numfields = get_short(&pxhead.numFields);
-	pxh->px_fileblocks = get_short(&pxhead.fileBlocks);
+	pxh->px_numrecords = get_long_le(&pxhead.numRecords);
+	pxh->px_numfields = get_short_le(&pxhead.numFields);
+	pxh->px_fileblocks = get_short_le(&pxhead.fileBlocks);
 	switch(pxhead.fileVersionID) {
 		case 3:
 			pxh->px_fileversion = 30;
@@ -87,7 +87,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 	pxh->px_indexfieldnumber = pxhead.indexFieldNumber;
 	pxh->px_writeprotected = pxhead.writeProtected;
-	pxh->px_primarykeyfields = get_short(&pxhead.primaryKeyFields);
+	pxh->px_primarykeyfields = get_short_le(&pxhead.primaryKeyFields);
 
 	if(((pxh->px_filetype == 0) ||
 		  (pxh->px_filetype == 2) ||
@@ -98,12 +98,12 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
-		pxh->px_doscodepage = get_short(&pxdatahead.dosCodePage);
+		pxh->px_doscodepage = get_short_le(&pxdatahead.dosCodePage);
 	}
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
 	pxh->px_sortorder = pxhead.sortOrder;
-	pxh->px_autoinc = get_long(&pxhead.autoInc);
+	pxh->px_autoinc = get_long_le(&pxhead.autoInc);
 	if((pxh->px_fields = (pxfield_t *) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxfield_t), _("Could not get memory for field definitions."))) == NULL)
 		return NULL;
 

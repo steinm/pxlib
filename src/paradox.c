@@ -186,7 +186,7 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read"));
 			return NULL;
 		}
-		datasize = get_short(&datablock.addDataSize);
+		datasize = get_short_le(&datablock.addDataSize);
 //		printf("datasize = %d, recno = %d, platz verbraucht = %d\n", datasize, recno, (recno+1)*pxh->px_recordsize);
 		if(recno*pxh->px_recordsize <= datasize) {
 			found = 1;
@@ -459,8 +459,8 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 		return NULL;
 	}
 
-	if(size != get_long(&head[3])) {
-		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)"), size, get_long(&head[3]));
+	if(size != get_long_be(&head[3])) {
+		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)"), size, get_long_be(&head[3]));
 		return(NULL);
 	}
 
@@ -543,43 +543,40 @@ PXLIB_API int PXLIB_CALL
 PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
-		*value = *((double *)data);
-		return 1;
 	} else if(*((long long int *)data) != 0) {
 		int k = 0;
 		for(k=0; k<len; k++)
 			data[k] = ~data[k];
-		*value = *((double *)data);
-		return 1;
+	} else {
+		return 0;
 	}
-	return 0;
+	*value = get_double_be(data); //*((double *)data);
+	return 1;
 }
 
 PXLIB_API int PXLIB_CALL
 PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
-		*value = *((long int *)data);
-		return 1;
 	} else if(*((long int *)data) != 0) {
 		data[0] |= 0x80;
-		*value = *((long int *)data);
-		return 1;
-	} 
-	return 0;
+	} else {
+		return 0;
+	}
+	*value = get_long_be(data); //*((long int *)data);
+	return 1;
 }
 
 PXLIB_API int PXLIB_CALL
 PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
-		*value = *((short int *)data);
-		return 1;
 	} else if(*((short int *)data) != 0) {
 		data[0] |= 0x80;
-		*value = *((short int *)data);
-		return 1;
-	} 
-	return 0;
+	} else {
+		return 0;
+	}
+	*value = get_short_be(data);
+	return 1;
 }
 
