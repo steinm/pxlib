@@ -23,6 +23,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_data_double.sgml \
 						 PX_get_data_alpha.sgml \
 						 PX_get_data_byte.sgml \
+						 PX_get_data_bytes.sgml \
 						 PX_get_data_bcd.sgml \
 						 PX_get_data_blob.sgml \
 						 PX_get_data_graphic.sgml \
