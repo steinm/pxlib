@@ -24,6 +24,8 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_data_alpha.sgml \
 						 PX_get_data_byte.sgml \
 						 PX_get_data_bcd.sgml \
+						 PX_get_data_blob.sgml \
+						 PX_get_data_graphic.sgml \
 						 PX_get_opaque.sgml \
 						 PX_put_data_short.sgml \
 						 PX_put_data_long.sgml \
