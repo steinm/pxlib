@@ -1,4 +1,6 @@
 Version 0.2.4
+	- Paradox tables can be read by the Paradox software if the
+	  database is stored as version 5.0
 	- added prototypes for PX_[get|set]_[parameter|value]()
 	- all strings passed to PX_[get|set]_[parameter|value]() are of
 	  type const char
