@@ -685,7 +685,7 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 }
 /* }}} */
 
-/* get_px_head() {{{
+/* get_mb_head() {{{
  * get the header info from the file
  * basic header info & field descriptions
  */
@@ -723,9 +723,11 @@ mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
 int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 	pxdoc_t *pxdoc;
 	TMbHeader mbhead;
+	int nullint = 0, i;
 
 	pxdoc = pxblob->pxdoc;
 	if(NULL == pxdoc) {
+		px_error(pxdoc, PX_RuntimeError, _("Blob file has no associated paradox database."));
 		return(-1);
 	}
 
@@ -734,9 +736,18 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 		return -1;
 	}
 
+	memset(&mbhead, 0, sizeof(TMbHeader));
 	if(pxblob->write(pxdoc, pxs, sizeof(TMbHeader), &mbhead) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write header of paradox file."));
 		return -1;
+	}
+
+	/* write zeros to fill space of first block */
+	for(i=0; i<4096-sizeof(TMbHeader); i++) {
+		if(pxblob->write(pxdoc, pxs, 1, &nullint) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write remaining blob file header."));
+			return -1;
+		}
 	}
 }
 /* }}} */
