@@ -110,19 +110,27 @@ else
 	if test -r ${withval}/include/libgsf-1/gsf/gsf-input.h ; then
 		GSF_LIBDIR=-L${withval}/lib
 		GSF_INCLUDEDIR="-I${withval}/include/libgsf-1 -I${withval}/include/glib-2.0 -I${withval}/lib/glib-2.0/include"
+		try_gsf=true
 	else
-		GSF_LIBDIR=-L/usr
-		GSF_INCLUDEDIR="-I/usr/include/libgsf-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
+		if test -r /usr/include/libgsf-1/gsf/gsf-input.h ; then
+			GSF_LIBDIR=-L/usr
+			GSF_INCLUDEDIR="-I/usr/include/libgsf-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
+			try_gsf=true
+		else
+			try_gsf=false
+		fi
 	fi
 
-	AC_CHECK_LIB(gsf-1, gsf_input_read,
-	  GSF_LIBDIR="$GSF_LIBDIR -lgsf-1",
-		AC_MSG_ERROR([libgsf-1 not found]),
-		"$GSF_LIBDIR")
+	if test "$try_gsf" = "true"; then
+		AC_CHECK_LIB(gsf-1, gsf_input_read,
+			GSF_LIBDIR="$GSF_LIBDIR -lgsf-1",
+			AC_MSG_RESULT([libgsf-1 not found]),
+			"$GSF_LIBDIR")
 
-	GSF_LIBS=-lgsf-1
-	AC_DEFINE(HAVE_GSF, 1, [Define if you have the gsf library.])
-	PX_HAVE_GSF=1
+		GSF_LIBS=-lgsf-1
+		AC_DEFINE(HAVE_GSF, 1, [Define if you have the gsf library.])
+		PX_HAVE_GSF=1
+	fi
 fi
 )
 
