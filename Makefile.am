@@ -4,7 +4,7 @@ SUBDIRS = include src po $(DOCDIR)
 
 spec = $(PACKAGE).spec
 
-EXTRA_DIST = $(spec) $(spec).in autogen.sh pxlib.pc.in
+EXTRA_DIST = intltool-extract.in intltool-merge.in intltool-update.in $(spec) $(spec).in autogen.sh pxlib.pc.in
 
 #all-local: $(spec)
 
