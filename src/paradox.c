@@ -264,6 +264,7 @@ PX_get_fields(pxdoc_t *pxdoc) {
 PXLIB_API pxfield_t* PXLIB_CALL
 PX_get_field(pxdoc_t *pxdoc, int fieldno) {
 	pxhead_t *pxh;
+	pxfield_t *pfield;
 
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
@@ -282,7 +283,7 @@ PX_get_field(pxdoc_t *pxdoc, int fieldno) {
 		return NULL;
 	}
 
-	pxfield_t *pfield = pxh->px_fields;
+	pfield = pxh->px_fields;
 	pfield += fieldno;
 
 	return(pfield);
