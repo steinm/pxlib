@@ -1837,8 +1837,8 @@ PX_has_blob_file(pxdoc_t *pxdoc) {
 /* PX_read_blobdata() {{{
  * Reads data of blob into memory and returns a pointer to it
  */
-PXLIB_API char* PXLIB_CALL
-PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize) {
+static char*
+_px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *mod, int *blobsize) {
 	int ret;
 	char *blobdata;
 	char head[12];
@@ -1901,8 +1901,8 @@ PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blo
 				px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
 				return NULL;
 			}
-			/* Read the remaining 6 bytes from the header */
-			if((ret = fread(head, 6, 1, pxblob->px_fp)) < 0) {
+			/* Read the remaining 6/14 bytes from the header */
+			if((ret = fread(head, hsize-3, 1, pxblob->px_fp)) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
 				return NULL;
 			}
@@ -1959,6 +1959,24 @@ PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blo
 		}
 	}
 	return(blobdata);
+}
+/* }}} */
+
+/* PX_read_blobdata() {{{
+ * Reads data of a blob into memory and returns a pointer to it
+ */
+PXLIB_API char* PXLIB_CALL
+PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize) {
+	return(_px_read_blobdata(pxblob, data, len, 9, mod, blobsize));
+}
+/* }}} */
+
+/* PX_read_graphicdata() {{{
+ * Reads data of a graphic into memory and returns a pointer to it
+ */
+PXLIB_API char* PXLIB_CALL
+PX_read_graphicdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize) {
+	return(_px_read_blobdata(pxblob, data, len, 17, mod, blobsize));
 }
 /* }}} */
 
@@ -2194,14 +2212,17 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 }
 /* }}} */
 
-/* PX_get_data_blob() {{{
- * Reads data of blob into memory and returns a pointer to it
+/* _px_get_data_blob() {{{
+ * Reads data of blob or graphic into memory and returns a pointer to it.
+ * The parameter hsize contains the length of the header right before
+ * the blob/graphic in the .MB file. It is 17 Bytes for graphics and 9
+ * for all other types of blobs (I'm not completely sure about OLE).
  */
-PXLIB_API int PXLIB_CALL
-PX_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobsize, char **value) {
+static int
+_px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod, int *blobsize, char **value) {
 	int ret;
 	char *blobdata;
-	char head[12];
+	char head[20];
 	pxblob_t *pxblob = pxdoc->px_blob;
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
@@ -2271,7 +2292,7 @@ PX_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobs
 				return -1;
 			}
 			/* Read the remaining 6 bytes from the header */
-			if((ret = fread(head, 6, 1, pxblob->px_fp)) < 0) {
+			if((ret = fread(head, hsize-3, 1, pxblob->px_fp)) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
 				*value = NULL;
 				return -1;
@@ -2340,6 +2361,24 @@ PX_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobs
 	}
 	*value = blobdata;
 	return(1);
+}
+/* }}} */
+
+/* PX_get_data_blob() {{{
+ * Reads data of blob into memory and returns a pointer to it
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobsize, char **value) {
+	return(_px_get_data_blob(pxdoc, data, len, 9, mod, blobsize, value));
+}
+/* }}} */
+
+/* PX_get_data_graphic() {{{
+ * Reads data of a graphic into memory and returns a pointer to it
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_graphic(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobsize, char **value) {
+	return(_px_get_data_blob(pxdoc, data, len, 17, mod, blobsize, value));
 }
 /* }}} */
 

@@ -349,6 +349,9 @@ PX_set_tablename(pxdoc_t *pxdoc, const char *tablename);
 PXLIB_API int PXLIB_CALL
 PX_set_blob_file(pxdoc_t *pxdoc, const char *filename);
 
+PXLIB_API int PXLIB_CALL
+PX_has_blob_file(pxdoc_t *pxdoc);
+
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc);
 
@@ -361,8 +364,17 @@ PX_open_blob_file(pxblob_t *pxdoc, const char *filename);
 PXLIB_API void PXLIB_CALL
 PX_close_blob(pxblob_t *pxdoc);
 
+PXLIB_API void PXLIB_CALL
+PX_delete_blob(pxblob_t *pxblob);
+
 PXLIB_API char* PXLIB_CALL
 PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize);
+
+PXLIB_API char* PXLIB_CALL
+PX_read_graphicdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize);
+
+PXLIB_API char* PXLIB_CALL
+PX_read_grahicdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize);
 
 /* Data conversion functions */
 /* Functions to read data from a record */
@@ -386,6 +398,12 @@ PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value);
 
 PXLIB_API int PXLIB_CALL
 PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value);
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobsize, char **value);
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_graphic(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobsize, char **value);
 
 /* Funktion to add data to a record */
 PXLIB_API void PXLIB_CALL
