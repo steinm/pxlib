@@ -1697,8 +1697,18 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 		return NULL;
 	}
 
-	if(size != get_long_be(&head[3])) {
-		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_be(&head[3]));
+	if(head[0] == 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
+		return NULL;
+	} else if(head[0] == 3) {
+		px_error(pxdoc, PX_RuntimeError, _("Cannot handle blobs in 'suballocated' blocks."));
+		return NULL;
+	} else if(head[0] == 4) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
+		return NULL;
+	}
+	if(size != get_long_le(&head[3])) {
+		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[3]));
 		return(NULL);
 	}
 
