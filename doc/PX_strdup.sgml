@@ -67,7 +67,7 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Duplicates a string like strdup(3) but uses the memory allocation
-		  function as passed to <function>PX_new2(3)</function>.
+		  function as passed to <function>PX_new2(3)</function>.</para>
 
   </refsect1>
   <refsect1>
