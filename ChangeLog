@@ -1,3 +1,8 @@
+Version 0.2.7
+	- set some more header fields. db and px files are now read correctly
+	  by the Paradox software.
+	- changed default file version to 7.0
+
 Version 0.2.6
 	- added new function PX_get_recordsize()
 	- set indexRoot and numIndexLevels in .PX files
