@@ -82,7 +82,8 @@ manpage.1: manpage.sgml
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns 0 if value is NULL, otherwise 1.</para>
+    <para>Returns 0 if the value is NULL, -1 in case of an error and 1
+		  otherwise.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
