@@ -2,6 +2,11 @@
 .sgml.3:
 	docbook2man $<
 
+clean:
+	rm -f ${man_MANS}
+
+EXTRA_DIST = PX_get_majorversion.sgml PX_get_minorversion.sgml PX_get_subminorversion.sgml PX_new2.sgml PX_new.sgml PX_open_file.sgml PX_open_fp.sgml
+
 man_MANS = PX_get_majorversion.3\
            PX_new2.3 \
            PX_new.3 \
