@@ -43,7 +43,7 @@ struct _TPxHeader {
 	pointer cryptInfoEndPtr;
 	byte unknown48;
 	longint autoInc;
-	byte unknown4Dx4E[2];
+	word firstFreeBlock;
 	byte indexUpdateRequired;
 	byte unknown50x54[5];
 	byte refIntegrity;
@@ -66,7 +66,7 @@ struct _TPxDataHeader {
 
 struct _TDataBlock {
 	word nextBlock;
-	word blockNumber;
+	word prevBlock;
 	integer addDataSize;
 };
 

@@ -100,6 +100,7 @@ struct px_head {
 	char px_modifiedflags2;
 	char px_sortorder;
 	int px_autoinc;
+	int px_fileupdatetime;
 	char px_refintegrity;
 	struct px_field *px_fields;
 };
@@ -155,8 +156,9 @@ struct px_datablockinfo {
 	int size;          /* the size of the block */
 	int recno;         /* the recno with the block starting with 0 */
 	int numrecords;    /* the number of records in the block */
-	int number;        /* the block number from the data block header */
-	int realnumber;    /* the block number count (first block is 0) */
+	int prev;          /* the number of the previous block */
+	int next;          /* the number of the next block */
+	int number;        /* the block number count (first block is 1) */
 };
 
 struct px_pindex {

@@ -473,9 +473,9 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 			int blocksize, ret;
 			TDataBlock datablock;
 
-			pxdbinfo->realnumber = pindex_data[j].blocknumber-1;
+			pxdbinfo->number = pindex_data[j].blocknumber;
 			pxdbinfo->recno = recno;
-			pxdbinfo->blockpos = pxh->px_headersize + pxdbinfo->realnumber*pxh->px_maxtablesize*0x400;
+			pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
 			pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
 
 			/* Go to the start of the data block (skip the header) */
@@ -492,7 +492,8 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 
 			blocksize = get_short_le((char *) &datablock.addDataSize);
 
-			pxdbinfo->number = get_short_le((char *) &datablock.blockNumber);
+			pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
+			pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
 			pxdbinfo->size = blocksize+pxh->px_recordsize;
 			pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
 			deleted = 0;
@@ -511,27 +512,30 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
  */
 int
 px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
-	int ret, found, blockcount;
+	int ret, found, blockcount, blocknumber;
 	TDataBlock datablock;
 	pxhead_t *pxh;
 
 	pxh = pxdoc->px_head;
 
-	/* Go to the start of the data block (skip the header) */
-	if((ret = fseek(pxdoc->px_fp, pxh->px_headersize, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
-		return 0;
-	}
-
 	found = 0;
-	blockcount = 0;
-	while(!found && (blockcount < pxh->px_fileblocks)) {
+	blockcount = 0; /* Just a block counter */
+	blocknumber = 1; /* Will be set to next block number */
+	while(!found && (blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
 		int datasize, blocksize;
+
+		/* Go to the start of the next block (skip the header) */
+		if((ret = fseek(pxdoc->px_fp, pxh->px_headersize + (blocknumber-1) * pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+			return 0;
+		}
+
 		/* Get the info about this data block */
 		if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read header of data block"));
 			return 0;
 		}
+
 		/* if deleted is set, then we will disregard the block size in the
 		 * data block header but take the maximum block size as indicated
 		 * by pxh->px_maxtablesize. The variable blocksize is just to test
@@ -564,12 +568,10 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 		 * them, because the data is still there, but considered to be
 		 * deleted.
 		 */
-		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-6)) {
-//			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.blockNumber), datasize, (float) datasize/pxh->px_recordsize + 1);
-			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of next data block."));
-				return 0;
-			}
+		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))) {
+//			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.prevBlock), datasize, (float) datasize/pxh->px_recordsize + 1);
+			/* Set the number of the next block */
+			blocknumber = get_short_le((char *) &datablock.nextBlock);
 		} else {
 			if(recno*pxh->px_recordsize <= datasize) {
 				found = 1;
@@ -580,8 +582,9 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 					*deleted = 0;
 				}
 				if(pxdbinfo != NULL) {
-					pxdbinfo->number = get_short_le((char *) &datablock.blockNumber);
-					pxdbinfo->realnumber = blockcount;
+					pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
+					pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
+					pxdbinfo->number = blocknumber;
 					pxdbinfo->size = datasize+pxh->px_recordsize;
 					pxdbinfo->recno = recno;
 					pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
@@ -589,11 +592,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 					pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
 				}
 			} else { /* skip rest of block */
-	//			printf("skippin rest of block %d\n", blockcount);
-				if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of next data block."));
-					return 0;
-				}
+				blocknumber = get_short_le((char *) &datablock.nextBlock);
 			}
 			recno -= (datasize/pxh->px_recordsize+1);
 		}
