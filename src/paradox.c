@@ -165,16 +165,8 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 	pxdoc->px_pindex = NULL;
 
 	pxdoc->last_position = -1;
-#if PX_USE_RECODE
-	pxdoc->recode_outer = recode_new_outer(false);
-	pxdoc->out_recode_request = recode_new_request(pxdoc->recode_outer);
-	pxdoc->in_recode_request = recode_new_request(pxdoc->recode_outer);
-#else
-#if PX_USE_ICONV
-	pxdoc->out_iconvcd = (iconv_t) -1;
 	pxdoc->in_iconvcd = (iconv_t) -1;
-#endif
-#endif
+	pxdoc->out_iconvcd = (iconv_t) -1;
 	pxdoc->targetencoding = NULL;
 	pxdoc->inputencoding = NULL;
 	pxdoc->px_data = NULL;
@@ -634,24 +626,11 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 		if(pxdoc->targetencoding)
 			pxdoc->free(pxdoc, pxdoc->targetencoding);
 		pxdoc->targetencoding = px_strdup(pxdoc, value);
-		if(pxdoc->targetencoding) {
-			char buffer[30];
-#if PX_USE_RECODE
-			sprintf(buffer, "CP%d/CR-LF..%s", pxdoc->px_head->px_doscodepage, pxdoc->targetencoding);
-			recode_scan_request(pxdoc->out_recode_request, buffer);
-#else
-#if PX_USE_ICONV
-			sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
-			if(pxdoc->out_iconvcd > 0)
-				iconv_close(pxdoc->out_iconvcd);
-			if((iconv_t)(-1) == (pxdoc->out_iconvcd = iconv_open(pxdoc->targetencoding, buffer))) {
-				pxdoc->free(pxdoc, pxdoc->targetencoding);
-				pxdoc->targetencoding = NULL;
-				px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
-				return -1;
-			}
-#endif
-#endif
+		if(0 > px_set_targetencoding(pxdoc)) {
+			pxdoc->free(pxdoc, pxdoc->targetencoding);
+			pxdoc->targetencoding = NULL;
+			px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
+			return -1;
 		}
 #else
 		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
@@ -661,24 +640,11 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 		if(pxdoc->inputencoding)
 			pxdoc->free(pxdoc, pxdoc->inputencoding);
 		pxdoc->inputencoding = px_strdup(pxdoc, value);
-		if(pxdoc->inputencoding) {
-			char buffer[30];
-#if PX_USE_RECODE
-			sprintf(buffer, "%s..CP%d/CR-LF", pxdoc->inputencoding, pxdoc->px_head->px_doscodepage);
-			recode_scan_request(pxdoc->in_recode_request, buffer);
-#else
-#if PX_USE_ICONV
-			sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
-			if(pxdoc->in_iconvcd > 0)
-				iconv_close(pxdoc->in_iconvcd);
-			if((iconv_t)(-1) == (pxdoc->in_iconvcd = iconv_open(buffer, pxdoc->inputencoding))) {
-				pxdoc->free(pxdoc, pxdoc->inputencoding);
-				pxdoc->inputencoding = NULL;
-				px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
-				return -1;
-			}
-#endif
-#endif
+		if(0 > px_set_inputencoding(pxdoc)) {
+			pxdoc->free(pxdoc, pxdoc->inputencoding);
+			pxdoc->inputencoding = NULL;
+			px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
+			return -1;
 		}
 #else
 		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
@@ -1579,8 +1545,6 @@ PX_get_recordsize(pxdoc_t *pxdoc) {
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
 #if PX_USE_RECODE || PX_USE_ICONV
-	char buffer[30];
-
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
@@ -1597,24 +1561,11 @@ PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
 	}
 
 	pxdoc->targetencoding = px_strdup(pxdoc, encoding);
-	if(pxdoc->targetencoding) {
-#if PX_USE_RECODE
-		sprintf(buffer, "CP%d/CR-LF..%s", pxdoc->px_head->px_doscodepage, pxdoc->targetencoding);
-		recode_scan_request(pxdoc->out_recode_request, buffer);
-#else
-#if PX_USE_ICONV
-		sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
-		if(pxdoc->out_iconvcd > 0)
-			iconv_close(pxdoc->out_iconvcd);
-		if((iconv_t)(-1) == (pxdoc->out_iconvcd = iconv_open(pxdoc->targetencoding, buffer))) {
-			pxdoc->free(pxdoc, pxdoc->targetencoding);
-			pxdoc->targetencoding = NULL;
-			px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
-			return -1;
-		}
-	
-#endif
-#endif
+	if(0 > px_set_targetencoding(pxdoc)) {
+		pxdoc->free(pxdoc, pxdoc->targetencoding);
+		pxdoc->targetencoding = NULL;
+		px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
+		return -1;
 	}
 #else
 	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
@@ -1633,8 +1584,6 @@ PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
 PXLIB_API int PXLIB_CALL
 PX_set_inputencoding(pxdoc_t *pxdoc, const char *encoding) {
 #if PX_USE_RECODE || PX_USE_ICONV
-	char buffer[30];
-
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
@@ -1651,25 +1600,13 @@ PX_set_inputencoding(pxdoc_t *pxdoc, const char *encoding) {
 	}
 
 	pxdoc->inputencoding = px_strdup(pxdoc, encoding);
-
-	if(pxdoc->inputencoding) {
-#if PX_USE_RECODE
-		sprintf(buffer, "%s..CP%d/CR-LF", pxdoc->inputencoding, pxdoc->px_head->px_doscodepage);
-		recode_scan_request(pxdoc->in_recode_request, buffer);
-#else
-#if PX_USE_ICONV
-		sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
-		if(pxdoc->in_iconvcd > 0)
-			iconv_close(pxdoc->in_iconvcd);
-		if((iconv_t)(-1) == (pxdoc->in_iconvcd = iconv_open(buffer, pxdoc->inputencoding))) {
-			pxdoc->free(pxdoc, pxdoc->inputencoding);
-			pxdoc->inputencoding = NULL;
-			px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
-			return -1;
-		}
-#endif
-#endif
+	if(0 > px_set_inputencoding(pxdoc)) {
+		pxdoc->free(pxdoc, pxdoc->inputencoding);
+		pxdoc->inputencoding = NULL;
+		px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
+		return -1;
 	}
+
 #else
 	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 	return -2;
@@ -1683,8 +1620,6 @@ PX_set_inputencoding(pxdoc_t *pxdoc, const char *encoding) {
  */
 PXLIB_API int PXLIB_CALL
 PX_set_tablename(pxdoc_t *pxdoc, const char *tablename) {
-	char buffer[30];
-
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
@@ -1716,12 +1651,12 @@ PX_new_blob(pxdoc_t *pxdoc) {
 	pxblob_t *pxblob;
 
 	pxblob = pxdoc->malloc(pxdoc, sizeof(pxblob_t), _("Could not allocate memory for blob."));
-	if(!pxblob) {
+	if(!pxblob)
 		return(NULL);
-	} else {
-		pxblob->pxdoc = pxdoc;
-		return(pxblob);
-	}
+
+	memset(pxblob, 0, sizeof(pxblob_t));
+	pxblob->pxdoc = pxdoc;
+	return(pxblob);
 }
 /* }}} */
 
@@ -1769,7 +1704,7 @@ PX_close_blob(pxblob_t *pxblob) {
 	if((pxblob->px_close_fp) && (pxblob->px_fp != 0)) {
 		fclose(pxblob->px_fp);
 		pxblob->px_fp = NULL;
-		pxblob->pxdoc = NULL;
+		pxblob->pxdoc->free(pxblob->pxdoc, pxblob->px_name);
 	}
 }
 /* }}} */
@@ -1846,7 +1781,7 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
 
-	 size = get_long_le(&data[leader+4]);
+	size = get_long_le(&data[leader+4]);
 	if(hsize == 17)
 		*blobsize = size - 8;
 	else
@@ -2058,7 +1993,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
-	char *buffer, *obuf = NULL;
+	char *obuf = NULL;
 	size_t olen;
 	int res;
 
