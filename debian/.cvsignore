@@ -1,0 +1,9 @@
+executable.files
+files
+pxlib-dev
+pxlib.doc-base.EX
+pxlib1
+pxlib1.postinst.debhelper
+pxlib1.postrm.debhelper
+pxlib1.substvars
+tmp
