@@ -20,6 +20,7 @@
 #include <gsf/gsf-output.h>
 #endif
 
+
 #ifdef WIN32
 
 #define PXLIB_CALL __cdecl
@@ -128,7 +129,7 @@ struct px_stream {
 	int close;       /* set to true if stream must be closed */
 	union {
 		FILE *fp;
-#if HAVE_GSF
+#if PX_HAVE_GSF
 		GsfInput *gsfin;
 		GsfOutput *gsfout;
 #endif
@@ -250,7 +251,7 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new(void);
 
-#ifdef HAVE_GSF
+#ifdef PX_HAVE_GSF
 PXLIB_API int PXLIB_CALL
 PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf);
 #endif
