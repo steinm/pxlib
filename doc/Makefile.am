@@ -23,6 +23,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_data_double.sgml \
 						 PX_get_data_alpha.sgml \
 						 PX_get_data_byte.sgml \
+						 PX_get_data_bcd.sgml \
 						 PX_get_opaque.sgml \
 						 PX_put_data_short.sgml \
 						 PX_put_data_long.sgml \
@@ -30,6 +31,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_put_data_alpha.sgml \
 						 PX_put_data_byte.sgml \
 						 PX_put_data_bytes.sgml \
+						 PX_put_data_bcd.sgml \
 						 PX_get_record.sgml \
 						 PX_get_record2.sgml \
 						 PX_put_record.sgml \
@@ -47,6 +49,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_open_blob_fp.sgml \
 						 PX_close_blob.sgml \
 						 PX_read_blobdata.sgml \
+						 PX_set_blob_file.sgml \
 						 PX_set_targetencoding.sgml \
 						 PX_set_inputencoding.sgml \
 						 PX_set_tablename.sgml \
