@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2003-11-17 09:51+0100\n"
+"POT-Creation-Date: 2003-11-17 10:26+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -84,48 +84,48 @@ msgstr "Konnte Kopf nicht speichern."
 
 #: src/paradox.c:477
 msgid "Could not create file for paradox database."
-msgstr ""
+msgstr "Konnte Datei für Paradox-Datenbank nicht erzeugen."
 
-#: src/paradox.c:530 src/paradox.c:1288 src/paradox.c:1342
+#: src/paradox.c:530 src/paradox.c:1288 src/paradox.c:1342 src/paradox.c:1392
 msgid "Header of file has not been read."
-msgstr ""
+msgstr "Kopf der Datei wurde noch nicht gelesen."
 
 #: src/paradox.c:544
 #, c-format
 msgid "File is not writable. Setting '%s' has no effect."
-msgstr ""
+msgstr "Datei ist nicht schreibbar. Das Setzen von '%s' hat keine Auswirkung."
 
 #: src/paradox.c:565 src/paradox.c:1310
 msgid "Target encoding could not be set."
-msgstr ""
+msgstr "Ziel-Kodierung konnt nicht gesetzt werden."
 
 #: src/paradox.c:572 src/paradox.c:599 src/paradox.c:1318 src/paradox.c:1372
 msgid "Library has not been compiled with support for reencoding."
-msgstr ""
+msgstr "Bibliothek wurde nicht mit Unterstützung für Umkodierung erstellt."
 
 #: src/paradox.c:592 src/paradox.c:1365
 msgid "Input encoding could not be set."
-msgstr ""
+msgstr "Eingabe-Kodierung konnte nicht gesetzt werden."
 
 #: src/paradox.c:637 src/paradox.c:672
 msgid "Did not pass a paradox primary index file."
-msgstr ""
+msgstr "Keinen Primärindex übergeben."
 
 #: src/paradox.c:642
 msgid "Primary index file has no index data."
-msgstr ""
+msgstr "Primärindex hat keine Index-Daten."
 
 #: src/paradox.c:677
 msgid "Allocate memory for primary index data."
-msgstr ""
+msgstr "Alloziere Speicher für Primärindex."
 
 #: src/paradox.c:679 src/paradox.c:688
 msgid "Could not allocate memory for primary index data."
-msgstr ""
+msgstr "Konnte Speicher für Primärindex nicht allozieren."
 
 #: src/paradox.c:687
 msgid "Allocate memory for data of index record."
-msgstr ""
+msgstr "Alloziere Speicher für Daten des Primärindex."
 
 #: src/paradox.c:704
 #, c-format
@@ -133,51 +133,55 @@ msgid ""
 "Inconsistency in length of primary index record. Expected %d but calculated %"
 "d."
 msgstr ""
+"Unstimmigkeit in der Länge des Primärindex. Erwartet wurde %d aber berechnet "
+"wurde %d."
 
 #. Copy the data part for later sorting
 #: src/paradox.c:716
 msgid "Allocate memory for data part of index record."
-msgstr ""
+msgstr "Alloziere Speicher für Datenteil des Primärindex."
 
 #: src/paradox.c:727
 #, c-format
 msgid "Could not read record no. %d of primary index data."
-msgstr ""
+msgstr "Konnte Datensatz Nr. %s des Primärindex nicht lesen."
 
 #: src/paradox.c:765
 msgid "The number of records coverd by index level 2 is unequal to level 1."
-msgstr ""
+msgstr "Die Zahl der Datensätze im Index-Level 2 ist ungleich der in Level 1."
 
 #: src/paradox.c:825
 msgid "Could not fseek start of first data block."
-msgstr ""
+msgstr "Konnte nicht zum Start des ersten Datenblocks gehen."
 
 #: src/paradox.c:831
 msgid "Could not read datablock header."
-msgstr ""
+msgstr "Konnte den Datenblockkopf nicht lesen."
 
 #: src/paradox.c:974 src/paradox.c:1032 src/paradox.c:1194 src/paradox.c:1217
 #: src/paradox.c:1246 src/paradox.c:1265
 msgid "File has no header."
-msgstr ""
+msgstr "Datei hat keinen Kopf."
 
 #: src/paradox.c:988
 msgid "Record number out of range."
-msgstr ""
+msgstr "Datensatznummer ist außerhalb des Bereichs."
 
 #: src/paradox.c:1003
 msgid "Could not fseek start of record data."
-msgstr ""
+msgstr "Konnte nicht zum Start des Datensatzes gehen."
 
 #: src/paradox.c:1007
 msgid "Could not read data of record."
-msgstr ""
+msgstr "Konnte Daten des Datensatzes nicht lesen."
 
 #: src/paradox.c:1062
 #, c-format
 msgid ""
 "Inconsistency in writing data block. Expected data block nr. %d, but got %d."
 msgstr ""
+"Unstimmigkeit beim Schreiben eines Datenblocks. Erwartete Datenblocknr %d, "
+"erhaltene Nummer %d."
 
 #: src/paradox.c:1074
 #, c-format
@@ -185,53 +189,52 @@ msgid ""
 "Inconsistency in writing record into data block. Expected record nr. %d, but "
 "got %d. %dth record. %dth data block. %d records per block."
 msgstr ""
+"Unstimmigkeit beim Schreiben eines Datensatzes in einen Datenblock. Erwartet "
+"Datensatznr. %d, erhaltene Nummer %d. %d. Datensatz. %d. Datenblock. %d "
+"Datensätze pro Block."
 
 #: src/paradox.c:1224
 msgid "Field number out of range."
-msgstr ""
+msgstr "Feldnummer ist außerhalb des Bereichs."
 
 #: src/paradox.c:1293
 msgid "Target encoding already set."
-msgstr ""
+msgstr "Ziel-Kodierung schon gesetzt."
 
 #: src/paradox.c:1347
 msgid "Input encoding already set."
-msgstr ""
-
-#: src/paradox.c:1392
-msgid "Header of file has not been read"
-msgstr ""
+msgstr "Eingabe-Kodierung schon gesetzt."
 
 #: src/paradox.c:1416 src/paradox.c:1510
 msgid "Could not allocate memory for blob."
-msgstr ""
+msgstr "Konnte Speicher für Blob nicht allozieren."
 
 #: src/paradox.c:1486
-msgid "PXDoc may not be NULL."
-msgstr ""
+msgid "Did not pass a blob file."
+msgstr "Keine Blob-Datei übergeben."
 
 #: src/paradox.c:1491
 msgid "Makes no sense to read blob with 0 or less bytes."
-msgstr ""
+msgstr "Es macht keine Sinn eine Blob-Datei mit 0 oder weniger Bytes zu lesen."
 
 #: src/paradox.c:1496
 msgid "Could not fseek start of blob."
-msgstr ""
+msgstr "Konnte nicht zum Start des Blobs gehen."
 
 #: src/paradox.c:1501
 msgid "Could not read head of blob data."
-msgstr ""
+msgstr "Konnte den Kopf des Blobs nicht lesen."
 
 #: src/paradox.c:1506
 #, c-format
 msgid "Blob does not have expected size (%d != %d)."
-msgstr ""
+msgstr "Blob hat nicht erwartete Größe. (%d != %d)."
 
 #: src/paradox.c:1516
 msgid "Could not read all blob data."
-msgstr ""
+msgstr "Konnt Blob-Daten nicht lesen."
 
 #. Copy the encoded string into memory which belongs to pxlib
 #: src/paradox.c:1572
 msgid "Allocate memory for field data."
-msgstr ""
+msgstr "Alloziere Speicher für Feld-Daten."
