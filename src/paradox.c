@@ -69,6 +69,10 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	pxdoc->free = freeproc;
 	pxdoc->px_fp = NULL;
 
+	pxdoc->recode_outer = recode_new_outer(false);
+	pxdoc->recode_request = recode_new_request(pxdoc->recode_outer);
+	pxdoc->targetencoding = NULL;
+
 	return pxdoc;
 }
 
@@ -79,7 +83,6 @@ PX_new(void) {
 
 PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
-
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
 		return -1;
@@ -91,6 +94,7 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 	}
 
 	pxdoc->px_fp = fp;
+
 	return 0;
 }
 
@@ -204,6 +208,15 @@ PX_delete(pxdoc_t *pxdoc) {
 		return;
 	}
 
+	if(pxdoc->recode_outer)
+		recode_delete_outer(pxdoc->recode_outer);
+
+	if(pxdoc->recode_request)
+		recode_delete_request(pxdoc->recode_request);
+
+	if(pxdoc->targetencoding)
+		pxdoc->free(pxdoc, pxdoc->targetencoding);
+
 	if(pxdoc->px_head != NULL) {
 		if(pxdoc->px_head->px_tablename) pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
 		pfield = pxdoc->px_head->px_fields;
@@ -289,6 +302,28 @@ PX_get_num_records(pxdoc_t *pxdoc) {
 	}
 
 	return(pxdoc->px_head->px_numrecords);
+}
+
+PXLIB_API int PXLIB_CALL
+PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
+	char buffer[30];
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		return -1;
+	}
+
+	pxdoc->targetencoding = px_strdup(pxdoc, encoding);
+	if(pxdoc->targetencoding) {
+		sprintf(buffer, "CP%d/CR-LF..%s", pxdoc->px_head->px_doscodepage, pxdoc->targetencoding);
+		recode_scan_request(pxdoc->recode_request, buffer);
+	}
+	return 0;
 }
 
 /******* Function to access Blob files *******/
@@ -389,7 +424,44 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 }
 
 PXLIB_API int PXLIB_CALL
-PX_get_data_double(char *data, int len, double *value) {
+PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
+	char *buffer, *obuf = NULL;
+	int olen;
+	int oallocated = 0;
+	int res;
+
+	if(data[0] == '\0') {
+		*value = NULL;
+		return 0;
+	}
+
+	if(pxdoc->targetencoding != NULL) {
+		res = recode_buffer_to_buffer(pxdoc->recode_request, data, len, &obuf, &olen, &oallocated);
+	} else {
+		olen = len;
+		obuf = data;
+	}
+	buffer = (char *) pxdoc->malloc(pxdoc, olen+1,  _("Could not reallocate memory for field data."));
+	if(!buffer) {
+		if(pxdoc->targetencoding != NULL) {
+			free(obuf);
+		}
+		*value = NULL;
+		return 0;
+	}
+	memcpy(buffer, obuf, olen);
+	buffer[olen] = '\0';
+	*value = buffer;
+
+	if(pxdoc->targetencoding != NULL) {
+		free(obuf);
+	}
+
+	return 1;
+}
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
 		*value = *((double *)data);
@@ -405,7 +477,7 @@ PX_get_data_double(char *data, int len, double *value) {
 }
 
 PXLIB_API int PXLIB_CALL
-PX_get_data_long(char *data, int len, long *value) {
+PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
 		*value = *((long int *)data);
@@ -419,7 +491,7 @@ PX_get_data_long(char *data, int len, long *value) {
 }
 
 PXLIB_API int PXLIB_CALL
-PX_get_data_short(char *data, int len, short int *value) {
+PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
 		*value = *((short int *)data);
