@@ -473,11 +473,13 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 #else
 #if PX_USE_ICONV
 		size_t ilen = len;
+		char *iptr, *optr;
 		olen = len + 1;
-		obuf = (char *) pxdoc->malloc(pxdoc, olen,  _("Could not allocate memory for field data."));
+		optr = obuf = (char *) pxdoc->malloc(pxdoc, olen,  _("Could not allocate memory for field data."));
+		iptr = data;
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
-		if(0 > (res = iconv(pxdoc->iconvcd, &data, &ilen, &obuf, &olen))) {
+		if(0 > (res = iconv(pxdoc->iconvcd, &iptr, &ilen, &optr, &olen))) {
 			*value = NULL;
 			return 0;
 		}
