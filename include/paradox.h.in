@@ -356,7 +356,7 @@ PXLIB_API void PXLIB_CALL
 PX_close_blob(pxblob_t *pxdoc);
 
 PXLIB_API char* PXLIB_CALL
-PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size);
+PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize);
 
 /* Data conversion functions */
 /* Functions to read data from a record */
