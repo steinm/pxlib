@@ -62,7 +62,7 @@ msgstr "Konnte auf Kopf nicht zugreifen."
 
 #: src/paradox.c:356
 msgid "Could not open file of paradox database."
-msgstr "Konnte die Datei der Paradox-Datenbank nicht öffnen"
+msgstr "Konnte die Datei der Paradox-Datenbank nicht öffnen."
 
 #: src/paradox.c:361 src/paradox.c:482
 msgid "Could not open paradox database."
@@ -72,7 +72,7 @@ msgstr "Konnte Paradox-Datenbank nicht öffnen."
 #. * actually it is very precise.
 #: src/paradox.c:384
 msgid "Allocate memory for database header."
-msgstr "Alloziere Speicher für Datenbankkopf"
+msgstr "Alloziere Speicher für Datenbankkopf."
 
 #: src/paradox.c:385
 msgid "Could not allocate memory for databae header."
