@@ -536,6 +536,7 @@
 |      |                                                                     |
 |      |        Most tables will use 79 bytes, padded with zeroes.           |
 |      |        This was extended with Paradox 7 to 271 bytes.               |
+|      |        Uwe: It looks like it is 261 and not 271.                    |
 |      |                                                                     |
 ==============================================================================
 |                                                                            |
