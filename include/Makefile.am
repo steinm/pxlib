@@ -9,4 +9,4 @@ pxlibinc_HEADERS = \
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(pxlibincdir)
 
-EXTRA_DIST = pxversion.h.in
+EXTRA_DIST = paradox.h.in pxversion.h.in
