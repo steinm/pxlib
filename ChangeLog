@@ -1,3 +1,7 @@
+Version 0.2.0
+	- added generic way to set and get parameters
+	- added support for external read, write, tell, seek functions
+
 Version 0.1.9
 	- encoding for data, that is to be written in a record can be set
 	- build internal primary index for faster access. This will not
