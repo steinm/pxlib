@@ -61,6 +61,7 @@ double get_double(char *cp)
 	double ret;
 	unsigned char *dp = (unsigned char *)&ret;
 
+#ifdef WORDS_BIGENDIAN
 	dp[7] = *cp++;
 	dp[6] = *cp++;
 	dp[5] = *cp++;
@@ -69,7 +70,9 @@ double get_double(char *cp)
 	dp[2] = *cp++;
 	dp[1] = *cp++;
 	dp[0] = *cp++;
-
+#else
+	memcpy(dp, cp, 8);
+#endif
 	return ret;
 }
 
@@ -77,6 +80,7 @@ void put_double(char *cp, double fval)
 {
 	unsigned char *dp = (unsigned char *)&fval;
 
+#ifdef WORDS_BIGENDIAN
 	cp[7] = *dp++;
 	cp[6] = *dp++;
 	cp[5] = *dp++;
@@ -85,6 +89,9 @@ void put_double(char *cp, double fval)
 	cp[2] = *dp++;
 	cp[1] = *dp++;
 	cp[0] = *dp++;
+#else
+	memcpy(cp, dp, 8);
+#endif
 }
 
 void copy_fill(char *dp, char *sp, int len)
