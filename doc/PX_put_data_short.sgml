@@ -78,7 +78,8 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_put_data_long(3), PX_put_data_double(3), PX_put_data_alpha(3)</para>
+    <para>PX_put_data_long(3), PX_put_data_double(3), PX_put_data_alpha(3),
+		  PX_put_data_byte(3), PX_put_data_bytes(3)</para>
 
   </refsect1>
   <refsect1>

@@ -23,6 +23,8 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_put_data_long.sgml \
 						 PX_put_data_double.sgml \
 						 PX_put_data_alpha.sgml \
+						 PX_put_data_byte.sgml \
+						 PX_put_data_bytes.sgml \
 						 PX_get_record.sgml \
 						 PX_get_record2.sgml \
 						 PX_put_record.sgml \
@@ -33,6 +35,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_add_primary_index.sgml \
 						 PX_read_primary_index.sgml \
 						 PX_set_targetencoding.sgml \
+						 PX_set_tablename.sgml \
 						 PX_close.sgml \
 						 PX_delete.sgml
 

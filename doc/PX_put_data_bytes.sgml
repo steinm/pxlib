@@ -26,8 +26,8 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_put_data_alpha</refentrytitle>">
-  <!ENTITY funcname    "PX_put_data_alpha">
+  <!ENTITY dhucpackage "<refentrytitle>PX_put_data_bytes</refentrytitle>">
+  <!ENTITY funcname    "PX_put_data_bytes">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -57,7 +57,7 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>Put value into an alpha data field</refpurpose>
+    <refpurpose>Put value into a bytes data field</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
@@ -66,22 +66,22 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Converts a string into a value for a data field as it stored
-		  in the database file. You must set the target encoding
-			before in order to recode the string. If you do not set the encoding
-			the data will be stored as is. You should use this function
+    <para>Simply copies a sequence of bytes into a data field as it stored
+		  in the database file. You should use this function
 			instead of accessing the record data directly.</para>
-		<para><option>data</option> points to the start of the data field in the
+		<para><option>data</option> points to start of the data field in the
 		  record. It must be calculated by summing up all field length before
 			the field to operate on and add it to the base pointer of the
 			record.</para>
+		<para>This function is similar to PX_put_data_alpha(3) without recoding.
+		  It is mostly used to store field data of Type pxfBytes.</para>
 
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_put_data_long(3), PX_put_data_double(3), PX_put_data_short(3),
-		  PX_put_data_byte(3), PX_put_data_bytes(3)</para>
+    <para>PX_put_data_byte(3), PX_put_data_short(3), PX_put_data_long(3),
+		  PX_put_data_double(3), PX_put_data_alpha(3)</para>
 
   </refsect1>
   <refsect1>
