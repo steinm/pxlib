@@ -66,7 +66,8 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Sets the target encoding for all alpha fields. The encoding must
+    <para>Sets the target encoding for all alpha fields. It is used when
+		  data is retrieved from a record. The encoding must
 		  be a name as it is described by the man and info pages of
 			<application>recode</application>. A common value is `latin1' on Unix
 			systems. If you do not set the encoding the function PX_get_data_alpha()
@@ -81,7 +82,8 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_data_alpha(3), recode(1)</para>
+    <para>PX_get_data_alpha(3), PX_set_inputencoding(3), iconv(1),
+		  recode(1)</para>
 
   </refsect1>
   <refsect1>
