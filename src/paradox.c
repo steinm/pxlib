@@ -31,21 +31,32 @@
 #include "px_error.h"
 #include "px_misc.h"
 
+/* PX_get_majorversion() {{{
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_majorversion(void) {
 	return(PXLIB_MAJOR_VERSION);
 }
+/* }}} */
 
+/* PX_get_minorversion() {{{
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_minorversion(void) {
 	return(PXLIB_MINOR_VERSION);
 }
+/* }}} */
 
+/* PX_get_subminorversion() {{{
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_subminorversion(void) {
 	return(PXLIB_MICRO_VERSION);
 }
+/* }}} */
 
+/* PX_has_recode_support() {{{
+ */
 PXLIB_API int PXLIB_CALL
 PX_has_recode_support(void) {
 #if PX_USE_RECODE
@@ -57,7 +68,10 @@ PX_has_recode_support(void) {
 #endif
 	return(0);
 }
+/* }}} */
 
+/* PX_is_bigendian() {{{
+ */
 PXLIB_API int PXLIB_CALL
 PX_is_bigendian(void) {
 #if WORDS_BIGENDIAN
@@ -66,7 +80,12 @@ PX_is_bigendian(void) {
 	return(0);
 #endif
 }
+/* }}} */
 
+/* PX_new2() {{{
+ * Create a new Paradox DB file and set memory management and error
+ * handling functions.
+ */
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
@@ -106,12 +125,21 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 
 	return pxdoc;
 }
+/* }}} */
 
+/* PX_new() {{{
+ * Create new Paradox DB file.
+ * Use the default memory management and error handling functions.
+ */
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new(void) {
 	return(PX_new2(NULL, NULL, NULL, NULL));
 }
+/* }}} */
 
+/* PX_open_fp() {{{
+ * Read from a Paradox DB file, which has already been opend with fopen.
+ */
 PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 	if(pxdoc == NULL) {
@@ -128,7 +156,12 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 
 	return 0;
 }
+/* }}} */
 
+/* PX_open_filename() {{{
+ * Read from a Paradox DB file. Open the file itself. Use PX_open_fp()
+ * if the file has been open already with fopen().
+ */
 PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	FILE *fp;
@@ -151,7 +184,16 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	pxdoc->px_close_fp = px_true;
 	return 0;
 }
+/* }}} */
 
+/* PX_add_primary_index() {{{
+ * Use a primary index for an DB file. The index has to open before with
+ * PX_open_fp() PX_open_filename(). After adding an index it will be
+ * used for accessing database records.
+ * If this function has been called before for the same DB file, the
+ * old index will be deleted first. Make sure to actually read the
+ * index with PX_read_primary_index() and not just open it.
+ */
 PXLIB_API int PXLIB_CALL
 PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
 	if(pxdoc == NULL ||
@@ -181,7 +223,11 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
 
 	return 0;
 }
+/* }}} */
 
+/* PX_read_primary_index() {{{
+ * Read the primary index completly into an internal array.
+ */
 PXLIB_API int PXLIB_CALL
 PX_read_primary_index(pxdoc_t *pindex) {
 	pxpindex_t *pindex_data;
@@ -244,8 +290,10 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	pindex->free(pindex, data);
 	return 0;
 }
+/* }}} */
 
-/* Locates a database record by using the primary index.
+/* px_get_record_pos_with_index() {{{
+ * Locates a database record by using the primary index.
  * Returns 1 if record could be found, otherwise 0
  */
 int
@@ -328,8 +376,10 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 	}
 	return 0;
 }
+/* }}} */
 
-/* Reads all data blocks until the requested recno is in the block.
+/* px_get_record_pos() {{{
+ * Reads all data blocks until the requested recno is in the block.
  * This function doesn't use a primary index and is therefore far
  * from being efficient for large files.
  * Returns 1 if record could be found, otherwise 0
@@ -426,13 +476,29 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 	}
 	return(found);
 }
+/* }}} */
 
+/* PX_get_record() {{{
+ * Reads one record from a Paradox file. This function can be used
+ * for different types of Paradox files. This function will not
+ * return any information about the datablock in which the record
+ * was stored.
+ */
 PXLIB_API char* PXLIB_CALL
 PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 	int d = 0;
 	return(PX_get_record2(pxdoc, recno, data, &d, NULL));
 }
+/* }}} */
 
+/* PX_get_record() {{{
+ * Reads one record from a Paradox file. This function can be used
+ * for different types of Paradox files. The function will return
+ * information about the datablock where the record is stored.
+ * It also reports if a record is deleted. Read the man page of
+ * this function to get an explanation on what it means if a record
+ * is deleted.
+ */
 PXLIB_API char* PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo) {
 	int ret, found, blockcount;
@@ -484,7 +550,12 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 	} else
 		return NULL;
 }
+/* }}} */
 
+/* PX_close() {{{
+ * Close a Paradox file, but only if it was opened with PX_open_filename().
+ * This function will not free any memory.
+ */
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
@@ -496,7 +567,12 @@ PX_close(pxdoc_t *pxdoc) {
 		fclose(pxdoc->px_fp);
 	pxdoc->px_fp = NULL;
 }
+/* }}} */
 
+/* PX_delete() {{{
+ * Frees all memory use by the Paradox file. If PX_close() had not
+ * been called before, it will be now.
+ */
 PXLIB_API void PXLIB_CALL
 PX_delete(pxdoc_t *pxdoc) {
 	pxfield_t *pfield;
@@ -542,7 +618,12 @@ PX_delete(pxdoc_t *pxdoc) {
 	}
 	pxdoc->free(pxdoc, pxdoc);
 }
+/* }}} */
 
+/* PX_get_fields() {{{
+ * Returns a pointer onto the first field specification. This is identical
+ * to calling PX_get_field() with a recno of 0.
+ */
 PXLIB_API pxfield_t* PXLIB_CALL
 PX_get_fields(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
@@ -557,7 +638,12 @@ PX_get_fields(pxdoc_t *pxdoc) {
 
 	return(pxdoc->px_head->px_fields);
 }
+/* }}} */
 
+/* PX_get_field() {{{
+ * Returns a pointer onto a field (column) specification. The first
+ * column/field has index 0.
+ */
 PXLIB_API pxfield_t* PXLIB_CALL
 PX_get_field(pxdoc_t *pxdoc, int fieldno) {
 	pxhead_t *pxh;
@@ -585,7 +671,11 @@ PX_get_field(pxdoc_t *pxdoc, int fieldno) {
 
 	return(pfield);
 }
+/* }}} */
 
+/* PX_get_num_fields() {{{
+ * Returns the number of fields/columns.
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_num_fields(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
@@ -600,7 +690,11 @@ PX_get_num_fields(pxdoc_t *pxdoc) {
 
 	return(pxdoc->px_head->px_numfields);
 }
+/* }}} */
 
+/* PX_get_num_records() {{{
+ * Returns the number of records in a Paradox file.
+ */
 PXLIB_API int PXLIB_CALL
 PX_get_num_records(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
@@ -615,7 +709,12 @@ PX_get_num_records(pxdoc_t *pxdoc) {
 
 	return(pxdoc->px_head->px_numrecords);
 }
+/* }}} */
 
+/* PX_set_targetencoding() {{{
+ * Sets the encoding of the output data. This is one of
+ * the encodings supported by iconv or recode.
+ */
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 #if PX_USE_RECODE || PX_USE_ICONV
@@ -655,6 +754,7 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 #endif
 	return 0;
 }
+/* }}} */
 
 /******* Function to access Blob files *******/
 
