@@ -216,6 +216,39 @@ PX_get_opaque(pxdoc_t *pxdoc) {
 }
 /* }}} */
 
+/* PX_set_io_stream() {{{
+ * Sets file access routines.
+ */
+PXLIB_API int PXLIB_CALL
+PX_set_io_stream(pxdoc_t *pxdoc,
+                 char * (*readproc)(pxdoc_t *p, void *stream),
+                 size_t (*writeproc)(pxdoc_t *p, void *stream, const char *data, size_t len),
+                 size_t (*seekproc)(pxdoc_t *p, void *stream, size_t offset, int whence),
+                 size_t (*tellproc)(pxdoc_t *p, void *stream)
+				 ) {
+	pxstream_t *pxs;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
+		return -1;
+	}
+	
+	pxs->read = px_gsfread;
+	pxs->seek = px_gsfseek;
+	pxs->tell = px_gsftell;
+	pxs->write = px_gsfwrite;
+
+	pxdoc->px_stream = pxs;
+
+	return(0);
+}
+/* }}} */
+
 /* build_primary_index() {{{
  * Build a primary index.
  */
@@ -268,9 +301,51 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 /* }}} */
 
 
+/* PX_open_stream() {{{
+ * Read from a Paradox DB file, which has an already open.
+ */
+PXLIB_API int PXLIB_CALL
+PX_open_stream(pxdoc_t *pxdoc, void *stream) {
+	pxhead_t *pxh;
+	pxstream_t *pxs;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_stream == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Paradox database has no stream."));
+		return -1;
+	}
+	pxs = pxdoc->px_stream;
+
+	pxdoc->px_stream->type = pxfIOStream;
+	pxdoc->px_stream->mode = pxfFileRead;
+	pxdoc->px_stream->close = px_false;
+	pxdoc->px_stream->s.stream = stream;
+
+	if((pxdoc->px_head = get_px_head(pxdoc, pxs)) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Unable to get header."));
+		return -1;
+	}
+
+	/* Build primary index. This index misses all index blocks with a level
+	 * greater than 1. Since they are not used currently this is of no harm.
+	 */
+	pxh = pxdoc->px_head;
+	if(pxh->px_filetype == pxfFileTypIndexDB ||
+	   pxh->px_filetype == pxfFileTypNonIndexDB) {
+		if(build_primary_index(pxdoc) < 0) {
+			return -1;
+		}
+	}
+	return 0;
+}
+/* }}} */
 #if PX_HAVE_GSF
 /* PX_open_gsf() {{{
- * Read from a Paradox DB file, which has already been opend with gsf.
+ * Read from a Paradox DB file, which has already been opened with gsf.
  */
 PXLIB_API int PXLIB_CALL
 PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf) {
@@ -1782,32 +1857,22 @@ PX_open_blob_file(pxblob_t *pxblob, const char *filename) {
 }
 /* }}} */
 
-/* PX_create_blob_file() {{{
- * Create a new file for blob data with the given filename
+/* PX_create_blob_fp() {{{
+ * Creates a blob with a given already open file pointer
  */
 PXLIB_API int PXLIB_CALL
-PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
-	FILE *fp;
-	mbhead_t *mbh;
+PX_create_blob_fp(pxblob_t *pxblob, FILE *fp) {
 	pxdoc_t *pxdoc;
 	pxstream_t *pxs;
-
-	if(!pxblob) {
-		return(-1);
-	}
+	mbhead_t *mbh;
 
 	if(NULL == (pxdoc = pxblob->pxdoc)) {
 		px_error(pxdoc, PX_RuntimeError, _("No paradox document associated with blob file."));
 		return -1;
 	}
 
-	if((fp = fopen(filename, "w")) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file '%s' for writing."), filename);
-		return -1;
-	}
-
-	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream.")))) {
-		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
+	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream of blob file.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream of blob file."));
 		return -1;
 	}
 	pxs->type = pxfIOFile;
@@ -1832,10 +1897,41 @@ PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
 
 	pxblob->mb_head = mbh;
 	pxblob->mb_stream = pxs;
+	pxblob->used_datablocks = 0;
+
+	return(0);
+}
+/* }}} */
+
+/* PX_create_blob_file() {{{
+ * Create a new file for blob data with the given filename
+ */
+PXLIB_API int PXLIB_CALL
+PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
+	FILE *fp;
+	pxdoc_t *pxdoc;
+
+	if(!pxblob) {
+		return(-1);
+	}
+
+	if(NULL == (pxdoc = pxblob->pxdoc)) {
+		px_error(pxdoc, PX_RuntimeError, _("No paradox document associated with blob file."));
+		return -1;
+	}
+
+	if((fp = fopen(filename, "w")) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file '%s' for writing."), filename);
+		return -1;
+	}
+
+	if(0 > PX_create_blob_fp(pxblob, fp)) {
+		fclose(fp);
+		return -1;
+	}
 
 	pxblob->mb_name = px_strdup(pxblob->pxdoc, filename);
 	pxblob->mb_stream->close = px_true;
-	pxblob->used_datablocks = 0;
 
 	return 0;
 }
@@ -1909,6 +2005,53 @@ PX_set_blob_file(pxdoc_t *pxdoc, const char *filename) {
 		}
 	} else {
 		if(0 > PX_create_blob_file(pxblob, filename)) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not create blob file."));
+			return -1;
+		}
+	}
+
+	pxdoc->px_blob = pxblob;
+
+	return 0;
+}
+/* }}} */
+
+/* PX_set_blob_fp() {{{
+ * Sets the file pointer of the file containing the blobs.
+ */
+PXLIB_API int PXLIB_CALL
+PX_set_blob_fp(pxdoc_t *pxdoc, FILE *fp) {
+	pxblob_t *pxblob;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_stream == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Paradox database has not been opened or created when setting the blob file."));
+		return -1;
+	}
+
+	if(pxdoc->px_blob != NULL) {
+		px_error(pxdoc, PX_Warning, _("Blob file has been set already. I will delete the existing one."));
+		PX_delete_blob(pxdoc->px_blob);
+		pxdoc->px_blob = NULL;
+	}
+
+	if(NULL == (pxblob = PX_new_blob(pxdoc))) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not create new blob file object."));
+		return -1;
+	}
+
+	/* If the paradox database was opend for reading the blob will be too. */
+	if(pxdoc->px_stream->mode == pxfFileRead) {
+		if(0 > PX_open_blob_fp(pxblob, fp)) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not open blob file."));
+			return -1;
+		}
+	} else {
+		if(0 > PX_create_blob_fp(pxblob, fp)) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not create blob file."));
 			return -1;
 		}
