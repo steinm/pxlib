@@ -1292,6 +1292,7 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 	}
 #else
 	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
+	return -2;
 #endif
 	return 0;
 }
@@ -1345,6 +1346,7 @@ PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding) {
 	}
 #else
 	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
+	return -2;
 #endif
 	return 0;
 }

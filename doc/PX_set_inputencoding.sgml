@@ -26,7 +26,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_set_inputencoding</refentrytitle>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_SET_INPUTENCODING</refentrytitle>">
   <!ENTITY funcname    "PX_set_inputencoding">
 
   <!ENTITY debian      "<productname>Debian</productname>">
@@ -69,15 +69,17 @@ manpage.1: manpage.sgml
     <para>Sets the input encoding for all alpha fields. It is used when
 		  data is stored into a record. The encoding must
 		  be a name as it is described by the man and info pages of
-			<application>recode</application>. A common value is `latin1' on Unix
-			systems. If you do not set the encoding the function PX_get_data_alpha()
+			<application>recode</application> or <application>iconv</application>
+			whatever is used. A common value is `latin1' on Unix
+			systems. If you do not set the encoding the function PX_get_data_alpha(3)
 			will return field data in the original encoding otherwise it will
 			recode the field data.</para>
 
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns a value < 0 in case of an error, otherwise 0.</para>
+    <para>Returns -2 if recoding is not supported and a value < 0 in case of
+		  an error, otherwise 0.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

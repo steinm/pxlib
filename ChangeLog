@@ -1,5 +1,6 @@
 Version 0.2.2
 	- fixed potential buffer overrun
+	- PX_set_[target|input]encoding returns -2 if recoding is not supported
 
 Version 0.2.1
 	- PX_create_fp uses a fixed header size which was to small for databases with
