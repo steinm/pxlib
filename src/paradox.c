@@ -120,7 +120,7 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	}
 	if (errorhandler == NULL)
 		errorhandler = px_errorhandler; 
-	if(NULL == (pxdoc = (pxdoc_t *) (* allocproc) (NULL, sizeof(pxdoc_t), "PX_new2: Allocate memory for px document."))) {
+	if(NULL == (pxdoc = (pxdoc_t *) (* allocproc) (NULL, sizeof(pxdoc_t), "PX_new3: Allocate memory for px document."))) {
 		(*errorhandler)(NULL, PX_MemoryError, _("Couldn't allocate PX object"));
 		return(NULL);
 	}
