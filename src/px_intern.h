@@ -1,7 +1,12 @@
 #ifndef __PX_INTERN_H__
 #define __PX_INTERN_H__
 
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#define _(a) dgettext(GETTEXT_PACKAGE, a)
+#else
 #define _(a) a
+#endif
 
 typedef unsigned char byte;
 //typedef unsigned short int integer;
