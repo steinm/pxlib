@@ -2248,131 +2248,136 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 //	fprintf(stderr, "size=%ld ", size);
 //	fprintf(stderr, "mod_nr=%d \n", mod_nr);
 
-	if(!pxblob || !pxblob->px_fp) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not set a blob file."));
-		*value = NULL;
-		return -1;
-	}
-
 	if(*blobsize <= 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
 		*value = NULL;
 		return -1;
 	}
 
+	/* First check if the blob data is included in the record itself */
 	if(*blobsize <= leader) {
-		blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
+		blobdata = pxdoc->malloc(pxdoc, *blobsize, _("Could not allocate memory for blob."));
 		if(!blobdata) {
 			*value = NULL;
 			return -1;
 		}
 		memcpy(blobdata, data, *blobsize);
-	} else {
-		offset = get_long_le(&data[leader]) & 0xffffff00;
-		if(offset == 0) {
-			*blobsize = 0;
+		*value = blobdata;
+		return(1);
+	} 
+
+	/* Since the blob data is not in the record we will need a blob file */
+	if(!pxblob || !pxblob->px_fp) {
+		px_error(pxdoc, PX_RuntimeError, _("Blob data is not contained in record and a blob file is not set."));
+		*value = NULL;
+		return -1;
+	}
+
+	offset = get_long_le(&data[leader]) & 0xffffff00;
+	if(offset == 0) {
+		*blobsize = 0;
+		*value = NULL;
+		return -1;
+	}
+//		fprintf(stderr, "offset=%ld ", offset);
+
+	if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+		*value = NULL;
+		return -1;
+	}
+
+	/* Just read the first 3 Bytes because they are common for all block */
+	if((ret = fread(head, 3, 1, pxblob->px_fp)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
+		*value = NULL;
+		return -1;
+	}
+
+	if(head[0] == 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
+		*value = NULL;
+		return -1;
+	} else if(head[0] == 4) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
+		*value = NULL;
+		return -1;
+	}
+
+	if(head[0] == 2) { /* Reading data from a block type 2 */
+		if(index != 0xff) {
+			px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
 			*value = NULL;
 			return -1;
 		}
-//		fprintf(stderr, "offset=%ld ", offset);
+		/* Read the remaining 6 bytes from the header */
+		if((ret = fread(head, hsize-3, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
+			*value = NULL;
+			return -1;
+		}
+		if(size != get_long_le(&head[0])) {
+			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
+			*value = NULL;
+			return -1;
+		}
+		/* We may check for identical modificatio number as well, if it
+		 * was passed to PX_read_blobdata()
+		 */
 
-		if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
+		blobdata = pxdoc->malloc(pxdoc, *blobsize, _("Could not allocate memory for blob."));
+		if(!blobdata) {
+			*value = NULL;
+			return -1;
+		}
+
+		if((ret = fread(blobdata, *blobsize, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+			*value = NULL;
+			return -1;
+		}
+	} else if(head[0] == 3) { /* Reading data from a block type 3 */
+		/* Read the remaining 9 bytes from the header */
+		if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of suballocated block."));
+			*value = NULL;
+			return -1;
+		}
+		/* Goto the blob pointer with the passed index */
+		if((ret = fseek(pxblob->px_fp, offset+12+index*5, SEEK_SET)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek blob pointer."));
+			*value = NULL;
+			return -1;
+		}
+		/* Read the blob pointer */
+		if((ret = fread(head, 5, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
+			*value = NULL;
+			return -1;
+		}
+		if(size != ((int)head[1]-1)*16+head[4]) {
+			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
+			*value = NULL;
+			return -1;
+		}
+		blobdata = pxdoc->malloc(pxdoc, size, _("Could not allocate memory for blob."));
+		if(!blobdata) {
+			*value = NULL;
+			return -1;
+		}
+		/* Goto the start of the blob */
+		if((ret = fseek(pxblob->px_fp, offset+head[0]*16, SEEK_SET)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
 			*value = NULL;
 			return -1;
 		}
-
-		/* Just read the first 3 Bytes because they are common for all block */
-		if((ret = fread(head, 3, 1, pxblob->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
+		if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 			*value = NULL;
 			return -1;
-		}
-
-		if(head[0] == 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
-			*value = NULL;
-			return -1;
-		} else if(head[0] == 4) {
-			px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
-			*value = NULL;
-			return -1;
-		}
-
-		if(head[0] == 2) { /* Reading data from a block type 2 */
-			if(index != 0xff) {
-				px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
-				*value = NULL;
-				return -1;
-			}
-			/* Read the remaining 6 bytes from the header */
-			if((ret = fread(head, hsize-3, 1, pxblob->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
-				*value = NULL;
-				return -1;
-			}
-			if(size != get_long_le(&head[0])) {
-				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
-				*value = NULL;
-				return -1;
-			}
-			/* We may check for identical modificatio number as well, if it
-			 * was passed to PX_read_blobdata()
-			 */
-
-			blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
-			if(!blobdata) {
-				*value = NULL;
-				return -1;
-			}
-
-			if((ret = fread(blobdata, *blobsize, 1, pxblob->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
-				*value = NULL;
-				return -1;
-			}
-		} else if(head[0] == 3) { /* Reading data from a block type 3 */
-			/* Read the remaining 9 bytes from the header */
-			if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of suballocated block."));
-				*value = NULL;
-				return -1;
-			}
-			/* Goto the blob pointer with the passed index */
-			if((ret = fseek(pxblob->px_fp, offset+12+index*5, SEEK_SET)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek blob pointer."));
-				*value = NULL;
-				return -1;
-			}
-			/* Read the blob pointer */
-			if((ret = fread(head, 5, 1, pxblob->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
-				*value = NULL;
-				return -1;
-			}
-			if(size != ((int)head[1]-1)*16+head[4]) {
-				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
-				*value = NULL;
-				return -1;
-			}
-			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
-			if(!blobdata) {
-				*value = NULL;
-				return -1;
-			}
-			/* Goto the start of the blob */
-			if((ret = fseek(pxblob->px_fp, offset+head[0]*16, SEEK_SET)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
-				*value = NULL;
-				return -1;
-			}
-			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
-				*value = NULL;
-				return -1;
-			}
 		}
 	}
+
 	*value = blobdata;
 	return(1);
 }
