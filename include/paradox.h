@@ -148,6 +148,18 @@ PX_close(pxdoc_t *pxdoc);
 PXLIB_API void PXLIB_CALL
 PX_delete(pxdoc_t *pxdoc);
 
+PXLIB_API pxfield_t* PXLIB_CALL
+PX_get_fields(pxdoc_t *pxdoc);
+
+PXLIB_API pxfield_t* PXLIB_CALL
+PX_get_field(pxdoc_t *pxdoc, int i);
+
+PXLIB_API int PXLIB_CALL
+PX_get_num_fields(pxdoc_t *pxdoc);
+
+PXLIB_API int PXLIB_CALL
+PX_get_num_records(pxdoc_t *pxdoc);
+
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc);
 
