@@ -101,15 +101,16 @@ PX_is_bigendian(void) {
 }
 /* }}} */
 
-/* PX_new2() {{{
- * Create a new Paradox DB file and set memory management and error
- * handling functions.
+/* PX_new3() {{{
+ * Create a new Paradox DB file and set memory management, error
+ * handling functions and the user data passed to the error handler.
  */
 PXLIB_API pxdoc_t* PXLIB_CALL
-PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
+PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
         void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller),
-        void  (*freeproc)(pxdoc_t *p, void *mem)) {
+        void  (*freeproc)(pxdoc_t *p, void *mem),
+		void* errorhandler_user_data) {
 	pxdoc_t *pxdoc;
 
 	if(allocproc == NULL) {
@@ -125,6 +126,7 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	}
 	memset((void *)pxdoc, 0, (size_t) sizeof(pxdoc_t));
 	pxdoc->errorhandler = errorhandler;
+	pxdoc->errorhandler_user_data = errorhandler_user_data;
 	pxdoc->malloc = allocproc;
 	pxdoc->realloc = reallocproc;
 	pxdoc->free = freeproc;
@@ -151,13 +153,26 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 }
 /* }}} */
 
+/* PX_new2() {{{
+ * Create a new Paradox DB file and set memory management and error
+ * handling functions.
+ */
+PXLIB_API pxdoc_t* PXLIB_CALL
+PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
+        void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
+        void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller),
+        void  (*freeproc)(pxdoc_t *p, void *mem)) {
+	return(PX_new3(errorhandler, allocproc, reallocproc, freeproc, NULL));
+}
+/* }}} */
+
 /* PX_new() {{{
  * Create new Paradox DB file.
  * Use the default memory management and error handling functions.
  */
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new(void) {
-	return(PX_new2(NULL, NULL, NULL, NULL));
+	return(PX_new3(NULL, NULL, NULL, NULL, NULL));
 }
 /* }}} */
 
