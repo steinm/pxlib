@@ -475,12 +475,17 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		size_t ilen = len;
 		char *iptr, *optr;
 		olen = len + 1;
-		optr = obuf = (char *) pxdoc->malloc(pxdoc, olen,  _("Could not allocate memory for field data."));
+		/* Do not pxdoc->malloc because the memory is freed with free
+		 * We use free because the memory allocated by recode_buffer_to_buffer()
+		 * is requested with malloc and must be freed with free.
+		 */
+		optr = obuf = (char *) malloc(olen);
 		iptr = data;
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
 		if(0 > (res = iconv(pxdoc->iconvcd, &iptr, &ilen, &optr, &olen))) {
 			*value = NULL;
+			free(obuf);
 			return 0;
 		}
 //		printf("data(%d) = '%s'\n", ilen, data);
@@ -492,6 +497,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		olen = len;
 		obuf = data;
 	}
+	/* Copy the encoded string into memory which belongs to pxlib */
 	buffer = (char *) pxdoc->malloc(pxdoc, olen+1,  _("Could not allocate memory for field data."));
 	if(!buffer) {
 		if(pxdoc->targetencoding != NULL) {
