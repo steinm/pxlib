@@ -274,14 +274,14 @@ char *px_cur_date(char *cp)
 	time_t	  c_time;
 
 	c_time = time((time_t *)NULL);
-//	ctm = php_localtime_r(&c_time, &tmbuf);
+	ctm = localtime_r(&c_time, &tmbuf);
 	if (cp == NULL)
 		cp = (char *)malloc(9);
 
 	if (ctm == NULL || cp == NULL)
 		return NULL;
 
-	px_set_date(cp, ctm->tm_year + 1900, ctm->tm_mon + 1, ctm->tm_mday);
+	px_set_date(cp, tmbuf.tm_year + 1900, tmbuf.tm_mon + 1, tmbuf.tm_mday);
 
 	return cp;
 }
