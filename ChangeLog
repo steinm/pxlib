@@ -1,4 +1,5 @@
 Version 0.2.7
+	- added man pages for blob file handling
 	- set some more header fields. db and px files are now read correctly
 	  by the Paradox software.
 	- changed default file version to 7.0
