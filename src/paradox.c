@@ -1168,10 +1168,11 @@ PX_close(pxdoc_t *pxdoc) {
 		return;
 	}
 
-	if(pxdoc->px_stream && pxdoc->px_stream->close && (pxdoc->px_stream->s.fp != NULL))
+	if(pxdoc->px_stream && pxdoc->px_stream->close && (pxdoc->px_stream->s.fp != NULL)){
 		fclose(pxdoc->px_stream->s.fp);
-	pxdoc->free(pxdoc, pxdoc->px_stream);
-	pxdoc->px_stream = NULL;
+		pxdoc->free(pxdoc, pxdoc->px_stream);
+		pxdoc->px_stream = NULL;
+	}
 }
 /* }}} */
 
