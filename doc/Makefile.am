@@ -1,6 +1,13 @@
+pxlib.3: pxlib.sgml
+	docbook2man $<
+	mv PXLIB.3 pxlib.3
 
 %.3: %.sgml
 	docbook-to-man $< > $@
+
+%.html: %.sgml
+	docbook2html $<
+	mv index.html $@
 
 distclean: clean
 
@@ -17,6 +24,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_open_fp.sgml \
 						 PX_open_gsf.sgml \
 						 PX_create_file.sgml \
+						 PX_create_blob_file.sgml \
 						 PX_create_fp.sgml \
 						 PX_get_data_short.sgml \
 						 PX_get_data_long.sgml \
@@ -65,7 +73,11 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_timestamp2string.sgml \
 						 PX_strdup.sgml
 
-EXTRA_DIST = ${SGML_FILES} pxformat.txt paradox4.txt
+EXTRA_DIST = ${SGML_FILES} pxformat.txt paradox4.txt pxlib.sgml
 
-man_MANS = $(SGML_FILES:.sgml=.3)
+man_MANS = $(SGML_FILES:.sgml=.3) pxlib.3 pxlib.html
+
+html: $(SGML_FILES:.sgml=.html) pxlib.html
+
+.PHONY: html
 
