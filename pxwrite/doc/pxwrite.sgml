@@ -95,7 +95,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>OPTIONS</title>
 
-    <para>The program follow the usual &gnu; command line syntax,
+    <para>The program follows the usual &gnu; command line syntax,
       with long options starting with two dashes (`-').  A summary of
       options is included below.</para>
 
