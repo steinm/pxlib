@@ -419,6 +419,8 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	pxh->px_doscodepage = 1252;
 	pxh->px_primarykeyfields = 0;
 	pxh->px_autoinc = 0;
+	if(type == pxfFileTypPrimIndex)
+		pxh->px_autoinc = 1;
 	pxh->px_sortorder = 0x62;
 
 	/* Calculate record size and get an idea on how big the header might
