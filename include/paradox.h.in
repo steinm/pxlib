@@ -250,6 +250,7 @@ PXLIB_API char* PXLIB_CALL
 PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size);
 
 /* Data conversion functions */
+/* Functions to read data from a record */
 PXLIB_API int PXLIB_CALL
 PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value);
 
@@ -261,4 +262,27 @@ PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value);
 
 PXLIB_API int PXLIB_CALL
 PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value);
+
+/* Funktion to add data to a record */
+PXLIB_API void PXLIB_CALL
+PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value);
+
+PXLIB_API void PXLIB_CALL
+PX_put_data_double(pxdoc_t *pxdoc, char *data, int len, double value);
+
+PXLIB_API void PXLIB_CALL
+PX_put_data_long(pxdoc_t *pxdoc, char *data, int len, int value);
+
+PXLIB_API void PXLIB_CALL
+PX_put_data_short(pxdoc_t *pxdoc, char *data, int len, short int value);
+
 #endif
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */

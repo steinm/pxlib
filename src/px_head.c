@@ -111,10 +111,10 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	/* The theoretical number of records is calculated from the number
 	 * of data blocks and the number of records that fit into a data
-	 * block. The '-6' is decreasing the available space of the data
+	 * block. The 'TDataBlock' is decreasing the available space of the data
 	 * block due to its header, which takes up 6 Bytes.
 	 */
-	pxh->px_theonumrecords = pxh->px_fileblocks * (int) ((pxh->px_maxtablesize*0x400-6) / pxh->px_recordsize);
+	pxh->px_theonumrecords = pxh->px_fileblocks * (int) ((pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize);
 
 	if((pxh->px_fields = (pxfield_t *) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxfield_t), _("Could not get memory for field definitions."))) == NULL)
 		return NULL;
@@ -197,19 +197,14 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	TFldInfoRec pxinfo;
 	pxfield_t *pxf;
 	int nullint = 0;
-	int recordsize = 0;
 	int i;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
 
-	/* Calculate record size */
-	pxf = pxh->px_fields;
-	for(i=0; i<pxh->px_numfields; i++, pxf++) {
-		recordsize += pxf->px_flen;
-	}
-	put_short_le(&pxhead.recordSize, recordsize);
+	put_short_le(&pxhead.recordSize, pxh->px_recordsize);
 	put_short_le(&pxhead.headerSize, pxh->px_headersize);
+	put_short_le(&pxhead.fileBlocks, pxh->px_fileblocks);
 	pxhead.fileType = pxh->px_filetype;
 	pxhead.maxTableSize = pxh->px_maxtablesize;
 	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
@@ -288,6 +283,93 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 
 	return 0;
+}
+/* }}} */
+
+/* put_px_datablock() {{{
+ * writes an empty data block. Returns the number of the new
+ * datablock. The first one has number 0. In the datablock head
+ * the first block has number 1.
+ */
+int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
+	TDataBlock datablockhead;
+	int i, ret, nullint = 0;
+
+	/* Go to the start of the data block (skip the header) */
+	if((ret = fseek(fp, pxh->px_headersize+pxh->px_fileblocks*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+		return -1;
+	}
+
+	memset(&datablockhead, 0, sizeof(TDataBlock));
+	put_short_le(&datablockhead.blockNumber, pxh->px_fileblocks+1);
+	put_short_le(&datablockhead.addDataSize, -pxh->px_recordsize);
+	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
+		return -1;
+	}
+
+	/* write an empty block */
+	for(i=0; i<pxh->px_maxtablesize*0x400-sizeof(TDataBlock); i++) {
+		if(fwrite(&nullint, 1, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock."));
+			return -1;
+		}
+	}
+
+	return(pxh->px_fileblocks);
+}
+
+int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *data, FILE *fp) {
+	TDataBlock datablockhead;
+	int ret, n;
+
+	/* Go to the start of the data block (skip the header) */
+	if((ret = fseek(fp, pxh->px_headersize+datablocknr*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of first data block"));
+		return -1;
+	}
+
+	if((ret = fread(&datablockhead, sizeof(TDataBlock), 1, fp)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
+		return -1;
+	}
+	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize+1;
+	fprintf(stderr, "Hexdump des alten datablock headers: ");
+	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
+	fprintf(stderr, "Datablock %d hat %d Datensätze\n", datablocknr, n);
+
+	/* Go back the beginning of the block */
+	if((ret = fseek(fp, -sizeof(TDataBlock), SEEK_CUR)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of data block"));
+		return -1;
+	}
+
+	/* Update size of data block and write it back */
+	put_short_le(&datablockhead.addDataSize, n*pxh->px_recordsize);
+	fprintf(stderr, "Hexdump des neuen datablock headers: ");
+	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
+	fprintf(stderr, "\n");
+	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
+		return -1;
+	}
+
+	/* Goto start of record data */
+	if((ret = fseek(fp, n*pxh->px_recordsize, SEEK_CUR)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of new record"));
+		return -1;
+	}
+
+	/* Write the record data */
+	if(fwrite(data, pxh->px_recordsize, 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write record."));
+		return -1;
+	}
+	
+	return n;
 }
 /* }}} */
 

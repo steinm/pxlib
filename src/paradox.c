@@ -192,16 +192,18 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
  * Create a new paradox database.
  */
 PXLIB_API int PXLIB_CALL
-PX_create_db(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename) {
+PX_create_db(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename) {
 	FILE *fp;
 	pxhead_t *pxh;
+	pxfield_t *pxf;
+	int i, recordsize = 0;
 
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
-	if((fp = fopen(filename, "w")) == NULL) {
+	if((fp = fopen(filename, "w+")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database."));
 		return -1;
 	}
@@ -214,13 +216,26 @@ PX_create_db(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename) {
 	pxh->px_fileversion = 70;
 	pxh->px_numrecords = 0;
 	pxh->px_numfields = numfields;
-	pxh->px_fields = pxf;
+	pxh->px_fields = fields;
 	pxh->px_writeprotected = 0;
 	pxh->px_headersize = 0x0800;
+	pxh->px_fileblocks = 0;
 	pxh->px_maxtablesize = 16;
 	pxh->px_doscodepage = 1251;
 	pxh->px_primarykeyfields = 0;
 	pxh->px_autoinc = 0;
+
+	/* Calculate record size */
+	pxf = pxh->px_fields;
+	for(i=0; i<pxh->px_numfields; i++, pxf++) {
+		recordsize += pxf->px_flen;
+	}
+	pxh->px_recordsize = recordsize;
+	if(recordsize < 30) {
+		pxh->px_maxtablesize = 1;
+	} else if(recordsize < 120) {
+		pxh->px_maxtablesize = 2;
+	}
 
 	if(put_px_head(pxdoc, pxh, fp) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to put header."));
@@ -229,6 +244,7 @@ PX_create_db(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename) {
 
 	pxdoc->px_head = pxh;
 	pxdoc->px_name = px_strdup(pxdoc, filename);
+	pxdoc->px_fp = fp;
 	pxdoc->px_close_fp = px_true;
 	return 0;
 }
@@ -376,7 +392,7 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 
 			/* Get the info about this data block */
 			if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+				px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
 				return 0;
 			}
 			n = get_short_le((char *) &datablock.addDataSize)/pxh->px_recordsize+1;
@@ -452,7 +468,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 		int datasize, blocksize;
 		/* Get the info about this data block */
 		if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+			px_error(pxdoc, PX_RuntimeError, _("Could not read header of data block"));
 			return 0;
 		}
 		/* if deleted is set, then we will disregard the block size in the
@@ -490,7 +506,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-6)) {
 //			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.blockNumber), datasize, (float) datasize/pxh->px_recordsize + 1);
 			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of next data block."));
 				return 0;
 			}
 		} else {
@@ -514,7 +530,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 			} else { /* skip rest of block */
 	//			printf("skippin rest of block %d\n", blockcount);
 				if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of next data block."));
 					return 0;
 				}
 			}
@@ -588,10 +604,11 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 		}
 
 		if((ret = fseek(pxdoc->px_fp, tmppxdbinfo.recordpos, SEEK_SET)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of record data."));
 			return NULL;
 		}
 		if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read data of record."));
 			return NULL;
 		}
 		return data;
@@ -602,31 +619,66 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 
 /* PX_put_record() {{{
  * Store a record into the paradox file.
+ * Returns the record number starting at 0.
  */
 PXLIB_API int PXLIB_CALL
 PX_put_record(pxdoc_t *pxdoc, char *data) {
 	pxhead_t *pxh;
+	int recsperdatablock, datablocknr, recdatablocknr;
+	int itmp;
 
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
-		return NULL;
+		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
-		return NULL;
+		return -1;
 	}
 	pxh = pxdoc->px_head;
 
-	/* Find position in file for next data block */
+	/* Check if record still fits into a existing data block */
+	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize;
+	/* Calculate the number of the data block for this record */
+	datablocknr = (pxh->px_numrecords+1) / recsperdatablock;
+	/* Calculate the position within the datablock */
+	recdatablocknr = pxh->px_numrecords % recsperdatablock;
+
+	fprintf(stderr, "Data goes into block %d at record no %d (%d)\n", datablocknr, recdatablocknr, recsperdatablock);
+	/* Check if we need a new datablock */
+	if(datablocknr >= pxh->px_fileblocks) {
+		fprintf(stderr, "We need an new datablock\n");
+		itmp = put_px_datablock(pxdoc, pxh, pxdoc->px_fp);
+		fprintf(stderr, "Added data block no. %d\n", itmp);
+	
+		/* The datablock number return by px_put_datablock() should be
+		 * the same as the calculated datablocknr.
+		 */
+		if(datablocknr != itmp) {
+			px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing data block."));
+			return -1;
+		}
+
+		pxh->px_fileblocks++;
+	}
 
 	/* write data */
+	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, data, pxdoc->px_fp);
+
+	/* The record number within the data block must be the same
+	 * as the calculated one.
+	 */
+	if(recdatablocknr != itmp) {
+		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block."));
+//		return -1;
+	}
 	
-	/* update data block header */
-
 	/* Update header */
+	pxh->px_numrecords++;
 
-	return 0;
+	put_px_head(pxdoc, pxh, pxdoc->px_fp);
+	return(pxh->px_numrecords-1);
 }
 /* }}} */
 
@@ -1017,7 +1069,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 }
 /* }}} */
 
-/* PX_get_double_long() {{{
+/* PX_get_data_double() {{{
  * Extracts a double from a data block
  */
 PXLIB_API int PXLIB_CALL
@@ -1025,7 +1077,7 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	if(data[0] & 0x80) {
 		data[0] &= 0x7f;
 	} else if(*((long long int *)data) != 0) {
-		int k = 0;
+		int k;
 		for(k=0; k<len; k++)
 			data[k] = ~data[k];
 	} else {
@@ -1068,6 +1120,120 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 	}
 	*value = get_short_be(data);
 	return 1;
+}
+/* }}} */
+
+/* PX_put_data_alpha() {{{
+ * Stores a string in a data block.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
+	char *obuf = NULL;
+	size_t olen;
+	int res;
+
+	memset(data, 0, len);
+	if((value == NULL) || (value[0] == '\0')) {
+		return;
+	}
+
+	if(pxdoc->targetencoding != NULL) {
+#if PX_USE_RECODE
+		int oallocated = 0;
+		res = recode_buffer_to_buffer(pxdoc->recode_request, value, strlen(value), &obuf, &olen, &oallocated);
+#else
+#if PX_USE_ICONV
+		size_t ilen = strlen(value);
+		char *iptr, *optr;
+		olen = len + 1;
+		/* Do not pxdoc->malloc because the memory is freed with free
+		 * We use free because the memory allocated by recode_buffer_to_buffer()
+		 * is requested with malloc and must be freed with free.
+		 */
+		optr = obuf = (char *) malloc(olen);
+		iptr = value;
+//		printf("value(%d) = '%s'\n", ilen, value);
+//		printf("obuf(%d) = '%s'\n", olen, obuf);
+		if(0 > (res = iconv(pxdoc->iconvcd, &iptr, &ilen, &optr, &olen))) {
+			memset(data, 0, len);
+			free(obuf);
+			return;
+		}
+//		printf("value(%d) = '%s'\n", ilen, value);
+//		printf("obuf(%d) = '%s'\n", olen, obuf);
+		olen = strlen(value);
+#endif
+#endif
+	} else {
+		olen = strlen(value);
+		obuf = value;
+	}
+
+	memcpy(data, obuf, olen < len ? olen : len);
+
+	if(pxdoc->targetencoding != NULL) {
+		free(obuf);
+	}
+
+}
+/* }}} */
+
+/* PX_put_data_double() {{{
+ * Stores a double in a data block.
+ * A len of 0 means to store a NULL value.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_double(pxdoc_t *pxdoc, char *data, int len, double value) {
+	if(len == 0) {
+		memset(data, 0, 8);
+	} else {
+		put_double_be(data, value);
+		if(value >= 0) {
+			data[0] |= 0x80;
+		} else {
+			int k;
+			for(k=0; k<len; k++)
+				data[k] = ~data[k];
+		}
+	}
+}
+/* }}} */
+
+/* PX_put_data_long() {{{
+ * Stores an integer in a data block.
+ * A len of 0 means to store a NULL value.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_long(pxdoc_t *pxdoc, char *data, int len, int value) {
+	if(len == 0) {
+		memset(data, 0, 4);
+	} else {
+		put_long_be(data, value);
+		if(value >= 0) {
+			data[0] |= 0x80;
+		} else {
+			data[0] &= 0x7f;
+		}
+	}
+}
+/* }}} */
+
+/* PX_put_data_short() {{{
+ * Stores a short integer in a data block.
+ * A len of 0 means to store a NULL value.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_short(pxdoc_t *pxdoc, char *data, int len, short int value) {
+	if(len == 0) {
+		memset(data, 0, 2);
+	} else {
+		put_short_be(data, value);
+		if(value >= 0) {
+			data[0] |= 0x80;
+		} else {
+			data[0] &= 0x7f;
+		}
+	}
 }
 /* }}} */
 
