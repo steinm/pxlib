@@ -1,6 +1,6 @@
 
-.sgml.3:
-	docbook2man $<
+%.3: %.sgml
+	docbook-to-man $< > $@
 
 clean:
 	rm -f ${man_MANS}
