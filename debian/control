@@ -1,7 +1,7 @@
 Source: pxlib
 Priority: optional
 Maintainer: Uwe Steinmann <uwe@steinmann.cx>
-Build-Depends: debhelper (>> 4.0.0)
+Build-Depends: debhelper (>> 4.0.0), intltool (>= 0.30), docbook-to-man
 Standards-Version: 3.5.8
 
 Package: pxlib-dev
