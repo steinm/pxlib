@@ -238,14 +238,14 @@ PXLIB_API int PXLIB_CALL
 PX_is_bigendian(void);
 
 PXLIB_API pxdoc_t* PXLIB_CALL
-PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
+PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
         void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller),
         void  (*freeproc)(pxdoc_t *p, void *mem),
 		void* errorhandler_user_data);
 
 PXLIB_API pxdoc_t* PXLIB_CALL
-PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
+PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
         void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller),
         void  (*freeproc)(pxdoc_t *p, void *mem));
