@@ -109,38 +109,6 @@ void put_double_le(char *cp, double fval)
  * routine to change big endian long to host long
  * these functions are used read table data
  */
-long long get_longlong_be(const char *cp)
-{
-	long long ret;
-	unsigned char *source = (unsigned char *)cp;
-
-	if(NULL == cp)
-		return 0;
-
-	ret = ((long long)(*source++)<<56);
-	ret += ((long long)(*source++)<<48);
-	ret += ((long long)(*source++)<<40);
-	ret += ((long long)(*source++)<<32);
-	ret += ((long long)(*source++)<<24);
-	ret += ((long long)(*source++)<<16);
-	ret += ((long long)(*source++)<<8);
-	ret += *source++;
-
-	return ret;
-}
-
-void put_longlong_be(char *cp, long long lval)
-{
-	*cp++ = (lval >> 56) & 0xff;
-	*cp++ = (lval >> 48) & 0xff;
-	*cp++ = (lval >> 40) & 0xff;
-	*cp++ = (lval >> 32) & 0xff;
-	*cp++ = (lval >> 24) & 0xff;
-	*cp++ = (lval >> 16) & 0xff;
-	*cp++ = (lval >> 8) & 0xff;
-	*cp++ = lval & 0xff;
-}
-
 long get_long_be(const char *cp)
 {
 	int ret;
