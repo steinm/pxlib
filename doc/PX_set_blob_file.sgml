@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>July 19, 2004</date>">
+  <!ENTITY dhdate      "<date>July 20, 2004</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2004</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -67,13 +67,15 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Opens the given blob file and associates it with the Paradox
-		  database.
+		  database. This function must be called before accessing records
+			whose blob data is stored in a .MB file. If the blob data is contained
+			in the record itself, this function may not be called.
 			</para>
 
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns a value < 0 in case of an error, otherwise 0.</para>
+    <para>Returns a value &lt; 0 in case of an error, otherwise 0.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
