@@ -40,6 +40,12 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_recordsize.sgml \
 						 PX_add_primary_index.sgml \
 						 PX_read_primary_index.sgml \
+						 PX_write_primary_index.sgml \
+						 PX_new_blob.sgml \
+						 PX_open_blob_file.sgml \
+						 PX_open_blob_fp.sgml \
+						 PX_close_blob.sgml \
+						 PX_read_blobdata.sgml \
 						 PX_set_targetencoding.sgml \
 						 PX_set_inputencoding.sgml \
 						 PX_set_tablename.sgml \
