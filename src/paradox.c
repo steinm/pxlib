@@ -1846,7 +1846,11 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
 
-	*blobsize = size = get_long_le(&data[leader+4]);
+	 size = get_long_le(&data[leader+4]);
+	if(hsize == 17)
+		*blobsize = size - 8;
+	else
+		*blobsize = size;
 	index = get_long_le(&data[leader]) & 0x000000ff;
 	*mod = mod_nr = get_short_le(&data[leader+8]);
 //	fprintf(stderr, "index=%ld ", index);
@@ -1858,17 +1862,17 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 		return(NULL);
 	}
 
-	if(size <= 0) {
+	if(*blobsize <= 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
 		return(NULL);
 	}
 
-	if(size <= leader) {
-		blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+	if(*blobsize <= leader) {
+		blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
 		if(!blobdata) {
 			return(NULL);
 		}
-		memcpy(blobdata, data, size);
+		memcpy(blobdata, data, *blobsize);
 	} else {
 		offset = get_long_le(&data[leader]) & 0xffffff00;
 		if(offset == 0) {
@@ -1914,12 +1918,12 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 			 * was passed to PX_read_blobdata()
 			 */
 
-			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+			blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
 			if(!blobdata) {
 				return(NULL);
 			}
 
-			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+			if((ret = fread(blobdata, *blobsize, 1, pxblob->px_fp)) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 				return NULL;
 			}
@@ -2227,7 +2231,17 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
 
-	*blobsize = size = get_long_le(&data[leader+4]);
+	/* FIXME: This is a quick hack because graphic blobs have some extra
+	 * 8 Bytes before the data which is contained in the size
+	 * The real size of the graphic is stored in the second long within
+	 * the extra 8 bytes. But this value seems to be alwasy 8 smaller
+	 * then the size at [leader+4].
+	 */
+	size = get_long_le(&data[leader+4]);
+	if(hsize == 17)
+		*blobsize = size - 8;
+	else
+		*blobsize = size;
 	index = get_long_le(&data[leader]) & 0x000000ff;
 	*mod = mod_nr = get_short_le(&data[leader+8]);
 //	fprintf(stderr, "index=%ld ", index);
@@ -2240,19 +2254,19 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 		return -1;
 	}
 
-	if(size <= 0) {
+	if(*blobsize <= 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
 		*value = NULL;
 		return -1;
 	}
 
-	if(size <= leader) {
-		blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+	if(*blobsize <= leader) {
+		blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
 		if(!blobdata) {
 			*value = NULL;
 			return -1;
 		}
-		memcpy(blobdata, data, size);
+		memcpy(blobdata, data, *blobsize);
 	} else {
 		offset = get_long_le(&data[leader]) & 0xffffff00;
 		if(offset == 0) {
@@ -2306,13 +2320,13 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 			 * was passed to PX_read_blobdata()
 			 */
 
-			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+			blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
 			if(!blobdata) {
 				*value = NULL;
 				return -1;
 			}
 
-			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+			if((ret = fread(blobdata, *blobsize, 1, pxblob->px_fp)) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 				*value = NULL;
 				return -1;
