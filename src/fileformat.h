@@ -86,11 +86,23 @@ struct _TMbHeader {
 	word subthresh;
 };
 
-struct _TMbBlockHeader {
+struct _TMbBlockHeader2 {
 	byte type;
 	word numBlocks;
 	longint blobLen;
 	word modNr;
+};
+
+struct _TMbBlockHeader3 {
+	byte type;
+	word numBlocks;
+	byte unknown[9];
+};
+struct _TMbBlockHeader3Table {
+	byte offset;
+	byte length;
+	word modNr;
+	byte lengthmod;
 };
 
 #endif

@@ -2653,8 +2653,7 @@ static int
 _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int valuelen) {
 	pxblob_t *pxblob;
 	pxstream_t *pxs;
-	TMbBlockHeader mbbh;
-	int used_blocks, leader;
+	int leader;
 
 	/* If the (field length - 10) is large enough to hold the blob data,
 	 * we don't need bother writing into the blob file. */
@@ -2665,38 +2664,103 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			px_error(pxdoc, PX_RuntimeError, _("Paradox database has no blob file."));
 			return(-1);
 		}
-
 		pxs = pxblob->mb_stream;
-		if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
-			return -1;
-		}
-		/* Calculate how many blocks of 4K this blob will need */
-		if((len+6) % 4096)
-			used_blocks = ((len+6) / 4096) + 1;
-		else
-			used_blocks = ((len+6) / 4096);
-		/* Fill up the structure that precede the blob in the mb file.
-		 * Blocks are currently all of type 2 */
-		mbbh.type = 2;
-		put_short_le((char *) &mbbh.numBlocks, used_blocks);
-		put_long_le((char *) &mbbh.blobLen, valuelen);
-		put_short_le((char *) &mbbh.modNr, ++pxblob->mb_head->modcount);
+		if(valuelen > 2048) { /* Block of type 2 */
+			TMbBlockHeader2 mbbh;
+			int used_blocks;
 
-		/* Write the header of the blob */
-		if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader), &mbbh) < 1) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
-			return -1;
+			fprintf(stderr, "Blob goes into type 2 block\n");
+			if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
+				return -1;
+			}
+			/* Calculate how many blocks of 4K this blob will need */
+			if((valuelen+6) % 4096)
+				used_blocks = ((valuelen+6) / 4096) + 1;
+			else
+				used_blocks = ((valuelen+6) / 4096);
+			/* Fill up the structure that precede the blob in the mb file.
+			 * Blocks are currently all of type 2 */
+			mbbh.type = 2;
+			put_short_le((char *) &mbbh.numBlocks, used_blocks);
+			put_long_le((char *) &mbbh.blobLen, valuelen);
+			put_short_le((char *) &mbbh.modNr, ++pxblob->mb_head->modcount);
+
+			/* Write the header of the blob */
+			if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader2), &mbbh) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
+				return -1;
+			}
+			/* Write the blob itself */
+			if(pxblob->write(pxdoc, pxs, valuelen, value) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write blob data to file."));
+				return -1;
+			}
+			put_long_le((char *) &data[leader], (pxblob->used_datablocks+1)*4096 + 0xff);
+			put_short_le((char *) &data[leader+8], pxblob->mb_head->modcount);
+			pxblob->used_datablocks += used_blocks;
+		} else { /* Block of type 3 */
+			TMbBlockHeader3Table mbbhtab;
+			fprintf(stderr, "Blob goes into type 3 block\n");
+			/* Do we have subblock already? Does the block has enough space? */
+			if(pxblob->subblockoffset == 0 || ((pxblob->subblockfree*16) < valuelen)) {
+				TMbBlockHeader3 mbbh;
+
+				if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
+					return -1;
+				}
+
+				mbbh.type = 3;
+				put_short_le((char *) &mbbh.numBlocks, 1);
+				/* Write the header of the blob */
+				if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader3), &mbbh) < 1) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
+					return -1;
+				}
+				pxblob->used_datablocks++;
+				pxblob->subblockoffset = pxblob->used_datablocks;
+				pxblob->subblockblobcount = 0;
+				pxblob->subblockfree = 4096/16 - 21;
+			}
+
+			/* At this point a block of type 3 should be available and has enough
+			 * space to store the blob data.
+			 * First write the table entry pointing to the blob data. The table is
+			 * filled from the end to the beginning.
+			 */
+			if(pxblob->seek(pxdoc, pxs, (pxblob->subblockoffset)*4096+sizeof(TMbBlockHeader3)+(63-pxblob->subblockblobcount)*5, SEEK_SET) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not go to table entry for the blob data."));
+				return -1;
+			}
+			mbbhtab.offset = (4096/16)-pxblob->subblockfree; /* offset/16 to blob data */
+			mbbhtab.length = valuelen/16;
+			if(valuelen % 16) {
+				mbbhtab.length++;
+			}
+			put_short_le((char *) &mbbhtab.modNr, 1);
+			mbbhtab.lengthmod = (valuelen % 16) == 0 ? 16 : (valuelen % 16);
+			/* Write the blob table entry */
+			if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader3Table), &mbbhtab) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write table entry for blob data to file."));
+				return -1;
+			}
+			/* Write the blob itself */
+			if(pxblob->seek(pxdoc, pxs, pxblob->subblockoffset*4096+mbbhtab.offset*16, SEEK_SET) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the slot for the blob."));
+				return -1;
+			}
+			if(pxblob->write(pxdoc, pxs, valuelen, value) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write blob data to file."));
+				return -1;
+			}
+			pxblob->subblockfree -= mbbhtab.length;
+			pxblob->subblockblobcount++;
+
+			put_long_le((char *) &data[leader], (pxblob->subblockoffset)*4096 + (64-pxblob->subblockblobcount));
+			put_short_le((char *) &data[leader+8], ++pxblob->mb_head->modcount);
 		}
-		/* Write the blob itself */
-		if(pxblob->write(pxdoc, pxs, valuelen, value) < 1) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not write blob data to file."));
-			return -1;
-		}
-		put_long_le((char *) &data[leader], (pxblob->used_datablocks+1)*4096 + 0xff);
-		put_short_le((char *) &data[leader+8], pxblob->mb_head->modcount);
-		pxblob->used_datablocks += used_blocks;
-	} else {
+	} else { /* blob fits in db file */
 		put_long_le((char *) &data[leader], 0);
 		put_short_le((char *) &data[leader+8], 0);
 	}
