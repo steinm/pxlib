@@ -152,7 +152,8 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 
 PXLIB_API char* PXLIB_CALL
 PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
-	return(PX_get_record2(pxdoc, recno, data, 0, NULL));
+	int d = 0;
+	return(PX_get_record2(pxdoc, recno, data, &d, NULL));
 }
 
 PXLIB_API char* PXLIB_CALL
