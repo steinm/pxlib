@@ -387,7 +387,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 		return -1;
 	}
 	pxh->px_filetype = type; //pxfFileTypNonIndexDB;
-	pxh->px_fileversion = 70;
+	pxh->px_fileversion = 50;
 	pxh->px_tablename = NULL;
 	pxh->px_numrecords = 0;
 	pxh->px_numfields = numfields;

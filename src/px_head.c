@@ -23,7 +23,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	TFldInfoRec pxinfo;
 	pxfield_t *pfield;
 	char dummy[TMPBUFFSIZE], c;
-	int ret, i, j;
+	int ret, i, j, tablenamelen;
 
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Allocate memory for document header."))) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
@@ -75,9 +75,11 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	switch(pxhead.fileVersionID) {
 		case 3:
 			pxh->px_fileversion = 30;
+			tablenamelen = 79;
 			break;
 		case 4:
 			pxh->px_fileversion = 35;
+			tablenamelen = 79;
 			break;
 		case 5:
 		case 6:
@@ -85,16 +87,20 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 		case 8:
 		case 9:
 			pxh->px_fileversion = 40;
+			tablenamelen = 79;
 			break;
 		case 10:
 		case 11:
 			pxh->px_fileversion = 50;
+			tablenamelen = 79;
 			break;
 		case 12:
 			pxh->px_fileversion = 70;
+			tablenamelen = 261;
 			break;
 		default:
 			pxh->px_fileversion = 0;
+			tablenamelen = 79;
 	}
 	pxh->px_indexfieldnumber = pxhead.indexFieldNumber;
 	pxh->px_writeprotected = pxhead.writeProtected;
@@ -167,10 +173,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	}
 
 	/* skip the tableName */
-	if(pxh->px_fileversion >= 70)
-		ret = pxdoc->read(pxdoc, pxs, 261, dummy);
-	else
-		ret = pxdoc->read(pxdoc, pxs, 79, dummy);
+	ret = pxdoc->read(pxdoc, pxs, tablenamelen, dummy);
 	if(ret < 0) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
@@ -217,6 +220,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	int base, offset, dataheadoffset;
 	short int tmp;
 	int isindex;
+	int tablenamelen;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
@@ -267,7 +271,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	pxhead.changeCount2 = 1;
 	pxhead.unknown3Ex3F[0] = 0x1f; // this seems to be a fixed value
 	pxhead.unknown3Ex3F[1] = 0x0f; // this seems to be a fixed value
-	pxhead.unknown50x54[1] = 0x97;
+	pxhead.unknown50x54[1] = 0x15;
 	pxhead.unknown50x54[2] = 0x01;
 	pxhead.unknown56x57[0] = 0x20;
 	if(!isindex && (pxh->px_fileversion >= 40)) {
@@ -281,13 +285,19 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	switch(pxh->px_fileversion) {
 		case 70:
 			pxhead.fileVersionID = 0x0C;
+			tablenamelen = 261;
+			break;
+		case 50:
+			pxhead.fileVersionID = 0x0B;
+			tablenamelen = 79;
 			break;
 	}
 	if(dataheadoffset == 0x78) {
 		switch(pxh->px_fileversion) {
 			case 70:
-				put_short_le(&pxdatahead.fileVerID3, 0x010C);
-				put_short_le(&pxdatahead.fileVerID4, 0x010C);
+			case 50:
+				put_short_le(&pxdatahead.fileVerID3, 0x010B);
+				put_short_le(&pxdatahead.fileVerID4, 0x010B);
 				break;
 		}
 
@@ -348,7 +358,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	 * numfields sizeof(* Fieldname) + sizeof(* Tablename) + strlen(tablename)
 	 */
 	if(!isindex) {
-		base = (int) basehead+dataheadoffset+pxh->px_numfields*(2+4)+4+261;
+		base = (int) basehead+dataheadoffset+pxh->px_numfields*(2+4)+4+tablenamelen;
 		pxf = pxh->px_fields;
 		offset = 0;
 		for(i=0; i<pxh->px_numfields; i++, pxf++) {
@@ -374,7 +384,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	}
 
 	/* write zeros to fill space for tablename */
-	for(i=0; i<261-len; i++) {
+	for(i=0; i<tablenamelen-len; i++) {
 		if(pxdoc->write(pxdoc, pxs, 1, &nullint) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write tablename."));
 			return -1;
