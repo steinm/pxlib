@@ -20,6 +20,9 @@ long get_long(char *cp)
 	int ret;
 	unsigned char *source = (unsigned char *)cp;
 
+	if(NULL == cp)
+		return 0;
+
 	ret = *source++;
 	ret += ((*source++)<<8);
 	ret += ((*source++)<<16);
@@ -44,6 +47,9 @@ int get_short(char *cp)
 	int ret;
 	unsigned char *source = (unsigned char *)cp;
 
+	if(NULL == cp)
+		return 0;
+
 	ret = *source++;
 	ret += ((*source++)<<8);
 
@@ -60,6 +66,9 @@ double get_double(char *cp)
 {
 	double ret;
 	unsigned char *dp = (unsigned char *)&ret;
+
+	if(NULL == cp)
+		return 0.0;
 
 #ifdef WORDS_BIGENDIAN
 	dp[7] = *cp++;
@@ -182,10 +191,14 @@ char *px_cur_date(char *cp)
 	return cp;
 }
 
-void hex_dump(char *p, int len) {
+void hex_dump(outfp *FILE, char *p, int len) {
 	int i;
+
+	if(NULL == p)
+		fprintf(outfp, "NULL");
+
 	for(i=0; i<len; i++)
-		printf("%02X ", p[i]);
+		fprintf(outfp, "%02X ", p[i]);
 }
 
 /*
