@@ -170,7 +170,7 @@ main(int argc, char *argv[]) {
 #include &lt;paradox.h&gt;
 
 main(int argc, char *argv[]) {
-	PSDoc *pxdoc;
+	pxdoc_t *pxdoc;
 
 	PX_boot();
 	pxdoc = PS_new();
@@ -206,7 +206,9 @@ main(int argc, char *argv[]) {
 			requires three further parameters to specify the database layout and the
 			file type, e.g. pxfFileTypNonIndexDB. The function can be used to create
 			both databases and primary index files. Secondary index files are not currently
-			supported. Each field of the database is described by a structure:</para>
+			supported. A database opened for reading cannot be written and vise versa.
+			This disadvantage may be removed in one of the next versions.
+			Each field of the database is described by a structure:</para>
 	  <programlisting>
 typedef struct px_field pxfield_t;
 struct px_field {
@@ -229,8 +231,10 @@ struct px_field {
 
 		<para>Data in a Paradox database is organized in records containing fields.
 		  This is much like in other formats, e.g. dBase or a relational database
-			system. Fields can be of 17 different data types. They are stored in
-			sequencial order in a record. A record is read by one of the functions
+			system. Fields can be of 17 different data types as listed below.
+			Field values are stored in
+			sequencial order in a record. A complete record is read by one of the
+			functions
 		</para>
     <funcsynopsis>
       <funcprototype>
@@ -252,18 +256,20 @@ struct px_field {
 		    <paramdef>pxdatablockinfo_t *<parameter>pxdbinfo</parameter></paramdef>
       </funcprototype>
 	  </funcsynopsis>
-    <para>The second function returns additional data about the internal location
+    <para>The second function returns additional data about the internal
+		  location
 			of the record within the file, which is mostly valueable for debuging.
 			Both functions need a record number starting at 0 for the first record
-			and a memory area large enough for the record. The record will read into
-			that piece of memory straight from the database file without modifications.
-			In order to determine the size of a record one can read the variable
-			<literal>pxdoc->px_head->px_recordsize</literal> from the database header
-			which contains the number of bytes per record.</para>
+			and a memory area large enough for the record. The size of that area
+			can be determined by the function <function>PX_get_value(3)</function>
+			when `recordsize' is passed as the value name. The record will read into
+			that piece of memory straight from the database file without
+			modifications.</para>
 		<para>
 			Once the record data has been read it can be accessed with a number of
 			different functions depending on the field type. The following
-			lists contains the field type and the function to access.</para>
+			list contains the field type and the function needed to retrieve
+			the value.</para>
     <para>
 		<variablelist>
 		  <varlistentry>
@@ -285,7 +291,10 @@ struct px_field {
            set to 'targetencoding`. The string will be null terminated.
          </para>
          <para>This function allocates memory for the field data which must
-           be freed by the application.
+           be freed by the application. The chunk of memory can be different
+					 from len when encoding involves conversion from a 1-byte to a
+					 2-byte character representaion. This is also the reason why the
+					 application cannot precisly allocate the memory for the data.
 			  </para></listitem>
 			</varlistentry>
 		  <varlistentry>
@@ -302,8 +311,9 @@ struct px_field {
 				 </funcsynopsis>
 			 </para>
 			 <para>Fields of type date are actually 4 byte interger values counting
-			   days. In order to convert it into 3 single integers for year, month and
-				 day, you will have to add 1721425 the value and call the function
+			   days since jan-00-0000. In order to convert it into 3 single integers
+				 for year, month and
+				 day, you will have to add 1721425 to the value and call the function
 			 </para>
 			 <para>
 			   <funcsynopsis>
@@ -315,7 +325,12 @@ struct px_field {
 						 <paramdef>int *<parameter>day</parameter></paramdef>
 					 </funcprototype>
 				 </funcsynopsis>
-			 </para></listitem>
+			 </para>
+			 <para>
+			   in order to get a valid date. The value 1721425 is the number of days
+				 between the start of the julian calendar (4714 BC) and jan-00-0000.
+			 </para>
+			 </listitem>
 			</varlistentry>
 		  <varlistentry>
 			 <term>pxfShort</term>
@@ -389,7 +404,13 @@ struct px_field {
 						 <paramdef>char **<parameter>value</parameter></paramdef>
 					 </funcprototype>
 				 </funcsynopsis>
-       </para></listitem>
+       </para>
+			 <para>
+			   This function may not in any case succed. You should call
+				 <function>PX_set_blob_file(3)</function> before to make sure even
+				 blobs in a separate blob file can be retrieved. See the section
+				 about reading blobs for more information.
+			 </para></listitem>
 			</varlistentry>
 		  <varlistentry>
 			 <term>pxfOLE</term>
@@ -414,7 +435,7 @@ struct px_field {
 		  <varlistentry>
 			 <term>pxfTime</term>
 			 <listitem><para>Use <function>PX_get_data_long(3)</function> as documented
-			   with field type pxfDate. The value is the number of milli seconds since
+			   at field type pxfDate. The value is the number of milli seconds since
 				 midnight.</para></listitem>
 			</varlistentry>
 		  <varlistentry>
@@ -433,6 +454,10 @@ struct px_field {
 			 </para>
 			 <para><function>PX_timestamp2string(3)</function> takes a format string
 			   as described in the manual page of the function and returns a string.
+				 Alternatively you can process the value itself. It represents the
+				 number of seconds since jan-00-0000. Dividing it by 86400 and
+				 converting
+				 it to an integer produces a value as stored in fields of type pxfTime.
 			 </para>
 			 </listitem>
 			</varlistentry>
@@ -466,9 +491,11 @@ struct px_field {
 					 </funcprototype>
 				 </funcsynopsis>
          <para>This function behaves like
-           <function>PX_get_data_alpha(3)</function> exept for the character
+           <function>PX_get_data_alpha(3)</function> except for the character
            conversion which does not take place. It will always copy
-           exactely <parameter>len</parameter> bytes.
+           exactely <parameter>len</parameter> bytes. This function
+					 allocates memory for the field data which must be freed by
+					 the application.
          </para></listitem>
 			</varlistentry>
 		</variablelist>
@@ -628,9 +655,45 @@ for(j=0; j&lt;pxh-&gt;px_numrecords; j++) {
   </refsect1>
 
   <refsect1>
-    <title>WRITING RECORDS TO A DATABASE</title>
+    <title>WRITING RECORDS INTO A DATABASE</title>
 
-		<para></para>
+		<para>Write support has been introduced into pxlib in version 0.1.9 but
+		  should be still considered experimental, though there has been reports
+			from users who has successfully used it.</para>
+		<para>Writing paradox databases is
+			quite similar to reading them, if you substitute
+			<function>PX_open_file(3)</function> by
+			<function>PX_create_file(3)</function> and
+			<function>PX_get_record(3)</function> by
+			<function>PX_put_record(3)</function>.</para>
+		<para>Modifying the above example in order to create a simple database
+		  with two columns will result in the following code:
+		</para>
+	  <programlisting>
+...
+#include &lt;paradox.h&gt;
+
+main(int argc, char *argv[]) {
+	pxdoc_t *pxdoc;
+	pxfield_t pxf[2];
+	int numfields = 2;
+
+	PX_boot();
+	pxdoc = PS_new();
+	pxf[0].px_fname = PX_strdup(pxdoc, "column1");
+	pxf[0].px_ftype = pxfShort;
+	pxf[0].px_flen = 2;
+	pxf[0].px_fdc = 0;
+	pxf[1].px_fname = PX_strdup(pxdoc, "column2");
+	pxf[1].px_ftype = pxfAlpha;
+	pxf[1].px_flen = 20;
+	pxf[1].px_fdc = 0;
+	PX_create_file(pxdoc, pxf, numfields, "test.db", pxfFileTypNonIndexDB);
+	PX_close(pxdoc);
+	PX_delete(pxdoc);
+	PX_shutdown();
+}
+	  </programlisting>
   </refsect1>
 
   <refsect1>
@@ -638,7 +701,8 @@ for(j=0; j&lt;pxh-&gt;px_numrecords; j++) {
 
 		<para>Exchanging text is not problem as long as both parties use the same
 		  encoding or stipulate to use plain 7 bit ascii. Paradox allows to use
-			any encoding and saves the corresponding dos code page number in the
+			any encoding with a know dos code page and saves the corresponding
+			code page number in the
 			header of the database. You can request this number with
 			<function>PX_get_value(3)</function> by passing `codepage' as the value
 			name. Reading fields of type <literal>pxfAlpha</literal> will return
@@ -648,8 +712,68 @@ for(j=0; j&lt;pxh-&gt;px_numrecords; j++) {
 			is set differently <function>PX_get_data_alpha(3)</function> will
 			automatically convert into the requested encoding. This is either
 			done be the iconv or recode library, depending on which one was
-			found when pxlib was configured. If both where available iconv
+			found when pxlib was configured. If both were available iconv
 			is preferred.</para>
+  </refsect1>
+
+  <refsect1>
+    <title>READING BLOBS</title>
+
+		<para>Paradox knows five field types which all represent a type of blob data.
+		  Blobs can be stored in the database file but are usually stored in an extra
+			file with the extension <literal>.MB</literal>. pxlib provides two functions
+			to read blob data.</para>
+		<para>
+		  <funcsynopsis>
+			  <funcprototype>
+				  <funcdef>int <function>PX_get_data_blob</function></funcdef>
+				  <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+				  <paramdef>char *<parameter>data</parameter></paramdef>
+				  <paramdef>int <parameter>len</parameter></paramdef>
+				  <paramdef>int *<parameter>modnr</parameter></paramdef>
+				  <paramdef>int *<parameter>blobsize</parameter></paramdef>
+				  <paramdef>char **<parameter>value</parameter></paramdef>
+			  </funcprototype>
+		  </funcsynopsis>
+    </para>
+		<para>and</para>
+		<para>
+		 <funcsynopsis>
+			 <funcprototype>
+				 <funcdef>int <function>PX_get_data_graphic</function></funcdef>
+				 <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+				 <paramdef>char *<parameter>data</parameter></paramdef>
+				 <paramdef>int <parameter>len</parameter></paramdef>
+				 <paramdef>int *<parameter>modnr</parameter></paramdef>
+				 <paramdef>int *<parameter>blobsize</parameter></paramdef>
+				 <paramdef>char **<parameter>value</parameter></paramdef>
+			 </funcprototype>
+		 </funcsynopsis>
+		</para>
+		<para>The second function must be used for fields of type
+		  <literal>pxfGraphic</literal>, the first function can be savely
+			use for fields of type <literal>pxfBLOb</literal>,
+			<literal>pxfMemoBLOb</literal>, and <literal>pxfFmtMemoBLOb</literal>.
+		</para>
+    <para>In order to read blob data from a .MB file one must first associate
+		  that file with the database file by calling</para>
+		<para>
+		  <funcsynopsis>
+			  <funcprototype>
+				  <funcdef>int <function>PX_set_blob_file</function></funcdef>
+				  <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+				  <paramdef>const char *<parameter>filename</parameter></paramdef>
+			  </funcprototype>
+		  </funcsynopsis>
+		</para>
+  </refsect1>
+
+  <refsect1>
+    <title>WRITING BLOBS</title>
+
+		<para>Writing blobs is still the most experimental part of pxlib. There
+		  has been already success stories but there are also some missing parts
+			in the paradox file format which decreases confidence on those files.</para>
   </refsect1>
 
   <refsect1>
@@ -692,7 +816,7 @@ for(j=0; j&lt;pxh-&gt;px_numrecords; j++) {
     <funcsynopsis>
       <funcprototype>
 		    <funcdef>int <function>PS_set_info</function></funcdef>
-		    <paramdef>PSDoc *<parameter>psdoc</parameter></paramdef>
+		    <paramdef>pxdoc_t *<parameter>psdoc</parameter></paramdef>
 		    <paramdef>const char *<parameter>key</parameter></paramdef>
 		    <paramdef>const char *<parameter>value</parameter></paramdef>
       </funcprototype>
