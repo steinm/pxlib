@@ -23,23 +23,16 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	INSTALL_PROGRAM += -s
 endif
 
-# shared library versions, option 1
-version=2.0.5
-major=2
-# option 2, assuming the library is created as src/.libs/libfoo.so.2.0.5 or so
-#version=`ls src/.libs/lib*.so.* | \
-# awk '{if (match($$0,/[0-9]+\.[0-9]+\.[0-9]+$$/)) print substr($$0,RSTART)}'`
-#major=`ls src/.libs/lib*.so.* | \
-# awk '{if (match($$0,/\.so\.[0-9]+$$/)) print substr($$0,RSTART+4)}'`
-
-config.status: configure
+configure: configure-stamp
+configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info --with-gsf=/usr
-
+	touch configure-stamp
 
 build: build-stamp
-build-stamp:  config.status
+
+build-stamp:  configure-stamp
 	dh_testdir
 
 	# Add here commands to compile the package.
@@ -50,7 +43,7 @@ build-stamp:  config.status
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp 
+	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
