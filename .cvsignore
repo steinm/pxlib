@@ -10,6 +10,7 @@ config.log
 config.status
 config.sub
 configure
+configure-stamp
 libtool
 ltmain.sh
 *.la
