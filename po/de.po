@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-17 20:14+0100\n"
+"POT-Creation-Date: 2004-12-20 22:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -294,7 +294,7 @@ msgstr "Eingabe-Kodierung schon gesetzt."
 #. * was passed to PX_read_blobdata()
 #.
 #: src/paradox.c:1653 src/paradox.c:1903 src/paradox.c:1953 src/paradox.c:1982
-#: src/paradox.c:2311 src/paradox.c:2380 src/paradox.c:2415
+#: src/paradox.c:2296 src/paradox.c:2365 src/paradox.c:2400
 msgid "Could not allocate memory for blob."
 msgstr "Konnte Speicher für Blob nicht allozieren."
 
@@ -339,100 +339,100 @@ msgstr "Konnte Blob-Datei nicht öffnen."
 msgid "Did not pass a blob file."
 msgstr "Keine Blob-Datei übergeben."
 
-#: src/paradox.c:1898 src/paradox.c:2304
+#: src/paradox.c:1898
 msgid "Makes no sense to read blob with 0 or less bytes."
 msgstr ""
 "Es macht keinen Sinn eine Blob-Datei mit 0 oder weniger Bytes zu lesen."
 
-#: src/paradox.c:1917 src/paradox.c:1988 src/paradox.c:2337 src/paradox.c:2422
+#: src/paradox.c:1917 src/paradox.c:1988 src/paradox.c:2322 src/paradox.c:2407
 msgid "Could not fseek start of blob."
 msgstr "Konnte nicht zum Start des Blobs gehen."
 
-#: src/paradox.c:1923 src/paradox.c:2344
+#: src/paradox.c:1923 src/paradox.c:2329
 msgid "Could not read head of blob data."
 msgstr "Konnte den Kopf des Blobs nicht lesen."
 
-#: src/paradox.c:1928 src/paradox.c:2350
+#: src/paradox.c:1928 src/paradox.c:2335
 msgid "Trying to read blob data from 'header' block."
 msgstr "Versuche BLOB-Daten von 'header'-Block zu lesen."
 
-#: src/paradox.c:1931 src/paradox.c:2354
+#: src/paradox.c:1931 src/paradox.c:2339
 msgid "Trying to read blob data from a 'free' block."
 msgstr "Versuch BLOB-Daten von einem 'free'-Block zu lesen."
 
-#: src/paradox.c:1937 src/paradox.c:2361
+#: src/paradox.c:1937 src/paradox.c:2346
 msgid "Offset points to a single blob block but index field is not 0xff."
 msgstr ""
 "Offset zeigt auf auf einen 'single blob' Block, aber Index hat nicht den "
 "Wert 0xff."
 
-#: src/paradox.c:1942 src/paradox.c:2367
+#: src/paradox.c:1942 src/paradox.c:2352
 msgid "Could not read remaining head of single data block."
 msgstr "Konnte den verbleibenen Kopf des 'single data' Blocks nicht lesen."
 
-#: src/paradox.c:1946 src/paradox.c:1979 src/paradox.c:2372 src/paradox.c:2411
+#: src/paradox.c:1946 src/paradox.c:1979 src/paradox.c:2357 src/paradox.c:2396
 #, c-format
 msgid "Blob does not have expected size (%d != %d)."
 msgstr "Blob hat nicht erwartete Größe. (%d != %d)."
 
-#: src/paradox.c:1959 src/paradox.c:1992 src/paradox.c:2387 src/paradox.c:2427
+#: src/paradox.c:1959 src/paradox.c:1992 src/paradox.c:2372 src/paradox.c:2412
 msgid "Could not read all blob data."
 msgstr "Konnte Blob-Daten nicht lesen."
 
-#: src/paradox.c:1965 src/paradox.c:2394
+#: src/paradox.c:1965 src/paradox.c:2379
 msgid "Could not read remaining head of suballocated block."
 msgstr "Konnte den verbleibenen Kopf des 'suballocated' Blocks nicht lesen."
 
-#: src/paradox.c:1970 src/paradox.c:2400
+#: src/paradox.c:1970 src/paradox.c:2385
 msgid "Could not fseek blob pointer."
 msgstr "Konnte nicht zum Start des Blobs Zeigers gehen."
 
-#: src/paradox.c:1975 src/paradox.c:2406
+#: src/paradox.c:1975 src/paradox.c:2391
 msgid "Could not read blob pointer."
 msgstr "Konnte Blob-Zeiger nicht lesen."
 
 #. Copy the encoded string into memory which belongs to pxlib
-#: src/paradox.c:2067 src/paradox.c:2225
+#: src/paradox.c:2067 src/paradox.c:2206
 msgid "Allocate memory for field data."
 msgstr "Alloziere Speicher für Feld-Daten."
 
-#: src/paradox.c:2323
+#: src/paradox.c:2308
 msgid "Blob data is not contained in record and a blob file is not set."
 msgstr ""
 "Blob-Daten sind nicht im Datensatz enthalten und eine Blob-Datei ist nicht "
 "gesetzt."
 
-#: src/paradox.c:2703
+#: src/paradox.c:2669
 msgid "Paradox database has no blob file."
 msgstr "Paradox Datenbank hat keine Blob-Datei gesetzt."
 
-#: src/paradox.c:2713 src/paradox.c:2750
+#: src/paradox.c:2679 src/paradox.c:2716
 msgid "Could not go to the begining of the first free block in the blob file."
 msgstr ""
 "Konnte nicht an den Anfang des ersten freien Blocks in der Blob-Datei "
 "springen."
 
-#: src/paradox.c:2730 src/paradox.c:2759
+#: src/paradox.c:2696 src/paradox.c:2725
 msgid "Could not write header of blob data to file."
 msgstr "Konnte den Kopf der Blob-Datei nicht schreiben."
 
-#: src/paradox.c:2735 src/paradox.c:2806
+#: src/paradox.c:2701 src/paradox.c:2772
 msgid "Could not write blob data to file."
 msgstr "Konnte Daten nicht in Blob-Datei schreiben."
 
-#: src/paradox.c:2764
+#: src/paradox.c:2730
 msgid "Could not write remaining of a type 3 block."
 msgstr "Konnte den verbleibenen Platz eines Blocks vom Typ 3 nicht schreiben."
 
-#: src/paradox.c:2780
+#: src/paradox.c:2746
 msgid "Could not go to table entry for the blob data."
 msgstr "Konnte nicht zum Tabelleneintrag der Blob-Daten springen."
 
-#: src/paradox.c:2797
+#: src/paradox.c:2763
 msgid "Could not write table entry for blob data to file."
 msgstr "Konnte den Tabelleneintrag der Blob-Daten nicht in Datei schreiben."
 
-#: src/paradox.c:2802
+#: src/paradox.c:2768
 msgid "Could not go to the begining of the slot for the blob."
 msgstr "Konnte nicht an den Anfang des Bereichs für die Blob-Daten springen."
 
