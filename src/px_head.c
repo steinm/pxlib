@@ -4,12 +4,13 @@
 #include <paradox.h>
 #include <px_intern.h>
 #include <px_memory.h>
+#include <px_io.h>
 
 /* get_px_head() {{{
  * get the header info from the file
  * basic header info & field descriptions
  */
-pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
+pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 {
 	pxhead_t *pxh;
 	TPxHeader pxhead;
@@ -21,9 +22,9 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL)
 		return NULL;
-	if(fseek(fp, 0, SEEK_SET) < 0)
+	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0)
 		return NULL;
-	if((ret = fread(&pxhead, sizeof(TPxHeader), 1, fp)) < 0) {
+	if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxHeader), &pxhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -99,7 +100,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		  (pxh->px_filetype == 3) ||
 		  (pxh->px_filetype == 5)) &&
 		  (pxh->px_fileversion >= 40)) {
-		if((ret = fread(&pxdatahead, sizeof(TPxDataHeader), 1, fp)) < 0) {
+		if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) < 0) {
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
@@ -124,7 +125,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
-		if((ret = fread(&pxinfo, sizeof(TFldInfoRec), 1, fp)) < 0) {
+		if((ret = pxdoc->read(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo)) < 0) {
 			pxdoc->free(pxdoc, pxh->px_fields);
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
@@ -141,7 +142,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 
 	/* skip the tableNamePtr */
-	if((ret = fread(dummy, sizeof(int), 1, fp)) < 0) {
+	if((ret = pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -150,7 +151,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	/* skip the tfieldNamePtrArray, not present in index files */
 	if(pxhead.fileType == 0 || pxhead.fileType == 2) {
 		for(i=0; i<pxh->px_numfields; i++) {
-			if((ret = fread(dummy, sizeof(int), 1, fp)) < 0) {
+			if((ret = pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
 				pxdoc->free(pxdoc, pxh->px_fields);
 				pxdoc->free(pxdoc, pxh);
 				return NULL;
@@ -160,9 +161,9 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	/* skip the tableName */
 	if(pxh->px_fileversion >= 70)
-		ret = fread(dummy, 261, 1, fp);
+		ret = pxdoc->read(pxdoc, pxs, 261, dummy);
 	else
-		ret = fread(dummy, 79, 1, fp);
+		ret = pxdoc->read(pxdoc, pxs, 79, dummy);
 	if(ret < 0) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
@@ -173,7 +174,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
 		j=0;
-		while(((ret = fread(&c, 1, 1, fp)) >= 0) && (c != '\0')) {
+		while(((ret = pxdoc->read(pxdoc, pxs, 1, &c)) >= 0) && (c != '\0')) {
 			dummy[j++] = c;
 		}
 		if(ret < 0) {
@@ -194,7 +195,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 /* put_px_head() {{{
  * writes the header and field information into a new file.
  */
-int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
+int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	TPxHeader pxhead;
 	TPxDataHeader pxdatahead;
 	TFldInfoRec pxinfo;
@@ -263,17 +264,17 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	pxdatahead.unknown6Cx6F[1] = 0x01;
 
 	/* Goto the begining of the file */
-	if(fseek(fp, 0, SEEK_SET) < 0) {
+	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not go to begining paradox file."));
 		return -1;
 	}
 
-	if(fwrite(&pxhead, sizeof(TPxHeader), 1, fp) < 1) {
+	if(pxdoc->write(pxdoc, pxs, sizeof(TPxHeader), &pxhead) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		return -1;
 	}
 
-	if(fwrite(&pxdatahead, sizeof(TPxDataHeader), 1, fp) < 1) {
+	if(pxdoc->write(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		return -1;
 	}
@@ -282,7 +283,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		pxinfo.fType = pxf->px_ftype;
 		pxinfo.fSize = pxf->px_flen;
-		if(fwrite(&pxinfo, sizeof(TFldInfoRec), 1, fp) < 1) {
+		if(pxdoc->write(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 			return -1;
 		}
@@ -295,7 +296,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	 * by this pointer (tableNamePtr) and numfield pointers to the
 	 * fieldnames. */
 	put_long_le(&ptr, basehead+0x78+pxh->px_numfields*2*2+4);
-	if(fwrite(&ptr, 4, 1, fp) < 1) {
+	if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write tableName pointer."));
 		return -1;
 	}
@@ -306,7 +307,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		put_long_le(&ptr, base+offset);
 		offset += strlen(pxf->px_fname)+1;
-		if(fwrite(&ptr, 4, 1, fp) < 1) {
+		if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write fieldName pointer."));
 			return -1;
 		}
@@ -318,7 +319,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 		px_error(pxdoc, PX_Warning, _("Tablename is empty."));
 	} else {
 		len = strlen(pxh->px_tablename);
-		if(fwrite(pxh->px_tablename, len, 1, fp) < 1) {
+		if(pxdoc->write(pxdoc, pxs, len, pxh->px_tablename) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 			return -1;
 		}
@@ -326,7 +327,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 
 	/* write zeros to fill space for tablename */
 	for(i=0; i<261-len; i++) {
-		if(fwrite(&nullint, 1, 1, fp) < 1) {
+		if(pxdoc->write(pxdoc, pxs, 1, &nullint) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 			return -1;
 		}
@@ -334,13 +335,13 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	pxf = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		if(pxf->px_fname != NULL) {
-			if(fwrite(pxf->px_fname, strlen(pxf->px_fname)+1, 1, fp) < 1) {
+			if(pxdoc->write(pxdoc, pxs, strlen(pxf->px_fname)+1, pxf->px_fname) < 1) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 				return -1;
 			}
 		} else {
 			px_error(pxdoc, PX_Warning, _("Column name is NULL"));
-			if(fputc(0, fp) != 0) {
+			if(pxdoc->write(pxdoc, pxs, 1, &nullint) != 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 				return -1;
 			}
@@ -351,14 +352,14 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	short int tmp;
 	for(i=0; i<pxh->px_numfields; i++) {
 		put_short_le(&tmp, i+1);
-		if(fwrite(&tmp, 2, 1, fp) < 1) {
+		if(pxdoc->write(pxdoc, pxs, 2, &tmp) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
 			return -1;
 		}
 	}
 
 	/* write sortOrderID */
-	if(fputs("ANSIINTL", fp) < 0) {
+	if(pxdoc->write(pxdoc, pxs, 8, "ANSIINTL") < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
 		return -1;
 	}
@@ -368,15 +369,18 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 
 /* get_datablock_head() {{{
  */
-int get_datablock_head(pxhead_t *pxh, FILE *fp, int datablocknr, TDataBlock *datablockhead)
+int get_datablock_head(pxdoc_t *pxdoc, pxstream_t *pxs, int datablocknr, TDataBlock *datablockhead)
 {
+	pxhead_t *pxh;
 	int position, ret;
-	position =  pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
-	if((ret = fseek(fp, position, SEEK_SET)) < 0) {
+
+	pxh = pxdoc->px_head;
+	position = pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
+	if((ret = pxdoc->seek(pxdoc, pxs, position, SEEK_SET)) < 0) {
 		return -1;
 	}
 
-	if((ret = fread(datablockhead, sizeof(TDataBlock), 1, fp)) < 0) {
+	if((ret = pxdoc->read(pxdoc, pxs, sizeof(TDataBlock), datablockhead)) < 0) {
 		return -1;
 	}
 
@@ -386,15 +390,18 @@ int get_datablock_head(pxhead_t *pxh, FILE *fp, int datablocknr, TDataBlock *dat
 
 /* put_datablock_head() {{{
  */
-int put_datablock_head(pxhead_t *pxh, FILE *fp, int datablocknr, TDataBlock *datablockhead)
+int put_datablock_head(pxdoc_t *pxdoc, pxstream_t *pxs, int datablocknr, TDataBlock *datablockhead)
 {
+	pxhead_t *pxh;
 	int position, ret;
+
+	pxh = pxdoc->px_head;
 	position =  pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
-	if((ret = fseek(fp, position, SEEK_SET)) < 0) {
+	if((ret = pxdoc->seek(pxdoc, pxs, position, SEEK_SET)) < 0) {
 		return -1;
 	}
 
-	if((ret = fwrite(datablockhead, sizeof(TDataBlock), 1, fp)) < 0) {
+	if((ret = pxdoc->write(pxdoc, pxs, sizeof(TDataBlock), datablockhead)) < 0) {
 		return -1;
 	}
 
@@ -410,7 +417,7 @@ int put_datablock_head(pxhead_t *pxh, FILE *fp, int datablocknr, TDataBlock *dat
  * Returns the number of the new datablock. The first one has number
  * 1 as stored in the datablock head as well.
  */
-int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
+int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) {
 	TDataBlock newdatablockhead, prevdatablockhead, nextdatablockhead;
 	int i, next, ret, nullint = 0;
 
@@ -426,7 +433,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 
 	/* Goto the block before the new block and read its header. */
 	if(after != 0) {
-		if((ret = get_datablock_head(pxh, fp, after, &prevdatablockhead)) < 0) {
+		if((ret = get_datablock_head(pxdoc, pxs, after, &prevdatablockhead)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block before the new block."));
 			return -1;
 		}
@@ -438,7 +445,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 	
 //	fprintf(stderr, "Inserting new block after %d and befor %d\n", after, next);
 	if(next != 0) {
-		if((ret = get_datablock_head(pxh, fp, next, &nextdatablockhead)) < 0) {
+		if((ret = get_datablock_head(pxdoc, pxs, next, &nextdatablockhead)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block after the new block."));
 			return -1;
 		}
@@ -446,7 +453,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 
 	/* Go to the start of the new data block, which should be identical
 	 * to the end of the file. */
-	if((ret = fseek(fp, pxh->px_headersize+pxh->px_fileblocks*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
+	if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_headersize+pxh->px_fileblocks*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
 		return -1;
 	}
@@ -456,14 +463,14 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 	put_short_le(&newdatablockhead.nextBlock, next);
 	/* This block is still empty, so set it -recordsize */
 	put_short_le(&newdatablockhead.addDataSize, -pxh->px_recordsize);
-	if(put_datablock_head(pxh, fp, pxh->px_fileblocks+1, &newdatablockhead) < 0) {
+	if(put_datablock_head(pxdoc, pxs, pxh->px_fileblocks+1, &newdatablockhead) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write new data block header."));
 		return -1;
 	}
 
 	/* write an empty block. File pointer is still at right position. */
 	for(i=0; i<pxh->px_maxtablesize*0x400-sizeof(TDataBlock); i++) {
-		if(fwrite(&nullint, 1, 1, fp) < 1) {
+		if(pxdoc->write(pxdoc, pxs, 1, &nullint) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write empty data block."));
 			return -1;
 		}
@@ -472,7 +479,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 	/* Update the block before the new one */
 	if(after != 0) {
 		put_short_le(&prevdatablockhead.nextBlock, pxh->px_fileblocks+1);
-		if(put_datablock_head(pxh, fp, after, &prevdatablockhead) < 0) {
+		if(put_datablock_head(pxdoc, pxs, after, &prevdatablockhead) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not update datablock header before new block."));
 			return -1;
 		}
@@ -481,7 +488,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 	/* Update the block after the new one */
 	if(next != 0) {
 		put_short_le(&nextdatablockhead.prevBlock, pxh->px_fileblocks+1);
-		if(put_datablock_head(pxh, fp, after, &nextdatablockhead) < 0) {
+		if(put_datablock_head(pxdoc, pxs, after, &nextdatablockhead) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not update datablock header after new block."));
 			return -1;
 		}
@@ -493,7 +500,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
 		pxh->px_firstblock = pxh->px_fileblocks;
 	if(next == 0)
 		pxh->px_lastblock = pxh->px_fileblocks;
-	if(put_px_head(pxdoc, pxh, fp) < 0) {
+	if(put_px_head(pxdoc, pxh, pxs) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to put header."));
 		return -1;
 	}
@@ -505,12 +512,12 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
  * stores a record into a data block. datablocknr is the logical number
  * of the block (the first block has number 1).
  */
-int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *data, FILE *fp) {
+int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *data, pxstream_t *pxs) {
 	TDataBlock datablockhead;
 	int ret, n;
 
 	/* Get header of the data block */
-	if((ret = get_datablock_head(pxh, fp, datablocknr, &datablockhead)) < 0) {
+	if((ret = get_datablock_head(pxdoc, pxs, datablocknr, &datablockhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
 		return -1;
 	}
@@ -527,19 +534,19 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
 	put_short_le(&datablockhead.addDataSize, n*pxh->px_recordsize);
-	if(put_datablock_head(pxh, fp, datablocknr, &datablockhead) < 0) {
+	if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write updated datablock header."));
 		return -1;
 	}
 
 	/* Goto start of record data */
-	if((ret = fseek(fp, n*pxh->px_recordsize, SEEK_CUR)) < 0) {
+	if((ret = pxdoc->seek(pxdoc, pxs, n*pxh->px_recordsize, SEEK_CUR)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of new record"));
 		return -1;
 	}
 
 	/* Write the record data */
-	if(fwrite(data, pxh->px_recordsize, 1, fp) < 1) {
+	if(pxdoc->write(pxdoc, pxs, pxh->px_recordsize, data) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write record."));
 		return -1;
 	}

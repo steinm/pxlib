@@ -13,6 +13,13 @@
 #endif
 #endif
 
+#define PX_HAVE_GSF @PX_HAVE_GSF@
+#if PX_HAVE_GSF
+#include <gsf/gsf-input-stdio.h>
+#include <gsf/gsf-input-memory.h>
+#include <gsf/gsf-output.h>
+#endif
+
 #ifdef WIN32
 
 #define PXLIB_CALL __cdecl
@@ -43,6 +50,10 @@
 #define PX_IOError 2
 #define PX_RuntimeError 3
 #define PX_Warning 100
+
+/* IO Stream types */
+#define pxfIOFile 1
+#define pxfIOGsf  2
 
 /* Field types */
 #define pxfAlpha        0x01
@@ -111,19 +122,34 @@ struct px_head {
 	struct px_field *px_fields;
 };
 
+struct px_stream {
+	int type;        /* set to pxfIOFile | pxfIOGsf */
+	int mode;        /* set to pxfFileRead | pxfFileWrite */
+	int close;       /* set to true if stream must be closed */
+	union {
+		FILE *fp;
+#if HAVE_GSF
+		GsfInput *gsfin;
+		GsfOutput *gsfout;
+#endif
+	} s;
+};
+
 typedef struct px_doc pxdoc_t;
 typedef struct px_datablockinfo pxdatablockinfo_t;
 typedef struct px_blob pxblob_t;
 typedef struct px_head pxhead_t;
 typedef struct px_field pxfield_t;
 typedef struct px_pindex pxpindex_t;
+typedef struct px_stream pxstream_t;
 
 struct px_doc {
 	/* database file */
-	FILE *px_fp;       /* File pointer of file */
+//	FILE *px_fp;       /* File pointer of file */
+	pxstream_t *px_stream; /* input stream to read file from */
 	char *px_name;     /* Name of file */
 	int px_close_fp;   /* set to true if file pointer must be closed */
-	int px_filemode;   /* set to pxfFileRead|pxfFileWrite */
+//	int px_filemode;   /* set to pxfFileRead|pxfFileWrite */
 	pxhead_t *px_head; /* Pointer to header of file */
 	void *px_data;     /* Pointer to data of file (used in prim. index for
 						* index data, used in db files for an self build
@@ -137,12 +163,23 @@ struct px_doc {
 
 	int in_error;
 
+	/* output function */
 	size_t (*writeproc)(pxdoc_t *p, void *data, size_t size);
+
+	/* error handler function */
 	void (*errorhandler)(pxdoc_t *p, int level, const char* msg);
+
+	/* Memory allocation functions */
 	void *(*malloc)(pxdoc_t *p, size_t size, const char *caller);
 	void *(*calloc)(pxdoc_t *p, size_t size, const char *caller);
 	void *(*realloc)(pxdoc_t *p, void *mem, size_t size, const char *caller);
 	void  (*free)(pxdoc_t *p, void *mem);
+
+	/* input stream functions */
+	int (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
+	long (*tell)(pxdoc_t *p, pxstream_t *stream);
+	long (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 
 	char *targetencoding;
 	char *inputencoding;
@@ -199,6 +236,9 @@ PXLIB_API int PXLIB_CALL
 PX_has_recode_support(void);
 
 PXLIB_API int PXLIB_CALL
+PX_has_gsf_support(void);
+
+PXLIB_API int PXLIB_CALL
 PX_is_bigendian(void);
 
 PXLIB_API pxdoc_t* PXLIB_CALL
@@ -209,6 +249,11 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 
 PXLIB_API pxdoc_t* PXLIB_CALL
 PX_new(void);
+
+#ifdef HAVE_GSF
+PXLIB_API int PXLIB_CALL
+PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf);
+#endif
 
 PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp);

@@ -21,13 +21,21 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(WIN32) || defined(OS2)
 #include <fcntl.h>
+#endif
+
+#ifdef WIN32
+#include <windows.h>
+#include <winbase.h>
+#endif
 
 #include "pxversion.h"
 #include "px_intern.h"
 #include "paradox.h"
 #include "px_memory.h"
 #include "px_head.h"
+#include "px_io.h"
 #include "px_error.h"
 #include "px_misc.h"
 
@@ -65,6 +73,17 @@ PX_has_recode_support(void) {
 #if PX_USE_ICONV
 	return(2);
 #endif
+#endif
+	return(0);
+}
+/* }}} */
+
+/* PX_has_gsf_support() {{{
+ */
+PXLIB_API int PXLIB_CALL
+PX_has_gsf_support(void) {
+#if HAVE_GSF
+	return(1);
 #endif
 	return(0);
 }
@@ -109,7 +128,7 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	pxdoc->malloc = allocproc;
 	pxdoc->realloc = reallocproc;
 	pxdoc->free = freeproc;
-	pxdoc->px_fp = NULL;
+	pxdoc->px_stream = NULL;
 
 	pxdoc->px_pindex = NULL;
 
@@ -142,26 +161,78 @@ PX_new(void) {
 }
 /* }}} */
 
-/* PX_open_fp() {{{
- * Read from a Paradox DB file, which has already been opend with fopen.
+/* build_primary_index() {{{
+ * Build a primary index.
+ */
+static int build_primary_index(pxdoc_t *pxdoc) {
+	pxhead_t *pxh;
+	pxstream_t *pxs;
+	pxpindex_t *pindex;
+	int blockcount, blocknumber;
+
+	pxh = pxdoc->px_head;
+	pxs = pxdoc->px_stream;
+	if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
+		return -1;
+	}
+
+	pxdoc->px_indexdata = pindex;
+	pxdoc->px_indexdatalen = pxh->px_fileblocks;
+	blockcount = 0; /* Just a block counter */
+	blocknumber = pxh->px_firstblock; /* Will be set to next block number */
+	while((blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
+		TDataBlock datablockhead;
+		if(get_datablock_head(pxdoc, pxs, blocknumber, &datablockhead) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
+			pxdoc->free(pxdoc, pindex);
+			return -1;
+		}
+		pindex[blockcount].data = NULL;
+		pindex[blockcount].blocknumber = blocknumber;
+		pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
+		pindex[blockcount].myblocknumber = 0;
+		pindex[blockcount].level = 1;
+		blockcount++;
+		blocknumber = get_short_le((char *) &datablockhead.nextBlock);
+	}
+}
+/* }}} */
+
+#ifdef HAVE_GSF
+/* PX_open_gsf() {{{
+ * Read from a Paradox DB file, which has already been opend with gsf.
  */
 PXLIB_API int PXLIB_CALL
-PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
-	pxpindex_t *pindex;
+PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf) {
 	pxhead_t *pxh;
-	int blockcount, blocknumber;
+	pxstream_t *pxs;
+
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
 		return -1;
 	}
 
-	if((pxdoc->px_head = get_px_head(pxdoc, fp)) == NULL) {
+	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
+		return -1;
+	}
+	pxs->type = pxfIOGsf;
+	pxs->mode = pxfFileRead;
+	pxs->close = px_false;
+	pxs->s.gsfin = gsf;
+	
+	pxdoc->read = px_gsfread;
+	pxdoc->seek = px_gsfseek;
+	pxdoc->tell = px_gsftell;
+	pxdoc->write = px_gsfwrite;
+
+	if((pxdoc->px_head = get_px_head(pxdoc, pxs)) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to get header."));
 		return -1;
 	}
 
-	pxdoc->px_fp = fp;
-	pxdoc->px_filemode = pxfFileRead;
+	pxdoc->px_stream = pxs;
 
 	/* Build primary index. This index misses all index blocks with a level
 	 * greater than 1. Since they are not used currently this is of no harm.
@@ -169,29 +240,57 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 	pxh = pxdoc->px_head;
 	if(pxh->px_filetype == pxfFileTypIndexDB ||
 	   pxh->px_filetype == pxfFileTypNonIndexDB) {
-		if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for selb build internal primary index")))) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for self build internal index."));
+		if(build_primary_index(pxdoc) < 0) {
 			return -1;
 		}
+	}
+	return 0;
+}
+/* }}} */
+#endif /* HAVE_GSF */
 
-		pxdoc->px_indexdata = pindex;
-		pxdoc->px_indexdatalen = pxh->px_fileblocks;
-		blockcount = 0; /* Just a block counter */
-		blocknumber = pxh->px_firstblock; /* Will be set to next block number */
-		while((blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
-			TDataBlock datablockhead;
-			if(get_datablock_head(pxh, fp, blocknumber, &datablockhead) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
-				pxdoc->free(pxdoc, pindex);
-				return -1;
-			}
-			pindex[blockcount].data = NULL;
-			pindex[blockcount].blocknumber = blocknumber;
-			pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
-			pindex[blockcount].myblocknumber = 0;
-			pindex[blockcount].level = 1;
-			blockcount++;
-			blocknumber = get_short_le((char *) &datablockhead.nextBlock);
+/* PX_open_fp() {{{
+ * Read from a Paradox DB file, which has already been opend with fopen.
+ */
+PXLIB_API int PXLIB_CALL
+PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
+	pxhead_t *pxh;
+	pxstream_t *pxs;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
+	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
+		return -1;
+	}
+	pxs->type = pxfIOFile;
+	pxs->mode = pxfFileRead;
+	pxs->close = px_false;
+	pxs->s.fp = fp;
+	
+	pxdoc->read = px_fread;
+	pxdoc->seek = px_fseek;
+	pxdoc->tell = px_ftell;
+	pxdoc->write = px_fwrite;
+
+	if((pxdoc->px_head = get_px_head(pxdoc, pxs)) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Unable to get header."));
+		return -1;
+	}
+
+	pxdoc->px_stream = pxs;
+
+	/* Build primary index. This index misses all index blocks with a level
+	 * greater than 1. Since they are not used currently this is of no harm.
+	 */
+	pxh = pxdoc->px_head;
+	if(pxh->px_filetype == pxfFileTypIndexDB ||
+	   pxh->px_filetype == pxfFileTypNonIndexDB) {
+		if(build_primary_index(pxdoc) < 0) {
+			return -1;
 		}
 	}
 	return 0;
@@ -223,7 +322,7 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	}
 
 	pxdoc->px_name = px_strdup(pxdoc, filename);
-	pxdoc->px_close_fp = px_true;
+	pxdoc->px_stream->close = px_true;
 	return 0;
 }
 /* }}} */
@@ -235,6 +334,7 @@ PXLIB_API int PXLIB_CALL
 PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxhead_t *pxh;
 	pxfield_t *pxf;
+	pxstream_t *pxs;
 	int i, recordsize = 0;
 
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("PX_create_fp: Allocate memory for document header."))) == NULL) {
@@ -270,15 +370,27 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 		pxh->px_maxtablesize = 3;
 	}
 
-	if(put_px_head(pxdoc, pxh, fp) < 0) {
+	if(NULL == (pxs = pxdoc->malloc(pxdoc, sizeof(pxstream_t), _("Allocate memory for io stream.")))) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
+		return -1;
+	}
+	pxs->type = pxfIOFile;
+	pxs->mode = pxfFileWrite;
+	pxs->close = px_false;
+	pxs->s.fp = fp;
+	
+	pxdoc->read = px_fread;
+	pxdoc->seek = px_fseek;
+	pxdoc->tell = px_ftell;
+	pxdoc->write = px_fwrite;
+
+	if(put_px_head(pxdoc, pxh, pxs) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to put header."));
 		return -1;
 	}
 
 	pxdoc->px_head = pxh;
-	pxdoc->px_fp = fp;
-	pxdoc->px_close_fp = px_false;
-	pxdoc->px_filemode = pxfFileWrite;
+	pxdoc->px_stream = pxs;
 	return 0;
 }
 /* }}} */
@@ -359,8 +471,8 @@ PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
 			px_free(pxdoc, pxdoc->px_head->px_tablename);
 
 		pxdoc->px_head->px_tablename = px_strdup(pxdoc, value);
-		if(pxdoc->px_filemode & pxfFileWrite) {
-			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_fp) < 0) {
+		if(pxdoc->px_stream->mode & pxfFileWrite) {
+			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
 				return;
 			}
 		} else {
@@ -644,13 +756,13 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 				pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
 
 				/* Go to the start of the data block (skip the header) */
-				if((ret = fseek(pxdoc->px_fp, pxdbinfo->blockpos, SEEK_SET)) < 0) {
+				if((ret = pxdoc->seek(pxdoc, pxdoc->px_stream, pxdbinfo->blockpos, SEEK_SET)) < 0) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
 					return 0;
 				}
 
 				/* Get the info about this data block */
-				if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
+				if((ret = pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not read"));
 					return 0;
 				}
@@ -690,7 +802,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 	while(!found && (blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
 		int datasize, blocksize;
 
-		if(get_datablock_head(pxh, pxdoc->px_fp, blocknumber, &datablock) < 0) {
+		if(get_datablock_head(pxdoc, pxdoc->px_stream, blocknumber, &datablock) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
 			return 0;
 		}
@@ -747,7 +859,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 					pxdbinfo->size = datasize+pxh->px_recordsize;
 					pxdbinfo->recno = recno;
 					pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
-					pxdbinfo->blockpos = ftell(pxdoc->px_fp)-sizeof(TDataBlock);
+					pxdbinfo->blockpos = pxdoc->tell(pxdoc, pxdoc->px_stream)-sizeof(TDataBlock);
 					pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
 				}
 			} else { /* skip rest of block */
@@ -822,11 +934,11 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 			memcpy(pxdbinfo, &tmppxdbinfo, sizeof(pxdatablockinfo_t));
 		}
 
-		if((ret = fseek(pxdoc->px_fp, tmppxdbinfo.recordpos, SEEK_SET)) < 0) {
+		if((ret = pxdoc->seek(pxdoc, pxdoc->px_stream, tmppxdbinfo.recordpos, SEEK_SET)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of record data."));
 			return NULL;
 		}
-		if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
+		if((ret = pxdoc->read(pxdoc, pxdoc->px_stream, pxh->px_recordsize, data)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read data of record."));
 			return NULL;
 		}
@@ -875,7 +987,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	/* Check if we need a new datablock */
 	if(datablocknr > pxh->px_fileblocks) {
 //		fprintf(stderr, "We need an new datablock\n");
-		itmp = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_fp);
+		itmp = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_stream);
 //		fprintf(stderr, "Added data block no. %d\n", itmp);
 	
 		/* The datablock number return by px_put_datablock() should be
@@ -888,7 +1000,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	}
 
 	/* write data */
-	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, data, pxdoc->px_fp);
+	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, data, pxdoc->px_stream);
 
 	/* The record number within the data block must be the same
 	 * as the calculated one.
@@ -901,7 +1013,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	/* Update header */
 	pxh->px_numrecords++;
 
-	put_px_head(pxdoc, pxh, pxdoc->px_fp);
+	put_px_head(pxdoc, pxh, pxdoc->px_stream);
 	return(pxh->px_numrecords-1);
 }
 /* }}} */
@@ -917,9 +1029,9 @@ PX_close(pxdoc_t *pxdoc) {
 		return;
 	}
 
-	if((pxdoc->px_close_fp) && (pxdoc->px_fp != NULL))
-		fclose(pxdoc->px_fp);
-	pxdoc->px_fp = NULL;
+	if((pxdoc->px_stream->close) && (pxdoc->px_stream->s.fp != NULL))
+		fclose(pxdoc->px_stream->s.fp);
+	pxdoc->px_stream->s.fp = NULL;
 }
 /* }}} */
 
@@ -1214,7 +1326,7 @@ PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
 		px_free(pxdoc, pxdoc->px_head->px_tablename);
 
 	pxdoc->px_head->px_tablename = px_strdup(pxdoc, tablename);
-	if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_fp) < 0) {
+	if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
 		return -1;
 	}
 	return 0;
