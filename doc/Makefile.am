@@ -10,6 +10,7 @@ clean:
 SGML_FILES = PX_get_majorversion.sgml \
              PX_get_minorversion.sgml \
 						 PX_get_subminorversion.sgml \
+						 PX_new3.sgml \
 						 PX_new2.sgml \
 						 PX_new.sgml \
 						 PX_open_filename.sgml \
