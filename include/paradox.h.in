@@ -86,7 +86,8 @@ struct px_head {
 	int px_recordsize;
 	char px_filetype;
 	int px_fileversion;
-	int px_numrecords;
+	int px_numrecords;           // number of records as in header
+	int px_theonumrecords;       // number of records that fit in data blocks
 	int px_numfields;
 	int px_maxtablesize;
 	int px_headersize;
@@ -95,6 +96,8 @@ struct px_head {
 	int px_writeprotected;
 	int px_doscodepage;
 	int px_primarykeyfields;
+	char px_modifiedflags1;
+	char px_modifiedflags2;
 	char px_sortorder;
 	int px_autoinc;
 	char px_refintegrity;
@@ -102,6 +105,7 @@ struct px_head {
 };
 
 typedef struct px_doc pxdoc_t;
+typedef struct px_datablockinfo pxdatablockinfo_t;
 typedef struct px_blob pxblob_t;
 typedef struct px_head pxhead_t;
 typedef struct px_field pxfield_t;
@@ -140,6 +144,14 @@ struct px_blob {
 	pxdoc_t *pxdoc;
 };
 
+struct px_datablockinfo {
+	long blockpos;
+	long recordpos;
+	int size;
+	int numrecords;
+	int number;
+};
+
 PXLIB_API int PXLIB_CALL
 PX_get_majorversion(void);
 
@@ -172,6 +184,9 @@ PX_open_file(pxdoc_t *pxdoc, char *filename);
 
 PXLIB_API char * PXLIB_CALL
 PX_get_record(pxdoc_t *pxdoc, int recno, char *data);
+
+PXLIB_API char * PXLIB_CALL
+PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo);
 
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc);

@@ -152,6 +152,11 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 
 PXLIB_API char* PXLIB_CALL
 PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
+	return(PX_get_record2(pxdoc, recno, data, 0, NULL));
+}
+
+PXLIB_API char* PXLIB_CALL
+PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo) {
 	int ret, found, blockcount;
 	TDataBlock datablock;
 	pxhead_t *pxh;
@@ -167,7 +172,10 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 	}
 	pxh = pxdoc->px_head;
 
-	if((recno < 0) || (recno >= pxh->px_numrecords)) {
+	/* Allow to read records up to the theoretical number of records
+	 * in the file.
+	 */
+	if((recno < 0) || (recno >= pxh->px_theonumrecords)) {
 		px_error(pxdoc, PX_RuntimeError, _("Record number out of range"));
 		return NULL;
 	}
@@ -187,26 +195,58 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read"));
 			return NULL;
 		}
-		datasize = get_short_le(&datablock.addDataSize);
+		/* if deleted is set, then we will disregard the block size in the
+		 * data block header but take the maximum block size as indicated
+		 * by pxh->px_maxtablesize
+		 */
+		if(!*deleted)
+			datasize = get_short_le(&datablock.addDataSize);
+		else
+			datasize = pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize;
 //		printf("datasize = %d, recno = %d, platz verbraucht = %d\n", datasize, recno, (recno+1)*pxh->px_recordsize);
-		if(recno*pxh->px_recordsize <= datasize) {
-			found = 1;
-			if((ret = fseek(pxdoc->px_fp, recno*pxh->px_recordsize, SEEK_CUR)) < 0) {
+		/* addDataSize is the number of bytes in this data block. It must
+		 * be less then pxh->px_maxtablesize*0x400-sizeof(TDataBlock)
+		 * and a multiple of pxh->recordsize. If this is not the case
+		 * (especially if addDataSize is to big, then this data block
+		 * does not contain any valid records. Actually you could read
+		 * them, because the data is still there, but considered to be
+		 * deleted.
+		 */
+		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-6)) {
+//			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.blockNumber), datasize, (float) datasize/pxh->px_recordsize + 1);
+			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
 				return NULL;
 			}
-			if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
-				return NULL;
+		} else {
+			if(recno*pxh->px_recordsize <= datasize) {
+				found = 1;
+				if(pxdbinfo != NULL) {
+					pxdbinfo->number = get_short_le(&datablock.blockNumber);
+					pxdbinfo->size = datasize+pxh->px_recordsize;
+					pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+					pxdbinfo->blockpos = ftell(pxdoc->px_fp);
+				}
+				if((ret = fseek(pxdoc->px_fp, recno*pxh->px_recordsize, SEEK_CUR)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+					return NULL;
+				}
+				if(pxdbinfo != NULL) {
+					pxdbinfo->recordpos = ftell(pxdoc->px_fp);
+				}
+				if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
+					return NULL;
+				}
+			} else { /* skip rest of block */
+	//			printf("skippin rest of block %d\n", blockcount);
+				if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+					return NULL;
+				}
 			}
-		} else { /* skip rest of block */
-//			printf("skippin rest of block %d\n", blockcount);
-			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-6, SEEK_CUR)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
-				return NULL;
-			}
+			recno -= (datasize/pxh->px_recordsize+1);
 		}
 		blockcount++;
-		recno -= (datasize/pxh->px_recordsize+1);
 	}
 
 	if(found)
