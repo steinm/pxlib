@@ -80,7 +80,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_open_fp(3), PX_open_file(3), PX_read_primary_file(3)</para>
+    <para>PX_open_fp(3), PX_open_file(3), PX_read_primary_index(3)</para>
 
   </refsect1>
   <refsect1>
