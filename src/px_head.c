@@ -33,7 +33,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file type (%d)."), pxhead.fileType);
 		return NULL;
 	}
-	if(pxhead.maxTableSize > 16 || pxhead.maxTableSize < 1) {
+	if(pxhead.maxTableSize > 32 || pxhead.maxTableSize < 1) {
 		px_free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown table size (%d)."), pxhead.maxTableSize);
 		return NULL;

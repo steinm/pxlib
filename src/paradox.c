@@ -92,7 +92,7 @@ PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	FILE *fp;
 
-	if((fp = fopen(filename, "r")) < 0) {
+	if((fp = fopen(filename, "r")) == NULL) {
 		return -1;
 	}
 
@@ -195,7 +195,7 @@ PX_open_blob_file(pxblob_t *pxblob, char *filename) {
 		return(-1);
 	}
 
-	if((fp = fopen(filename, "r")) < 0) {
+	if((fp = fopen(filename, "r")) == NULL) {
 		return -1;
 	}
 

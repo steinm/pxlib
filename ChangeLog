@@ -1,0 +1,3 @@
+Version 0.0.4
+  - fixed segm fault if input file does not exist
+	- maxTableSize may not be larger as 32
