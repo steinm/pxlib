@@ -92,6 +92,8 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	pxdoc->free = freeproc;
 	pxdoc->px_fp = NULL;
 
+	pxdoc->px_pindex = NULL;
+
 #if PX_USE_RECODE
 	pxdoc->recode_outer = recode_new_outer(false);
 	pxdoc->recode_request = recode_new_request(pxdoc->recode_outer);
@@ -146,8 +148,283 @@ PX_open_file(pxdoc_t *pxdoc, char *filename) {
 	}
 
 	pxdoc->px_name = px_strdup(pxdoc, filename);
-	pxdoc->closefp = px_true;
+	pxdoc->px_close_fp = px_true;
 	return 0;
+}
+
+PXLIB_API int PXLIB_CALL
+PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
+	if(pxdoc == NULL ||
+	   pxdoc->px_head == NULL ||
+	   pxdoc->px_head->px_filetype != pxfFileTypIndexDB) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		return -1;
+	}
+
+	if(pindex == NULL ||
+	   pindex->px_head == NULL ||
+	   pindex->px_head->px_filetype != pxfFileTypPrimIndex) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox primary index file"));
+		return -1;
+	}
+
+	if(pindex->px_data == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Primary index file has no index data"));
+		return -1;
+	}
+
+	/* Delete an existing primary index file */
+	if(pxdoc->px_pindex) {
+		PX_delete(pxdoc->px_pindex);
+	}
+	pxdoc->px_pindex = pindex;
+
+	return 0;
+}
+
+PXLIB_API int PXLIB_CALL
+PX_read_primary_index(pxdoc_t *pindex) {
+	pxpindex_t *pindex_data;
+	pxhead_t *pxh;
+	pxfield_t *pxf;
+	char *data;
+	int j;
+
+	if(pindex == NULL ||
+	   pindex->px_head == NULL ||
+	   pindex->px_head->px_filetype != pxfFileTypPrimIndex) {
+		px_error(pindex, PX_RuntimeError, _("Did not pass a paradox primary index file"));
+		return -1;
+	}
+
+	pxh = pindex->px_head;
+	pindex->px_data = pindex->malloc(pindex, pxh->px_numrecords*sizeof(pxpindex_t), _("Couldn't get memory for primary index data."));
+	if(!pindex->px_data) {
+		px_error(pindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
+		return -1;
+	}
+
+	pindex_data = (pxpindex_t *) pindex->px_data;
+	if((data = (char *) pindex->malloc(pindex, pxh->px_recordsize, _("Could not allocate memory for record."))) == NULL) {
+		px_error(pindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
+		return -1;
+	}
+
+	for(j=0; j<pxh->px_numrecords; j++) {
+		int offset, i;
+		if(PX_get_record(pindex, j, data)) {
+			short int value;
+			offset = 0;
+			/* Read over the field data.
+			 * px_numfields does not count the fields with information about
+			 * block position and num of records per block. */
+			pxf = pxh->px_fields;
+			for(i=0; i<pxh->px_numfields; i++) {
+				offset += pxf->px_flen;
+				pxf++;
+			}
+			PX_get_data_short(pindex, &data[offset], 2, &value);
+			pindex_data[j].blocknumber = value;
+			offset += 2;
+			PX_get_data_short(pindex, &data[offset], 2, &value);
+			pindex_data[j].numrecords = value;
+			offset += 2;
+			PX_get_data_short(pindex, &data[offset], 2, &value);
+			pindex_data[j].dummy = value;
+			offset += 2;
+		} else {
+			px_error(pindex, PX_RuntimeError, _("Could not read record no. %d of primary index data."), j);
+			pindex->free(pindex, data);
+			pindex->free(pindex, pindex->px_data);
+			pindex->px_data = NULL;
+			return -1;
+		}
+	}
+
+	pindex->free(pindex, data);
+	return 0;
+}
+
+/* Locates a database record by using the primary index.
+ * Returns 1 if record could be found, otherwise 0
+ */
+int
+px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
+	int j, numrecords, n;
+	pxdoc_t *pindexdoc;
+	pxhead_t *pxh, *pxih;
+	pxpindex_t *pindex_data;
+
+	pxh = pxdoc->px_head;
+	pindexdoc = pxdoc->px_pindex;
+	pxih = pindexdoc->px_head;
+	pindex_data = pindexdoc->px_data;
+
+	if(!pindex_data)
+		return 0;
+
+	numrecords = 0 ;
+	for(j=0; j<pxih->px_numrecords; j++) {
+		/* Check if the number of records is in the possible range.
+		 * I have seen prim. index files with very strange values.
+		 */
+		if(pindex_data[j].numrecords > pxh->px_maxtablesize*0x400/pxh->px_recordsize) {
+			int ret;
+			TDataBlock datablock;
+//			printf("Records per block in index file is wrong (%d)\n", pindex_data[j].numrecords);
+			/* Go to the start of the data block (skip the header) */
+			if((ret = fseek(pxdoc->px_fp, pxh->px_headersize + (pindex_data[j].blocknumber-1)*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+				return 0;
+			}
+
+			/* Get the info about this data block */
+			if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+				return 0;
+			}
+			n = get_short_le((char *) &datablock.addDataSize)/pxh->px_recordsize+1;
+			if(n > pxh->px_maxtablesize*0x400/pxh->px_recordsize) {
+				n = 0;
+			}
+			pindex_data[j].numrecords = n;
+//			printf("Set number of records in block to %d (%d)\n", n, get_short_le((char *) &datablock.addDataSize));
+
+		} else {
+			n = pindex_data[j].numrecords;
+		}
+		numrecords += n;
+		if(recno >= n) {
+			recno -= n;
+		} else {
+			int blocksize, ret;
+			TDataBlock datablock;
+
+			pxdbinfo->realnumber = pindex_data[j].blocknumber-1;
+			pxdbinfo->recno = recno;
+			pxdbinfo->blockpos = pxh->px_headersize + pxdbinfo->realnumber*pxh->px_maxtablesize*0x400;
+			pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
+
+			/* Go to the start of the data block (skip the header) */
+			if((ret = fseek(pxdoc->px_fp, pxdbinfo->blockpos, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+				return 0;
+			}
+
+			/* Get the info about this data block */
+			if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+				return 0;
+			}
+
+			blocksize = get_short_le((char *) &datablock.addDataSize);
+
+			pxdbinfo->number = get_short_le((char *) &datablock.blockNumber);
+			pxdbinfo->size = blocksize+pxh->px_recordsize;
+			pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+			deleted = 0;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* Reads all data blocks until the requested recno is in the block.
+ * This function doesn't use a primary index and is therefore far
+ * from being efficient for large files.
+ * Returns 1 if record could be found, otherwise 0
+ */
+int
+px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
+	int ret, found, blockcount;
+	TDataBlock datablock;
+	pxhead_t *pxh;
+
+	pxh = pxdoc->px_head;
+
+	/* Go to the start of the data block (skip the header) */
+	if((ret = fseek(pxdoc->px_fp, pxh->px_headersize, SEEK_SET)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+		return 0;
+	}
+
+	found = 0;
+	blockcount = 0;
+	while(!found && (blockcount < pxh->px_fileblocks)) {
+		int datasize, blocksize;
+		/* Get the info about this data block */
+		if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+			return 0;
+		}
+		/* if deleted is set, then we will disregard the block size in the
+		 * data block header but take the maximum block size as indicated
+		 * by pxh->px_maxtablesize. The variable blocksize is just to test
+		 * whether a record is valid or not.
+		 * If a block is not completely used the blocksize will be less than
+		 * the theortical size of a block. If a block is not used at all
+		 * its blocksize is usually much bigger than the maximal data block
+		 * size. In the second case we set it -1.
+		 */
+		blocksize = get_short_le((char *) &datablock.addDataSize);
+		if(!*deleted)
+			datasize = blocksize; //get_short_le((char *) &datablock.addDataSize);
+		else
+			datasize = pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize;
+		if(blocksize > pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize) {
+			/* setting blocksize to -1 means that this block contains no valid
+			 * records. All records are deleted. The -1 is later used to set
+			 * 'deleted' on the proper value.
+			 */
+			blocksize = -1;
+		}
+
+//		printf("datasize = %d, recno = %d, platz verbraucht = %d\n", datasize, recno, (recno+1)*pxh->px_recordsize);
+		/* addDataSize is the number of bytes in this data block. It must
+		 * be less then
+		 * 'pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize'
+		 * and a multiple of pxh->recordsize. If this is not the case
+		 * (especially if addDataSize is to big, then this data block
+		 * does not contain any valid records. Actually you could read
+		 * them, because the data is still there, but considered to be
+		 * deleted.
+		 */
+		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-6)) {
+//			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.blockNumber), datasize, (float) datasize/pxh->px_recordsize + 1);
+			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+				return 0;
+			}
+		} else {
+			if(recno*pxh->px_recordsize <= datasize) {
+				found = 1;
+				/* if we are within the range of valid data in the block,
+				 * then set the deleted flag to 0
+				 */
+				if(recno*pxh->px_recordsize <= blocksize) {
+					*deleted = 0;
+				}
+				if(pxdbinfo != NULL) {
+					pxdbinfo->number = get_short_le((char *) &datablock.blockNumber);
+					pxdbinfo->realnumber = blockcount;
+					pxdbinfo->size = datasize+pxh->px_recordsize;
+					pxdbinfo->recno = recno;
+					pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+					pxdbinfo->blockpos = ftell(pxdoc->px_fp)-sizeof(TDataBlock);
+					pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
+				}
+			} else { /* skip rest of block */
+	//			printf("skippin rest of block %d\n", blockcount);
+				if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+					return 0;
+				}
+			}
+			recno -= (datasize/pxh->px_recordsize+1);
+		}
+		blockcount++;
+	}
+	return(found);
 }
 
 PXLIB_API char* PXLIB_CALL
@@ -159,8 +436,8 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data) {
 PXLIB_API char* PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo) {
 	int ret, found, blockcount;
-	TDataBlock datablock;
 	pxhead_t *pxh;
+	pxdatablockinfo_t tmppxdbinfo;
 
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
@@ -174,85 +451,37 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 	pxh = pxdoc->px_head;
 
 	/* Allow to read records up to the theoretical number of records
-	 * in the file.
+	 * in the file or the actual number of records depending on 'deleted'.
+	 * If a primary index exists do not care about 'deleted' and read
+	 * in any case only up to the actual number of records.
 	 */
-	if((recno < 0) || (recno >= pxh->px_theonumrecords)) {
+	if((recno < 0) ||
+	   (*deleted && (recno >= pxh->px_theonumrecords)) ||
+	   (pxdoc->px_pindex && (recno >= pxh->px_numrecords)) ||
+	   (!*deleted && (recno >= pxh->px_numrecords))) {
 		px_error(pxdoc, PX_RuntimeError, _("Record number out of range"));
 		return NULL;
 	}
 
-	/* Go to the start of the data block (skip the header) */
-	if((ret = fseek(pxdoc->px_fp, pxh->px_headersize, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of data block"));
-		return NULL;
-	}
+	if(pxdoc->px_pindex)
+		found = px_get_record_pos_with_index(pxdoc, recno, deleted, &tmppxdbinfo);
+	else
+		found = px_get_record_pos(pxdoc, recno, deleted, &tmppxdbinfo);
 
-	found = 0;
-	blockcount = 0;
-	while(!found && (blockcount < pxh->px_fileblocks)) {
-		int datasize;
-		/* Get the info about this data block */
-		if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+	if(found) {
+		if(pxdbinfo) {
+			memcpy(pxdbinfo, &tmppxdbinfo, sizeof(pxdatablockinfo_t));
+		}
+
+		if((ret = fseek(pxdoc->px_fp, tmppxdbinfo.recordpos, SEEK_SET)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
 			return NULL;
 		}
-		/* if deleted is set, then we will disregard the block size in the
-		 * data block header but take the maximum block size as indicated
-		 * by pxh->px_maxtablesize
-		 */
-		if(!*deleted)
-			datasize = get_short_le(&datablock.addDataSize);
-		else
-			datasize = pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize;
-//		printf("datasize = %d, recno = %d, platz verbraucht = %d\n", datasize, recno, (recno+1)*pxh->px_recordsize);
-		/* addDataSize is the number of bytes in this data block. It must
-		 * be less then pxh->px_maxtablesize*0x400-sizeof(TDataBlock)
-		 * and a multiple of pxh->recordsize. If this is not the case
-		 * (especially if addDataSize is to big, then this data block
-		 * does not contain any valid records. Actually you could read
-		 * them, because the data is still there, but considered to be
-		 * deleted.
-		 */
-		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-6)) {
-//			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.blockNumber), datasize, (float) datasize/pxh->px_recordsize + 1);
-			if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
-				return NULL;
-			}
-		} else {
-			if(recno*pxh->px_recordsize <= datasize) {
-				found = 1;
-				if(pxdbinfo != NULL) {
-					pxdbinfo->number = get_short_le(&datablock.blockNumber);
-					pxdbinfo->size = datasize+pxh->px_recordsize;
-					pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
-					pxdbinfo->blockpos = ftell(pxdoc->px_fp);
-				}
-				if((ret = fseek(pxdoc->px_fp, recno*pxh->px_recordsize, SEEK_CUR)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
-					return NULL;
-				}
-				if(pxdbinfo != NULL) {
-					pxdbinfo->recordpos = ftell(pxdoc->px_fp);
-				}
-				if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
-					return NULL;
-				}
-			} else { /* skip rest of block */
-	//			printf("skippin rest of block %d\n", blockcount);
-				if((ret = fseek(pxdoc->px_fp, pxh->px_maxtablesize*0x400-sizeof(TDataBlock), SEEK_CUR)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
-					return NULL;
-				}
-			}
-			recno -= (datasize/pxh->px_recordsize+1);
+		if((ret = fread(data, pxh->px_recordsize, 1, pxdoc->px_fp)) < 0) {
+			return NULL;
 		}
-		blockcount++;
-	}
-
-	if(found)
 		return data;
-	else
+	} else
 		return NULL;
 }
 
@@ -263,7 +492,7 @@ PX_close(pxdoc_t *pxdoc) {
 		return;
 	}
 
-	if((pxdoc->closefp) && (pxdoc->px_fp != NULL))
+	if((pxdoc->px_close_fp) && (pxdoc->px_fp != NULL))
 		fclose(pxdoc->px_fp);
 	pxdoc->px_fp = NULL;
 }
@@ -277,6 +506,11 @@ PX_delete(pxdoc_t *pxdoc) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
 		return;
 	}
+
+	/* Make sure the files are closed. If they were already closed
+	 * it is not problem to call the functions again.
+	 */
+	PX_close(pxdoc);
 
 #if PX_USE_RECODE
 	if(pxdoc->recode_outer)
@@ -461,13 +695,13 @@ PX_open_blob_file(pxblob_t *pxblob, char *filename) {
 	}
 
 	pxblob->px_name = px_strdup(pxblob->pxdoc, filename);
-	pxblob->closefp = px_true;
+	pxblob->px_close_fp = px_true;
 	return 0;
 }
 
 PXLIB_API void PXLIB_CALL
 PX_close_blob(pxblob_t *pxblob) {
-	if((pxblob->closefp) && (pxblob->px_fp != 0)) {
+	if((pxblob->px_close_fp) && (pxblob->px_fp != 0)) {
 		fclose(pxblob->px_fp);
 		pxblob->px_fp = NULL;
 		pxblob->pxdoc = NULL;

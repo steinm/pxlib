@@ -109,15 +109,20 @@ typedef struct px_datablockinfo pxdatablockinfo_t;
 typedef struct px_blob pxblob_t;
 typedef struct px_head pxhead_t;
 typedef struct px_field pxfield_t;
+typedef struct px_pindex pxpindex_t;
 
 struct px_doc {
-	FILE *px_fp;
-	char *px_name;
-	int closefp;
+	/* database file */
+	FILE *px_fp;       /* File pointer of file */
+	char *px_name;     /* Name of file */
+	int px_close_fp;   /* set to true if file pointer must be closed */
+	pxhead_t *px_head; /* Pointer to header of file */
+	void *px_data;     /* Pointer to data of file (only used in prim. index) */
+
+	/* primary index file */
+	pxdoc_t *px_pindex;
 
 	int in_error;
-
-	pxhead_t *px_head;
 
 	size_t (*writeproc)(pxdoc_t *p, void *data, size_t size);
 	void (*errorhandler)(pxdoc_t *p, int level, const char* msg);
@@ -140,16 +145,24 @@ struct px_doc {
 struct px_blob {
 	FILE *px_fp;
 	char *px_name;
-	int closefp;
+	int px_close_fp;
 	pxdoc_t *pxdoc;
 };
 
 struct px_datablockinfo {
-	long blockpos;
-	long recordpos;
-	int size;
+	long blockpos;     /* the start of the block in the file */
+	long recordpos;    /* the start of the record in the file */
+	int size;          /* the size of the block */
+	int recno;         /* the recno with the block starting with 0 */
+	int numrecords;    /* the number of records in the block */
+	int number;        /* the block number from the data block header */
+	int realnumber;    /* the block number count (first block is 0) */
+};
+
+struct px_pindex {
+	int blocknumber;
 	int numrecords;
-	int number;
+	int dummy;
 };
 
 PXLIB_API int PXLIB_CALL
@@ -181,6 +194,12 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp);
 
 PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename);
+
+PXLIB_API int PXLIB_CALL
+PX_read_primary_index(pxdoc_t *pindex);
+
+PXLIB_API int PXLIB_CALL
+PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex);
 
 PXLIB_API char * PXLIB_CALL
 PX_get_record(pxdoc_t *pxdoc, int recno, char *data);
