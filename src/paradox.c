@@ -143,12 +143,12 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 		reallocproc = _px_realloc;
 		freeproc  = _px_free;
 	} else if(allocproc != NULL && (reallocproc == NULL || freeproc == NULL)) {
-		(*errorhandler)(NULL, PX_RuntimeError, _("Must be set all memory management functions or none"), errorhandler_user_data);
+		(*errorhandler)(NULL, PX_RuntimeError, _("Must set all memory management functions or none."), errorhandler_user_data);
 		return(NULL);
 	}
 
 	if(NULL == (pxdoc = (pxdoc_t *) (* allocproc) (NULL, sizeof(pxdoc_t), "PX_new3: Allocate memory for px document."))) {
-		(*errorhandler)(NULL, PX_MemoryError, _("Couldn't allocate PX object"), errorhandler_user_data);
+		(*errorhandler)(NULL, PX_MemoryError, _("Could not allocate memory for PX object."), errorhandler_user_data);
 		return(NULL);
 	}
 	memset((void *)pxdoc, 0, (size_t) sizeof(pxdoc_t));
@@ -251,7 +251,7 @@ PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf) {
 	pxstream_t *pxs;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
@@ -300,7 +300,7 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 	pxstream_t *pxs;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
@@ -381,8 +381,8 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	int approxheadersize = 0; /* The name indicates that this size not accurate,
 							   * actually it is very precise. */
 
-	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("PX_create_fp: Allocate memory for document header."))) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
+	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Allocate memory for database header."))) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for databae header."));
 		return -1;
 	}
 	pxh->px_filetype = pxfFileTypNonIndexDB;
@@ -498,7 +498,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, char *filename)
 PXLIB_API void PXLIB_CALL
 PX_set_value(pxdoc_t *pxdoc, char *name, float value) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
 }
@@ -510,7 +510,7 @@ PX_set_value(pxdoc_t *pxdoc, char *name, float value) {
 PXLIB_API float PXLIB_CALL
 PX_get_value(pxdoc_t *pxdoc, char *name) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
 }
@@ -522,12 +522,12 @@ PX_get_value(pxdoc_t *pxdoc, char *name) {
 PXLIB_API void PXLIB_CALL
 PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
 		return;
 	}
 
@@ -608,7 +608,7 @@ PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value) {
 PXLIB_API const char * PXLIB_CALL
 PX_get_parameter(pxdoc_t *pxdoc, char *name) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
 }
@@ -627,19 +627,19 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
 	if(pxdoc == NULL ||
 	   pxdoc->px_head == NULL ||
 	   pxdoc->px_head->px_filetype != pxfFileTypIndexDB) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database file"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if(pindex == NULL ||
 	   pindex->px_head == NULL ||
 	   pindex->px_head->px_filetype != pxfFileTypPrimIndex) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox primary index file"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox primary index file."));
 		return -1;
 	}
 
 	if(pindex->px_data == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Primary index file has no index data"));
+		px_error(pxdoc, PX_RuntimeError, _("Primary index file has no index data."));
 		return -1;
 	}
 
@@ -669,7 +669,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	if(pindex == NULL ||
 	   pindex->px_head == NULL ||
 	   pindex->px_head->px_filetype != pxfFileTypPrimIndex) {
-		px_error(pindex, PX_RuntimeError, _("Did not pass a paradox primary index file"));
+		px_error(pindex, PX_RuntimeError, _("Did not pass a paradox primary index file."));
 		return -1;
 	}
 
@@ -822,13 +822,13 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 
 				/* Go to the start of the data block (skip the header) */
 				if((ret = pxdoc->seek(pxdoc, pxdoc->px_stream, pxdbinfo->blockpos, SEEK_SET)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block."));
 					return 0;
 				}
 
 				/* Get the info about this data block */
 				if((ret = pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+					px_error(pxdoc, PX_RuntimeError, _("Could not read datablock header."));
 					return 0;
 				}
 
@@ -966,12 +966,12 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 	pxdatablockinfo_t tmppxdbinfo;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return NULL;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
 		return NULL;
 	}
 	pxh = pxdoc->px_head;
@@ -985,7 +985,7 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 	   (*deleted && (recno >= pxh->px_theonumrecords)) ||
 	   (pxdoc->px_pindex && (recno >= pxh->px_numrecords)) ||
 	   (!*deleted && (recno >= pxh->px_numrecords))) {
-		px_error(pxdoc, PX_RuntimeError, _("Record number out of range"));
+		px_error(pxdoc, PX_RuntimeError, _("Record number out of range."));
 		return NULL;
 	}
 
@@ -1024,12 +1024,12 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	int itmp;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
 		return -1;
 	}
 	pxh = pxdoc->px_head;
@@ -1090,7 +1090,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
 
@@ -1112,7 +1112,7 @@ PX_delete(pxdoc_t *pxdoc) {
 	int i;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return;
 	}
 
@@ -1186,12 +1186,12 @@ PX_delete(pxdoc_t *pxdoc) {
 PXLIB_API pxfield_t* PXLIB_CALL
 PX_get_fields(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return NULL;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
 		return NULL;
 	}
 
@@ -1209,19 +1209,19 @@ PX_get_field(pxdoc_t *pxdoc, int fieldno) {
 	pxfield_t *pfield;
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return NULL;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
 		return NULL;
 	}
 
 	pxh = pxdoc->px_head;
 
 	if((fieldno < 0) || (fieldno >= pxh->px_numfields)) {
-		px_error(pxdoc, PX_RuntimeError, _("Field number out of range"));
+		px_error(pxdoc, PX_RuntimeError, _("Field number out of range."));
 		return NULL;
 	}
 
@@ -1238,12 +1238,12 @@ PX_get_field(pxdoc_t *pxdoc, int fieldno) {
 PXLIB_API int PXLIB_CALL
 PX_get_num_fields(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
 		return -1;
 	}
 
@@ -1257,12 +1257,12 @@ PX_get_num_fields(pxdoc_t *pxdoc) {
 PXLIB_API int PXLIB_CALL
 PX_get_num_records(pxdoc_t *pxdoc) {
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("File has no header"));
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
 		return -1;
 	}
 
@@ -1280,17 +1280,17 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 	char buffer[30];
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
 		return -1;
 	}
 
 	if(pxdoc->targetencoding) {
-		px_error(pxdoc, PX_RuntimeError, _("Target encoding already set"));
+		px_error(pxdoc, PX_RuntimeError, _("Target encoding already set."));
 		return -1;
 	}
 
@@ -1334,17 +1334,17 @@ PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding) {
 	char buffer[30];
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
 	if(pxdoc->px_head == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
 		return -1;
 	}
 
 	if(pxdoc->inputencoding) {
-		px_error(pxdoc, PX_RuntimeError, _("Input encoding already set"));
+		px_error(pxdoc, PX_RuntimeError, _("Input encoding already set."));
 		return -1;
 	}
 
@@ -1384,7 +1384,7 @@ PX_set_tablename(pxdoc_t *pxdoc, char *tablename) {
 	char buffer[30];
 
 	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
@@ -1413,7 +1413,7 @@ PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc) {
 	pxblob_t *pxblob;
 
-	pxblob = pxdoc->malloc(pxdoc, sizeof(pxblob_t), _("Couldn't get memory for blob."));
+	pxblob = pxdoc->malloc(pxdoc, sizeof(pxblob_t), _("Could not allocate memory for blob."));
 	if(!pxblob) {
 		return(NULL);
 	} else {
@@ -1493,7 +1493,7 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	}
 
 	if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek"));
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
 		return NULL;
 	}
 
@@ -1503,11 +1503,11 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 	}
 
 	if(size != get_long_be(&head[3])) {
-		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)"), size, get_long_be(&head[3]));
+		px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_be(&head[3]));
 		return(NULL);
 	}
 
-	blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Couldn't get memory for blob."));
+	blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
 	if(!blobdata) {
 		return(NULL);
 	}
