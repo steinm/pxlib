@@ -196,20 +196,44 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	TPxDataHeader pxdatahead;
 	TFldInfoRec pxinfo;
 	pxfield_t *pxf;
+	char *ptr;
 	int nullint = 0;
 	int i, len = 0;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
 
+	char *basehead = &pxhead;
+
 	put_short_le(&pxhead.recordSize, pxh->px_recordsize);
 	put_short_le(&pxhead.headerSize, pxh->px_headersize);
 	put_short_le(&pxhead.fileBlocks, pxh->px_fileblocks);
+	/* nextBlock is the number of the next block to use. It is always
+	 * identical to fileBlocks unless, there are empty blocks in the
+	 * file, which will not happen. */
+	put_short_le(&pxhead.nextBlock, pxh->px_fileblocks);
+	/* firstBlock should be zero unless there is at least one data
+	 * block in the file. We set it to 1, because completely empty
+	 * files are bogus anyway. */
+	put_short_le(&pxhead.firstBlock, 1);
+	/* The last block is similar to nextBlock. If all blocks are filled
+	 * this is identical to fileBlocks. */
+	put_short_le(&pxhead.lastBlock, pxh->px_fileblocks);
+	put_short_le(&pxhead.maxBlocks, pxh->px_fileblocks);
+	/* The field unknown12x13 is probably the number of changes.
+	 * In several files it was just 5. */
+	put_short_le(&pxhead.unknown12x13, 5);
 	pxhead.fileType = pxh->px_filetype;
 	pxhead.maxTableSize = pxh->px_maxtablesize;
 	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
 	pxhead.writeProtected = pxh->px_writeprotected;
 	put_short_le(&pxhead.numFields, pxh->px_numfields);
+	put_long_le(&pxhead.encryption1, 0xFF00FF00);
+	pxhead.sortOrder = pxh->px_sortorder;
+	pxhead.changeCount1 = 1;
+	pxhead.changeCount2 = 1;
+	put_long_le(&pxhead.fldInfoPtr, basehead+0x78);
+	put_long_le(&pxhead.tableNamePtrPtr, basehead+0x78+pxh->px_numfields*2);
 	switch(pxh->px_fileversion) {
 		case 70:
 			pxhead.fileVersionID = 0x0C;
@@ -249,14 +273,24 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 
 	/* write tableNamePtr */
-	if(fwrite(&nullint, 4, 1, fp) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+	/* 78 Bytes is the header. The continued header at 0x78 starts
+	 * with numfields fields specifications (each 2 Bytes), followed
+	 * by this pointer (tableNamePtr) and numfield pointers to the
+	 * fieldnames. */
+	put_long_le(&ptr, basehead+0x78+pxh->px_numfields*2*2+4);
+	if(fwrite(&ptr, 4, 1, fp) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write tableName pointer."));
 		return -1;
 	}
 	/* write fieldNamePtrArray */
-	for(i=0; i<pxh->px_numfields; i++) {
-		if(fwrite(&nullint, 4, 1, fp) < 1) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+	int base = basehead+0x78+pxh->px_numfields*2*2+4+261;
+	pxf = pxh->px_fields;
+	int offset = 0;
+	for(i=0; i<pxh->px_numfields; i++, pxf++) {
+		put_long_le(&ptr, base+offset);
+		offset += strlen(pxf->px_fname)+1;
+		if(fwrite(&ptr, 4, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write fieldName pointer."));
 			return -1;
 		}
 	}
@@ -296,6 +330,21 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 		}
 	}
 
+	/* write fieldNumbers */
+	short int tmp;
+	for(i=0; i<pxh->px_numfields; i++) {
+		put_short_le(&tmp, i+1);
+		if(fwrite(&tmp, 2, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
+			return -1;
+		}
+	}
+
+	/* write sortOrderID */
+	if(fputs("ANSIINTL", fp) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
+		return -1;
+	}
 	return 0;
 }
 /* }}} */
