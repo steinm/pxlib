@@ -4,7 +4,7 @@ SUBDIRS = include src doc
 
 spec = $(PACKAGE).spec
 
-EXTRA_DIST = 
+EXTRA_DIST = $(spec) $(spec).in
 
 #all-local: $(spec)
 

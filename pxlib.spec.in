@@ -1,0 +1,37 @@
+Summary: A library to read Paradox databases
+Name: pxlib
+Version: @PACKAGE_VERSION@
+Release: 1
+Copyright: see doc/PDFlib-license.pdf
+Group: Applications/Utils
+Url: http://www.pdflib.com/pdflib/index.html
+Packager: Uwe Steinmann <uwe@steinmann.cx>
+Source: http://prdownloads.sourceforge.net/pxlib/pxlib-%{PACKAGE_VERSION}.tar.gz
+BuildRoot: /var/tmp/rpm/pxlib-root
+Prefix: /usr
+
+%description
+pxlib is a simply and still small C library to read Paradox DB files. It
+supports all versions starting from 3.0. It currently has a very limited set of
+functions like to open a DB file, read its header and read every single record.
+
+%prep
+%setup
+
+%build
+./configure --prefix=%prefix --mandir=%prefix/share/man --infodir=%prefix/share/info
+make
+
+%install
+rm -rf ${RPM_BUILD_ROOT}
+install -d -m 755 ${RPM_BUILD_ROOT}
+make prefix=${RPM_BUILD_ROOT}/usr install
+
+%clean
+rm -rf ${RPM_BUILD_ROOT}
+
+%files
+%attr(-,root,root) %doc doc 
+%attr(-,root,root) /usr/lib/*
+%attr(-,root,root) /usr/include/*
+%attr(-,root,root) /usr/share/man/man3/*
