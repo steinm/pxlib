@@ -28,7 +28,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 
 	/* check some header fields for reasonable values */
-	if((pxhead.fileType > 8) || (pxhead.fileType < 0)) {
+	if(pxhead.fileType > 8) {
 		px_free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file type (%d)."), pxhead.fileType);
 		return NULL;
@@ -45,7 +45,17 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 
 	pxh->px_recordsize = get_short(&pxhead.recordSize);
+	if(pxh->px_recordsize == 0) {
+		px_free(pxdoc, pxh);
+		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero record size."));
+		return NULL;
+	}
 	pxh->px_headersize = get_short(&pxhead.headerSize);
+	if(pxh->px_headersize == 0) {
+		px_free(pxdoc, pxh);
+		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero header size."));
+		return NULL;
+	}
 	pxh->px_filetype = pxhead.fileType;
 	pxh->px_numrecords = get_long(&pxhead.numRecords);
 	pxh->px_numfields = get_short(&pxhead.numFields);

@@ -3,3 +3,6 @@ Version 0.0.4
 	- maxTableSize may now be larger as 32
 	- add check for endianess
 	- added data conversion functions
+
+Version 0.0.5
+  - check for zero record size and header size
