@@ -25,11 +25,11 @@ char *px_strdup(pxdoc_t *p, const char *str) {
 	char *buf;
 
 	if (str == NULL) {
-		px_error(p, PX_Warning, "NULL string in pdf_strdup");
+		p->errorhandler(p, PX_Warning, "NULL string in pdf_strdup");
 		return(NULL);
 	}
 	len = px_strlen(str);
-	buf = (char *) px_malloc(p, len+1, "ps_strdup");
+	buf = (char *) p->malloc(p, len+1, "ps_strdup");
 	memcpy(buf, str, len+1);
 	return(buf);
 }

@@ -18,41 +18,41 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	char dummy[300], c;
 	int ret, i, j;
 
-	if((pxh = (pxhead_t *) px_malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL)
+	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL)
 		return NULL;
 	if(fseek(fp, 0, 0) < 0)
 		return NULL;
 	if((ret = fread(&pxhead, sizeof(TPxHeader), 1, fp)) < 0) {
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh);
 		return NULL;
 	}
 
 	/* check some header fields for reasonable values */
 	if(pxhead.fileType > 8) {
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file type (%d)."), pxhead.fileType);
 		return NULL;
 	}
 	if(pxhead.maxTableSize > 32 || pxhead.maxTableSize < 1) {
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown table size (%d)."), pxhead.maxTableSize);
 		return NULL;
 	}
 	if(pxhead.fileVersionID > 15 || pxhead.fileVersionID < 3) {
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file version (0x%X)."), pxhead.fileVersionID);
 		return NULL;
 	}
 
 	pxh->px_recordsize = get_short(&pxhead.recordSize);
 	if(pxh->px_recordsize == 0) {
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero record size."));
 		return NULL;
 	}
 	pxh->px_headersize = get_short(&pxhead.headerSize);
 	if(pxh->px_headersize == 0) {
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero header size."));
 		return NULL;
 	}
@@ -94,21 +94,21 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		  (pxh->px_filetype == 5)) &&
 		  (pxh->px_fileversion >= 40)) {
 		if((ret = fread(&pxdatahead, sizeof(TPxDataHeader), 1, fp)) < 0) {
-			px_free(pxdoc, pxh);
+			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
 		pxh->px_doscodepage = get_short(pxdatahead.dosCodePage);
 	}
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
-	if((pxh->px_fields = (pxfield_t *) px_malloc(pxdoc, pxh->px_numfields*sizeof(pxfield_t), _("Could not get memory for field definitions."))) == NULL)
+	if((pxh->px_fields = (pxfield_t *) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxfield_t), _("Could not get memory for field definitions."))) == NULL)
 		return NULL;
 
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
 		if((ret = fread(&pxinfo, sizeof(TFldInfoRec), 1, fp)) < 0) {
-			px_free(pxdoc, pxh->px_fields);
-			px_free(pxdoc, pxh);
+			pxdoc->free(pxdoc, pxh->px_fields);
+			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
 		pfield->px_ftype = pxinfo.fType;
@@ -124,8 +124,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 
 	/* skip the tableNamePtr */
 	if((ret = fread(dummy, sizeof(int), 1, fp)) < 0) {
-		px_free(pxdoc, pxh->px_fields);
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh->px_fields);
+		pxdoc->free(pxdoc, pxh);
 		return NULL;
 	}
 
@@ -133,8 +133,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	if(pxhead.fileType == 0 || pxhead.fileType == 2) {
 		for(i=0; i<pxh->px_numfields; i++) {
 			if((ret = fread(dummy, sizeof(int), 1, fp)) < 0) {
-				px_free(pxdoc, pxh->px_fields);
-				px_free(pxdoc, pxh);
+				pxdoc->free(pxdoc, pxh->px_fields);
+				pxdoc->free(pxdoc, pxh);
 				return NULL;
 			}
 		}
@@ -146,8 +146,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	else
 		ret = fread(dummy, 79, 1, fp);
 	if(ret < 0) {
-		px_free(pxdoc, pxh->px_fields);
-		px_free(pxdoc, pxh);
+		pxdoc->free(pxdoc, pxh->px_fields);
+		pxdoc->free(pxdoc, pxh);
 		return NULL;
 	}
 	pxh->px_tablename = px_strdup(pxdoc, dummy);
@@ -159,9 +159,9 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 			dummy[j++] = c;
 		}
 		if(ret < 0) {
-			px_free(pxdoc, pxh->px_tablename);
-			px_free(pxdoc, pxh->px_fields);
-			px_free(pxdoc, pxh);
+			pxdoc->free(pxdoc, pxh->px_tablename);
+			pxdoc->free(pxdoc, pxh->px_fields);
+			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
 		dummy[j] = '\0';
