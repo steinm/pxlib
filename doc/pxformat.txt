@@ -180,6 +180,10 @@
 |      |        figured it out.                                              |
 |      |        Uwe: This field and 0x2C must be set correctly for a         |
 |      |        .PX file (see note at 0x2C).                                 |
+|      |        Uwe: This field in a .PX file and a .DB file seem to be      |
+|      |        related. The value in the .PX file is in most cases 1 larger |
+|      |        than in the .DB. The value in the .DB file itself is seldom  |
+|      |        larger than 19.                                              | 
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 0014 | byte        modifiedFlags1                                          |
@@ -209,12 +213,12 @@
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 001E | word        indexRoot    (Added 14.01.04 by Uwe)                    | 
-|      |        Block number of index root                                   |
+|      |        Block number of index root (check paradox4.txt)              |
 |      |        Only used in .PX files.                                      |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 0020 | byte       numIndexLevels   (Added 14.01.04 by Uwe)                 |
-|      |        Number of index levels                                       |
+|      |        Number of index levels (check paradox4.txt)                  |
 |      |        Only used in .PX files.                                      |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
@@ -276,7 +280,13 @@
 | 002B...002C        unknown    (always 0)                                   |
 |      |        0x2C has a value in .PX files. If it is not set Paradox will |
 |      |        quit with a message like 'the index is not valid anymore'.   |
-|      |        (Uwe)                                                        |
+|      |        See also 0x12. 0x2C increments whenever a change happend     |
+|      |        to the .PX file. If you add 2 new records to the .DB file    |
+|      |        this will increment by two. If you delete 2 records it will  |
+|      |        also increment by two. If you change a primary key field     |
+|      |        if will increment for each change field. If you change a     |
+|      |        field and change it back it will for two.                    |
+|      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 002D | byte        changeCount1                                            |
 |      |                                                                     |
@@ -376,13 +386,27 @@
 |      |                                                                     |
 |      |        Always zero (Uwe)                                            |
 +------+---------------------------------------------------------------------+
-| 0051...0052        unknown                                                 |
+| 0051 | integer     realHeaderSize                                          |
 |      |                                                                     |
-|      |        0x51 is somehow related to fileVersionID in .PX files        |
-|      |        0x51 = 173 fileVersionId = 11                                |
-|      |        0x51 = 99  fileVersionId = 12                                |
+|      |        Added by Uwe 20.01.2003                                      |
+|      |        The exact size of bytes in the header.                       |
 |      |                                                                     |
-|      |        0x51 and 0x52 are the exact size of bytes in the header      |
+|      |        In .PX files it can be calculated by adding:                 |
+|      |          0x58               (size of header)                        |
+|      |        + numFields * 2      (Field type and size)                   |
+|      |        + 4                  (tableNamePtr)                          |
+|      |        + 79 or 261          (len of tablename depending on version) |
+|      |                                                                     |
+|      |        In .DB files it can be calculated by adding:                 |
+|      |          0x78               (size of header)                        |
+|      |        + numFields * 2      (Field type and size)                   |
+|      |        + 4                  (tableNamePtr)                          |
+|      |        + numFields * 4      (fieldNamePtrs)                         |
+|      |        + numFields * 2      (fieldNumbers)                          |
+|      |        + sum(len(fieldname) (Space used by field names)             |
+|      |        + 79 or 261          (len of tablename depending on version) |
+|      |        + len(sortOrderID)   (don't forget the trailing zero)        |
+|      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 0053 | byte        unknown                                                 |
 |      |                                                                     |
@@ -493,16 +517,26 @@
 +------+---------------------------------------------------------------------+
 | 006C...006D        unknown                                                 |
 |      |                                                                     |
-|      |        Mostly zero in .PX files. 0x6C is sometimes 88. (Uwe)        |
+|      |        0x6C is sometimes 88. (Uwe)                                  |
 +------+---------------------------------------------------------------------+
 | 006E | integer     unknown                                                 |
 |      |                                                                     |
-|      |        Uwe: This value + 0x60 is the number of bytes actually       |
-|      |        used in the header.                                          |
+|      |        Uwe: This value + 0x60-1 is the number of bytes actually     |
+|      |        used in the header (see realHeaderSize).                     |
 +------+---------------------------------------------------------------------+
 | 0070 | integer     changeCount4                                            |
+|      |                                                                     |
+|      |        Uwe: This value changes when a record is deleted but not     |
+|      |        when a record is changed. It is incremented when you         |
+|      |        delete a record and change in to 'none modify' modus in      |
+|      |        the Paradox software. It increments a second time when you   |
+|      |        leave the Paradox software. Maybe it counts both, header     |
+|      |        changes and record deletion.                                 |
 +------+---------------------------------------------------------------------+
-| 0072...0077        unknown (Uwe: 74 seems to be another changeCount)       |
+| 0072...0077        unknown                                                 |
+|      |                                                                     |
+|      |        Uwe: 0x74 seems to be another changeCount. It increments     |
+|      |        when a record changes but not when a record was deleted.     |
 |      |                                                                     |
 |      |        0x74 and 0x75 has sometimes a value != zero                  |
 |      |        All other fields are always zero (Uwe)                       |
