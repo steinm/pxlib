@@ -1874,7 +1874,7 @@ static char*
 _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *mod, int *blobsize) {
 	int ret;
 	char *blobdata;
-	char head[12];
+	unsigned char head[12];
 	pxdoc_t *pxdoc = pxblob->pxdoc;
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
