@@ -33,4 +33,7 @@ typedef TDataBlock *PDataBlock;
 typedef struct _TMbHeader TMbHeader;
 typedef TMbHeader *PMbHeader;
 
+typedef struct _TMbBlockHeader TMbBlockHeader;
+typedef TMbBlockHeader *PMbBlockHeader;
+
 #endif

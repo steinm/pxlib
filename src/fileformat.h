@@ -84,4 +84,12 @@ struct _TMbHeader {
 	word suballoc;
 	word subthresh;
 };
+
+struct _TMbBlockHeader {
+	byte type;
+	word numBlocks;
+	longint blobLen;
+	word modNr;
+};
+
 #endif
