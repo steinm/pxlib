@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>FIRSTNAME</firstname>">
   <!ENTITY dhsurname   "<surname>SURNAME</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>July 15, 2004</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -57,30 +57,33 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>closes Paradox blob file</refpurpose>
+    <refpurpose>Read blob from file</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>char* &funcname;(pxblob_t *pxblob, int offset, size_t size)</para>
+		<para>char* &funcname;(pxblob_t *pxblob, const char *data, int len, int *mod_nr, int *blobsize)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Reads blob data starting at the given offset. The offset
-		  points to the start of the header of the blob. The header will
-			be checked for reasonable values before reading the blob data.
-			The function
-		  reads <option>size</option> bytes. <option>size</option> does not
-			include the size of the header and must be identical the size
-			stored in the header. The memory for the data
-			is allocated by the function and must be freed by the caller.</para>
+    <para>Reads blob data from the given blob document (.MB file)
+	    passed as the
+		  first parameter. <option>data</option> is the data stored in the
+			blob field of the db file. <option>len</option> is the length
+			of that field. The function hides everything needed for evaluating
+			the field data. It can handle both single blob blocks and
+			suballocated blocks.
+			</para>
 
   </refsect1>
   <refsect1>
     <title>RETURNS</title>
 
     <para>Returns NULL in case of an error or a pointer to the blob
-		  data.</para>
+		  data. <option>mod_nr</option> contains the modification number of
+			the blob and <option>blobsize</option> contains the length of
+			the blob data. The modification number can be used as a unique
+			id for the blob.</para>
 
   </refsect1>
   <refsect1>
