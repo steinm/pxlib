@@ -14,12 +14,18 @@ EXTRA_DIST = PX_get_majorversion.sgml \
 						 PX_new.sgml \
 						 PX_open_file.sgml \
 						 PX_open_fp.sgml \
+						 PX_create_db.sgml \
 						 PX_get_data_short.sgml \
 						 PX_get_data_long.sgml \
 						 PX_get_data_double.sgml \
 						 PX_get_data_alpha.sgml \
+						 PX_put_data_short.sgml \
+						 PX_put_data_long.sgml \
+						 PX_put_data_double.sgml \
+						 PX_put_data_alpha.sgml \
 						 PX_get_record.sgml \
 						 PX_get_record2.sgml \
+						 PX_put_record.sgml \
 						 PX_get_field.sgml \
 						 PX_get_fields.sgml \
 						 PX_get_num_fields.sgml \
