@@ -1,3 +1,8 @@
+Version 0.4.3
+	- various fixed for writing blob files
+	- timestamps are now written propperly (new functions
+	  PX_get_data_timestamp() and PX_put_data_timestamp())
+
 Version 0.4.2
 	- fixed possible errors in header of mb files
 	- added support for type 3 blocks in mb files
