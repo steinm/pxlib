@@ -202,7 +202,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
 		return -1;
 	}
-	pxh->px_filetype = pxfFileTypIndexDB;
+	pxh->px_filetype = pxfFileTypNonIndexDB;
 	pxh->px_fileversion = 70;
 	pxh->px_tablename = NULL;
 	pxh->px_numrecords = 0;
@@ -212,9 +212,10 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxh->px_headersize = 0x0800;
 	pxh->px_fileblocks = 0;
 	pxh->px_maxtablesize = 16;
-	pxh->px_doscodepage = 1251;
+	pxh->px_doscodepage = 1252;
 	pxh->px_primarykeyfields = 0;
 	pxh->px_autoinc = 0;
+	pxh->px_sortorder = 0x62;
 
 	/* Calculate record size */
 	pxf = pxh->px_fields;
@@ -223,9 +224,9 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	}
 	pxh->px_recordsize = recordsize;
 	if(recordsize < 30) {
-		pxh->px_maxtablesize = 1;
-	} else if(recordsize < 120) {
 		pxh->px_maxtablesize = 2;
+	} else if(recordsize < 120) {
+		pxh->px_maxtablesize = 3;
 	}
 
 	if(put_px_head(pxdoc, pxh, fp) < 0) {
