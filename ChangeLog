@@ -1,3 +1,13 @@
+Version 0.2.6
+	- added new function PX_get_recordsize()
+	- set indexRoot and numIndexLevels in .PX files
+	- fixed segm fault when writing a primary index file
+	- fixed reading of blobs
+	- two new header fields are known (indexRoot, numIndexLevels)
+	- many more translations
+	- some more tweaking to finally store the file update time in the
+	  header without messing it up
+
 Version 0.2.5
 	- fixed man pages of PX_set_value|parameter. Both functions return int now.
 	- PX_set_parameter() returns -1 on error and 0 otherwise
