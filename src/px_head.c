@@ -26,6 +26,24 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		px_free(pxdoc, pxh);
 		return NULL;
 	}
+
+	/* check some header fields for reasonable values */
+	if(pxhead.fileType > 8 || pxhead.fileType < 0) {
+		px_free(pxdoc, pxh);
+		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file type (%d)."), pxhead.fileType);
+		return NULL;
+	}
+	if(pxhead.maxTableSize > 16 || pxhead.maxTableSize < 1) {
+		px_free(pxdoc, pxh);
+		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown table size (%d)."), pxhead.maxTableSize);
+		return NULL;
+	}
+	if(pxhead.fileVersionID > 15 || pxhead.fileVersionID < 3) {
+		px_free(pxdoc, pxh);
+		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file version (0x%X)."), pxhead.fileVersionID);
+		return NULL;
+	}
+
 	pxh->px_recordsize = get_short(&pxhead.recordSize);
 	pxh->px_headersize = get_short(&pxhead.headerSize);
 	pxh->px_filetype = pxhead.fileType;
@@ -101,12 +119,14 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		return NULL;
 	}
 
-	/* skip the tfieldNamePtrArray */
-	for(i=0; i<pxh->px_numfields; i++) {
-		if((ret = fread(dummy, sizeof(int), 1, fp)) < 0) {
-			px_free(pxdoc, pxh->px_fields);
-			px_free(pxdoc, pxh);
-			return NULL;
+	/* skip the tfieldNamePtrArray, not present in index files */
+	if(pxhead.fileType == 0 || pxhead.fileType == 2) {
+		for(i=0; i<pxh->px_numfields; i++) {
+			if((ret = fread(dummy, sizeof(int), 1, fp)) < 0) {
+				px_free(pxdoc, pxh->px_fields);
+				px_free(pxdoc, pxh);
+				return NULL;
+			}
 		}
 	}
 
