@@ -122,6 +122,7 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 #endif
 #endif
 	pxdoc->targetencoding = NULL;
+	pxdoc->px_data = NULL;
 
 	return pxdoc;
 }
@@ -315,11 +316,11 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
  */
 PXLIB_API int PXLIB_CALL
 PX_read_primary_index(pxdoc_t *pindex) {
-	pxpindex_t *pindex_data;
+	pxpindex_t *pindex_data, pdata;
 	pxhead_t *pxh;
 	pxfield_t *pxf;
 	char *data;
-	int j;
+	int i, j, swap, datalen;
 
 	if(pindex == NULL ||
 	   pindex->px_head == NULL ||
@@ -329,49 +330,72 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	}
 
 	pxh = pindex->px_head;
-	pindex->px_data = pindex->malloc(pindex, pxh->px_numrecords*sizeof(pxpindex_t), _("Couldn't get memory for primary index data."));
+	pindex->px_data = pindex->malloc(pindex, pxh->px_numrecords*sizeof(pxpindex_t), _("Allocate memory for primary index data."));
 	if(!pindex->px_data) {
 		px_error(pindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
 		return -1;
 	}
 
 	pindex_data = (pxpindex_t *) pindex->px_data;
-	if((data = (char *) pindex->malloc(pindex, pxh->px_recordsize, _("Could not allocate memory for record."))) == NULL) {
+	memset(pindex_data, 0, pxh->px_numrecords*sizeof(pxpindex_t));
+
+	if((data = (char *) pindex->malloc(pindex, pxh->px_recordsize, _("Allocate memory for data of index record."))) == NULL) {
 		px_error(pindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
+		pindex->free(pindex, pindex->px_data);
 		return -1;
 	}
 
+	/* Read over the field data.
+	 * px_numfields does not count the fields with information about
+	 * block position and num of records per block. It is only the
+	 * number of index fields. */
+	datalen = 0;
+	pxf = pxh->px_fields;
+	for(i=0; i<pxh->px_numfields; i++) {
+		datalen += pxf->px_flen;
+		pxf++;
+	}
+	if(datalen != pxh->px_recordsize-6) {
+		px_error(pindex, PX_RuntimeError, _("Inconsistency in length of primary index record. Expected %d but calculated %d."), pxh->px_recordsize-6, datalen);
+		pindex->free(pindex, data);
+		pindex->free(pindex, pindex->px_data);
+		pindex->px_data = NULL;
+		return(-1);
+	}
 	for(j=0; j<pxh->px_numrecords; j++) {
-		int offset, i;
 		if(PX_get_record(pindex, j, data)) {
 			short int value;
-			offset = 0;
-			/* Read over the field data.
-			 * px_numfields does not count the fields with information about
-			 * block position and num of records per block. */
-			pxf = pxh->px_fields;
-			for(i=0; i<pxh->px_numfields; i++) {
-				offset += pxf->px_flen;
-				pxf++;
-			}
-			PX_get_data_short(pindex, &data[offset], 2, &value);
+			/* Copy the data part for later sorting */
+			pindex_data[j].data = pindex->malloc(pindex, datalen, _("Allocate memory for data part of index record."));
+			memcpy(pindex_data[j].data, data, datalen);
+			/* Get the index data */
+			PX_get_data_short(pindex, &data[datalen], 2, &value);
 			pindex_data[j].blocknumber = value;
-			offset += 2;
-			PX_get_data_short(pindex, &data[offset], 2, &value);
+			PX_get_data_short(pindex, &data[datalen+2], 2, &value);
 			pindex_data[j].numrecords = value;
-			offset += 2;
-			PX_get_data_short(pindex, &data[offset], 2, &value);
+			PX_get_data_short(pindex, &data[datalen+4], 2, &value);
 			pindex_data[j].dummy = value;
-			offset += 2;
 		} else {
 			px_error(pindex, PX_RuntimeError, _("Could not read record no. %d of primary index data."), j);
+			/* FIXME: Need to free all already allocated data parts */
 			pindex->free(pindex, data);
 			pindex->free(pindex, pindex->px_data);
 			pindex->px_data = NULL;
 			return -1;
 		}
 	}
-
+	/* sort the data */
+	while(swap) {
+		swap = 0;
+		for(j=0; j<pxh->px_numrecords-1; j++) {
+			if(strncmp(pindex_data[j].data, pindex_data[j+1].data, datalen) > 0) {
+				memcpy(&pdata, pindex_data[j].data, datalen);
+				memcpy(pindex_data[j].data, pindex_data[j+1].data, datalen);
+				memcpy(pindex_data[j+1].data, &pdata, datalen);
+				swap = 1;
+			}
+		}
+	}
 	pindex->free(pindex, data);
 	return 0;
 }
@@ -379,11 +403,17 @@ PX_read_primary_index(pxdoc_t *pindex) {
 
 /* px_get_record_pos_with_index() {{{
  * Locates a database record by using the primary index.
+ * The index is used by adding the number of records per block
+ * until the block is found where the record with the given number
+ * is stored. The function still disregards any sorting within the
+ * index. The record number is not an absolut value. Accessing a
+ * database file with and without the index may result in different
+ * record numbers for the same record.
  * Returns 1 if record could be found, otherwise 0
  */
 int
 px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
-	int j, numrecords, n;
+	int j, numrecords, n, recsperdatablock;
 	pxdoc_t *pindexdoc;
 	pxhead_t *pxh, *pxih;
 	pxpindex_t *pindex_data;
@@ -397,13 +427,18 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 		return 0;
 
 	numrecords = 0 ;
+	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))/pxh->px_recordsize;
 	for(j=0; j<pxih->px_numrecords; j++) {
 		/* Check if the number of records is in the possible range.
 		 * I have seen prim. index files with very strange values.
+		 * If the number of records in a datablock according to the index file
+		 * is actually greater than the theoretical maximum, we will
+		 * read the datablock header and get the real value from there.
 		 */
-		if(pindex_data[j].numrecords > pxh->px_maxtablesize*0x400/pxh->px_recordsize) {
+		if(pindex_data[j].numrecords > recsperdatablock) {
 			int ret;
 			TDataBlock datablock;
+			px_error(pxdoc, PX_Warning, _("The number of records in data block %d according to the index file is larger than the theoretical number of records (%d > %d). I will try to get the number from the header of the data block."), pindex_data[j].blocknumber, pindex_data[j].numrecords, recsperdatablock);
 //			printf("Records per block in index file is wrong (%d)\n", pindex_data[j].numrecords);
 			/* Go to the start of the data block (skip the header) */
 			if((ret = fseek(pxdoc->px_fp, pxh->px_headersize + (pindex_data[j].blocknumber-1)*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
@@ -416,8 +451,12 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 				px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
 				return 0;
 			}
+			/* Get the number of records in this block */
 			n = get_short_le((char *) &datablock.addDataSize)/pxh->px_recordsize+1;
-			if(n > pxh->px_maxtablesize*0x400/pxh->px_recordsize) {
+			/* Make sure the real number or records in the block is not bigger
+			 * than the theoretical maximum
+			 */
+			if(n > recsperdatablock) {
 				n = 0;
 			}
 			pindex_data[j].numrecords = n;
@@ -767,6 +806,14 @@ PX_delete(pxdoc_t *pxdoc) {
 		}
 		pxdoc->free(pxdoc, pxdoc->px_head);
 	}
+	if(pxdoc->px_data) {
+		/* Free the data of the file. In case of an primary index file
+		 * this is the index data
+		 * FIXME: need to free the memory pointed to by px_data->data
+		 */
+		pxdoc->free(pxdoc, pxdoc->px_data);
+	}
+
 	pxdoc->free(pxdoc, pxdoc);
 }
 /* }}} */
@@ -1118,6 +1165,26 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 }
 /* }}} */
 
+/* PX_get_data_bytes() {{{
+ * Extracts a bytes field value from a data block
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
+	char *buffer, *obuf = NULL;
+	size_t olen;
+	int res;
+
+	if(data[0] == '\0') {
+		*value = NULL;
+		return 0;
+	}
+
+	memcpy(*value, data, len);
+
+	return 1;
+}
+/* }}} */
+
 /* PX_get_data_double() {{{
  * Extracts a double from a data block
  */
@@ -1168,6 +1235,23 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 		return 0;
 	}
 	*value = get_short_be(data);
+	return 1;
+}
+/* }}} */
+
+/* PX_get_data_byte() {{{
+ * Extracts a byte in a data block
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value) {
+	if(data[0] & 0x80) {
+		data[0] &= 0x7f;
+	} else if(*data != 0) {
+		data[0] |= 0x80;
+	} else {
+		return 0;
+	}
+	*value = *data;
 	return 1;
 }
 /* }}} */
