@@ -73,7 +73,7 @@ manpage.1: manpage.sgml
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns 0 on success an -1 on failure.</para>
+    <para>Returns 0 on success and -1 on failure.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
