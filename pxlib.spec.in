@@ -11,7 +11,7 @@ BuildRoot: /var/tmp/rpm/@PACKAGE@-root
 Prefix: @prefix@
 
 %description
-pxlib is a simply and still small C library to read Paradox DB files. It
+@PACKAGE@ is a simply and still small C library to read Paradox DB files. It
 supports all versions starting from 3.0. It currently has a very limited set of
 functions like to open a DB file, read its header and read every single record.
 
@@ -29,7 +29,7 @@ functions like to open a DB file, read its header and read every single record.
 %setup
 
 %build
-./configure --prefix=%prefix --with-gsf --mandir=%prefix/share/man --infodir=%prefix/share/info
+./configure --prefix=%prefix --with-sqlite --with-gsf --mandir=%prefix/share/man --infodir=%prefix/share/info
 make
 
 %install
