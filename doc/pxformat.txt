@@ -1092,3 +1092,8 @@ Begin
     writeln(^M^J'Error:  Status=', Stream.Status, ';  Error=', Stream.ErrorInfo);
   Stream.Done;
 End.
+
+--------
+Found at http://www.password-crackers.com/crack2.html
+
+Try following universal passwords for different Win/DOS versions: jIGGAe or nx66ppx
