@@ -61,13 +61,18 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>float &funcname;(pxdoc_t *pxdoc, char *name)</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, const char *name, float *value)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Get the value of parameter <option>name</option>.</para>
+    <para>Get the value of parameter <option>name</option>. The value
+		  is returned in the passed parameter <option>value</option>.</para>
     <para>For a list a available parameter names see PX_set_value(3).</para>
+  </refsect1>
+  <refsect1>
+    <title>RETURN VALUE</title>
+    <para>Returns 0 on success and -1 on failure.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
