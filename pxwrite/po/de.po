@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2003-09-23 19:59+0200\n"
+"POT-Creation-Date: 2003-09-24 16:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,22 +55,119 @@ msgstr "libpx wurde für Architekturen mit big endian übersetzt."
 msgid "libpx has been compiled for little endian architecture."
 msgstr "libpx wurde für Architekturen mit little endian übersetzt."
 
-#: src/main.c:113
+#: src/main.c:124
 msgid "You must at least specify an output file."
 msgstr "Sie müssen mindestens eine Ausgabedatei angeben."
 
-#: src/main.c:126
+#: src/main.c:134
+msgid "Could not open input file."
+msgstr "Konnte Eingabedatei nicht öffnen."
+
+#: src/main.c:148 src/main.c:214
 msgid "Could not create new paradox instance."
 msgstr "Konnte neue Paradox-Instanz nicht erzeugen."
 
-#: src/main.c:131
+#: src/main.c:153
 msgid "Could not get memory for field definitions."
 msgstr "Konnte Speicher für Felddefinitionen nicht allozieren."
 
-#: src/main.c:157
+#: src/main.c:179 src/main.c:361
 msgid "Could not create output file."
 msgstr "Konnte Ausgabedatei nicht erzeugen."
 
-#: src/main.c:173
+#: src/main.c:195
 msgid "Could not write record."
 msgstr "Konnte Datensatz nicht schreiben."
+
+#. Create a piece of memory where the pointers to the field values
+#. * can be stored. This array of pointers is used for any row.
+#. * csv_row_fread() initialized it to 0 before refilling it.
+#.
+#: src/main.c:223
+msgid "Allocate memory for single line"
+msgstr "Alloziere Speicher für eine Zeile."
+
+#: src/main.c:224
+msgid "Allocate memory for single row."
+msgstr "Alloziere Speicher für eine Reihe."
+
+#: src/main.c:242
+msgid "Could not read first line of csv input."
+msgstr "Konnte erste Zeile der CSV-Eingabe nicht lesen."
+
+#. Read the field specification an build the field array for
+#. * PX_create_fp()
+#: src/main.c:249
+msgid "Allocate memory for field definitions."
+msgstr "Konnte Speicher für Felddefinitionen nicht allozieren."
+
+#: src/main.c:250
+msgid "Could not allocate memory for field specification array."
+msgstr "Konnte Speicher für Array der Felddefinitionen nicht allozieren."
+
+#: src/main.c:267
+msgid ""
+"Field specification must be a comma separated value (Name,Type,Size,Prec)."
+msgstr ""
+"Felddefinitionen müssen durch Komma getrennte Werte sein (Name,Typ,Größe,"
+"Genauigkeit)"
+
+#: src/main.c:272
+msgid "Allocate memory for column name."
+msgstr "Alloziere Speicher für Spaltenname."
+
+#: src/main.c:273
+#, c-format
+msgid "Could not allocate memory for %d. field name."
+msgstr "Konnte Speicher für %d. Feldnamen nicht allozieren."
+
+#: src/main.c:283
+#, c-format
+msgid "%d. field specification ended unexpectetly."
+msgstr "%d. Felddefinitionen unerwartet beendet."
+
+#: src/main.c:288
+#, c-format
+msgid "%d. field specification misses type."
+msgstr "Der %d. Felddefinitionen fehlt der Typ."
+
+#: src/main.c:326
+#, c-format
+msgid "%d. field type '%c' is unknown."
+msgstr "%d. Feldtyp '%c' ist unbekannt."
+
+#: src/main.c:336 src/main.c:343
+msgid "Field specification misses the column size."
+msgstr "Der Felddefinitionen fehlt die Spaltengröße."
+
+#: src/main.c:350
+#, c-format
+msgid ""
+"The remainder '%s' of the specification for field %d is being disregarded."
+msgstr "Der Rest '%s' der Felddefinition für Feld %d bleibt unbeachtet."
+
+#: src/main.c:368
+msgid "Allocate memory for record data."
+msgstr "Alloziere Speicher für Datensatz."
+
+#: src/main.c:369
+msgid "Could not allocate memory for record data."
+msgstr "Konnte Speicher für Datensatz nicht allozieren."
+
+#: src/main.c:381
+msgid "Could not read data line of csv input."
+msgstr "Konnte Zeile der CSV-Eingabe nicht lesen."
+
+#: src/main.c:393
+#, c-format
+msgid ""
+"Input data in line %d has not the expected number of columns. Expected %d "
+"got %d."
+msgstr ""
+"Eingabedaten in Zeile %d haben nicht die erwartete Anzahl Spalten. Erwartet "
+"wurden %d, geliefert wurden %d."
+
+#: src/main.c:444
+#, c-format
+msgid "Could not write record number %d."
+msgstr "Konnte Datensatznummer %d nicht schreiben."
