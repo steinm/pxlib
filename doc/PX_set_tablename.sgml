@@ -68,7 +68,8 @@ manpage.1: manpage.sgml
 
     <para>Sets the name of the table as stored in the header of the database
 		  file. You probably will call this function after PX_create_fp(3) because
-			it leaves the name empty.</para>
+			it leaves the name empty. This function is a short cut for
+			PX_set_parameter(pxdoc, "tablename", name) and is deprecated.</para>
 
   </refsect1>
   <refsect1>
@@ -78,7 +79,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_create_fp(3)</para>
+    <para>PX_create_fp(3), PX_set_parameter(3)</para>
 
   </refsect1>
   <refsect1>

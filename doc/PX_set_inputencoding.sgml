@@ -74,6 +74,8 @@ manpage.1: manpage.sgml
 			systems. If you do not set the encoding the function PX_get_data_alpha(3)
 			will return field data in the original encoding otherwise it will
 			recode the field data.</para>
+		<para>This function is a short cut form PX_set_parameter(pxdoc,
+		  "inputencoding", encoding) and is deprecated.</para>
 
   </refsect1>
   <refsect1>
@@ -84,8 +86,8 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_set_data_alpha(3), PX_set_targetencoding(3), iconv(1),
-		  recode(1)</para>
+    <para>PX_set_data_alpha(3), PX_set_targetencoding(3), PX_set_parameter(3),
+		  iconv(1), recode(1)</para>
 
   </refsect1>
   <refsect1>
