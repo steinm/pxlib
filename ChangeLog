@@ -1,4 +1,7 @@
 Version 0.1.9
+	- fixed several errors in fileformat which where due to lack of information
+	- provide header field 'fileUpdateTime'
+	- access data block as linked in list and not as stored in file
 	- new functions to manipulate record data
 	- made many error message better understandable
 	- initial support to write db files
