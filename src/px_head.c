@@ -6,6 +6,11 @@
 #include <px_memory.h>
 #include <px_io.h>
 
+/* TMPBUFFSIZE must be larger than 261 because the tablename must fit into
+ * the buffer. It is also the maximum length of a field name. Field names
+ * which are longer get cut off.
+ */
+#define TMPBUFFSIZE 300
 /* get_px_head() {{{
  * get the header info from the file
  * basic header info & field descriptions
@@ -17,7 +22,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	TPxDataHeader pxdatahead;
 	TFldInfoRec pxinfo;
 	pxfield_t *pfield;
-	char dummy[300], c;
+	char dummy[TMPBUFFSIZE], c;
 	int ret, i, j;
 
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Couldn't get memory for document header."))) == NULL)
@@ -171,10 +176,12 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	}
 	pxh->px_tablename = px_strdup(pxdoc, dummy);
 
+	/* FIXME: The following will cut off field names longer than
+	 * TMPBUFFSIZE-1 chars */
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
 		j=0;
-		while(((ret = pxdoc->read(pxdoc, pxs, 1, &c)) >= 0) && (c != '\0')) {
+		while((j < TMPBUFFSIZE-1) && ((ret = pxdoc->read(pxdoc, pxs, 1, &c)) >= 0) && (c != '\0')) {
 			dummy[j++] = c;
 		}
 		if(ret < 0) {
@@ -191,6 +198,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	return pxh;
 }
 /* }}} */
+#undef TMPBUFFSIZE
 
 /* put_px_head() {{{
  * writes the header and field information into a new file.
