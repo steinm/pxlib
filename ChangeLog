@@ -1,4 +1,5 @@
 Version 0.0.9
+	- fixed compile error with older versions of gcc
 	- fixed two potential segm faults
 
 Version 0.0.8
