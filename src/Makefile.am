@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = -I@srcdir@/../include -I./include -DLOCALEDIR=\""$(datadir)/locale"\"
+INCLUDES = -I@srcdir@/../include -I./include -I@RECODE_INCLUDEDIR@ -DLOCALEDIR=\""$(datadir)/locale"\"
 
 EXTRA_DIST = fileformat.h \
              px_error.h \
@@ -25,6 +25,8 @@ libpx_la_SOURCES = \
 		px_memory.c \
 		px_error.c \
 		gregor.c
+
+libpx_la_LIBADD = @RECODE_LIBS@
 
 BUILD_LIBS = -lm
 
