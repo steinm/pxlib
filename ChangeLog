@@ -1,3 +1,10 @@
+Version 0.3.0
+	- various man page updates
+	- Blob data stored in the record itself can be read
+	- added function PX_set_blob_file(), PX_has_blob_file()
+	- added function PX_get_data_bcd(), PX_put_data_bcd(), PX_get_data_blob(),
+	  PX_get_data_graphic()
+
 Version 0.2.11
 	- PX_read_blob_data() has been completely rewritten and can now handle
 	  any type of blob data. Watch for the new prototype.
