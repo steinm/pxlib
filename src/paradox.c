@@ -115,7 +115,7 @@ PX_boot(void) {
 }
 /* }}} */
 
-/* PX_boot() {{{
+/* PX_shutdown() {{{
  * Make some final cleanup for the whole library. Counter part to PX_boot().
  */
 PXLIB_API void PXLIB_CALL
@@ -704,8 +704,8 @@ PX_get_parameter(pxdoc_t *pxdoc, const char *name, char **value) {
 /* }}} */
 
 /* PX_add_primary_index() {{{
- * Use a primary index for an DB file. The index has to open before with
- * PX_open_fp() PX_open_filename(). After adding an index it will be
+ * Use a primary index for an DB file. The index has to be opened before
+ * with PX_open_fp() PX_open_filename(). After adding an index it will be
  * used for accessing database records.
  * If this function has been called before for the same DB file, the
  * old index will be deleted first. Make sure to actually read the
