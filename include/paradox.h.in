@@ -154,6 +154,9 @@ struct px_doc {
 	/* primary index file */
 	pxdoc_t *px_pindex;
 
+	/* record accounting */
+	int last_position; /* Position (starting at 0) where last record was put. */
+
 	int in_error;
 
 	/* output function */
@@ -285,6 +288,9 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data);
 
 PXLIB_API char * PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo);
+
+PXLIB_API int PXLIB_CALL
+PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos);
 
 PXLIB_API int PXLIB_CALL
 PX_put_record(pxdoc_t *pxdoc, char *data);

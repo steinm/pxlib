@@ -162,6 +162,7 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 
 	pxdoc->px_pindex = NULL;
 
+	pxdoc->last_position = -1;
 #if PX_USE_RECODE
 	pxdoc->recode_outer = recode_new_outer(false);
 	pxdoc->out_recode_request = recode_new_request(pxdoc->recode_outer);
@@ -852,8 +853,10 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 	pxfield_t *pxf;
 	pxhead_t *pxh, *pih;
 	char *data;
-	int i, j, recsperblock, blocknumber;
+	int i, j;
 	int recordsize, indexdatalen, numrecords, recordnr;
+	int recsperblock = 0;
+	int blocknumber = 1;
 
 	pxh = pxdoc->px_head;
 	pxf = pxh->px_fields;
@@ -876,22 +879,25 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 	indexdatalen = pxdoc->px_indexdatalen;
 	/* Check if we need level 2 index entries. If the space needed for
 	 * all level 1 entries is larger than a datablock in the index file,
-	 * we will need level 2 entries. The record size for an index entry
-	 * in the index file is 12 Bytes (3*4) larger than the recordsize, 
-	 * because of the three intergers containing the accounting info.
+	 * we will need level 2 entries.
+	 * There is currently no support for level 3 entries.
 	 */
-	if(pih->px_maxtablesize*0x400-sizeof(TDataBlock) < indexdatalen*(pih->px_recordsize+12)) {
-		int recsperblock = (pih->px_maxtablesize*0x400-sizeof(TDataBlock)) / (pih->px_recordsize+12);
-		blocknumber = 1;
+	if(pih->px_maxtablesize*0x400-sizeof(TDataBlock) < indexdatalen*pih->px_recordsize) {
+		recsperblock = (pih->px_maxtablesize*0x400-sizeof(TDataBlock)) / pih->px_recordsize;
+		blocknumber = 2; /* The first block contains the level 2 entries */
 		recordnr = 0;
 		for(i=0; i<indexdatalen; i++) {
 			PX_get_record(pxdoc, recordnr, data);
+//			fprintf(stderr, "Get record %d for level 2 entry\n", recordnr);
 
 			/* Accumulate index entries until a data block is filled. */
 			j = 0;
 			numrecords = 0;
-			while((j < recsperblock) && (i < indexdatalen))
+			while((j < recsperblock) && (i < indexdatalen)) {
 				numrecords += indexdata[i].numrecords;
+				j++; i++;
+			}
+			i--;
 
 			PX_put_data_short(pxindex, &data[recordsize-6], 2, blocknumber);
 			PX_put_data_short(pxindex, &data[recordsize-4], 2, numrecords);
@@ -910,7 +916,7 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 		PX_put_data_short(pxindex, &data[recordsize-6], 2, indexdata[i].blocknumber);
 		PX_put_data_short(pxindex, &data[recordsize-4], 2, indexdata[i].numrecords);
 		PX_put_data_short(pxindex, &data[recordsize-2], 2, 0);
-		PX_put_record(pxindex, data);
+		PX_put_recordn(pxindex, data, recsperblock+i);
 		recordnr += indexdata[i].numrecords;
 	}
 	pxindex->free(pxindex, data);
@@ -1157,12 +1163,19 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 }
 /* }}} */
 
-/* PX_put_record() {{{
- * Store a record into the paradox file.
- * Returns the record number starting at 0.
+/* PX_put_recordn() {{{
+ * Store a record into the paradox file. The record can be save at
+ * any position. If the position is beyond the last datablock, then
+ * new datablocks will be added until the position lies in a
+ * datablock. You may use this function to end a datablock and
+ * start a new one. If the position is in the middle of a data block
+ * without any records before this position, the position will be
+ * recalculated and the record is place after the last record in
+ * that datablock.
+ * Returns the next postion or -1 in case of an error.
  */
 PXLIB_API int PXLIB_CALL
-PX_put_record(pxdoc_t *pxdoc, char *data) {
+PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 	pxhead_t *pxh;
 	int recsperdatablock, datablocknr, recdatablocknr;
 	int itmp;
@@ -1178,6 +1191,8 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	}
 	pxh = pxdoc->px_head;
 
+//	fprintf(stderr, "Putting record at position %d\n", recpos);
+
 	/* All the following calculation assume sequentially writting of
 	 * records and filling a datablock first before starting a new one.
 	 * This should be fixed. Better would be, if we keep record
@@ -1188,24 +1203,30 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize;
 	/* Calculate the number of the data block for this record.
 	 * Datablock numbers start at 1. */
-	datablocknr = ((pxh->px_numrecords) / recsperdatablock) + 1;
+	datablocknr = (recpos / recsperdatablock) + 1;
 	/* Calculate the position within the datablock */
-	recdatablocknr = (pxh->px_numrecords) % recsperdatablock;
+	recdatablocknr = recpos % recsperdatablock;
 
 //	fprintf(stderr, "Data goes into block %d at record no %d (%d)\n", datablocknr, recdatablocknr, recsperdatablock);
-	/* Check if we need a new datablock */
-	if(datablocknr > pxh->px_fileblocks) {
+	/* add as many datablocks as require to store the record at the
+	 * desired position. */
+	itmp = datablocknr;
+	while(datablocknr > pxh->px_fileblocks) {
 //		fprintf(stderr, "We need an new datablock\n");
 		itmp = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_stream);
-//		fprintf(stderr, "Added data block no. %d\n", itmp);
-	
-		/* The datablock number return by px_put_datablock() should be
-		 * the same as the calculated datablocknr.
-		 */
-		if(datablocknr != itmp) {
-			px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing data block. Expected data block nr. %d, but got %d."), datablocknr, itmp);
+		if(itmp < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write new data block."));
 			return -1;
 		}
+//		fprintf(stderr, "Added data block no. %d\n", itmp);
+	}
+	/* The datablock number return by px_put_datablock() should be
+	 * the same as the calculated datablocknr after all datablocks
+	 * has been added.
+	 */
+	if(datablocknr != itmp) {
+		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing data block. Expected data block nr. %d, but got %d."), datablocknr, itmp);
+		return -1;
 	}
 
 	/* write data */
@@ -1214,16 +1235,32 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	/* The record number within the data block must be the same
 	 * as the calculated one.
 	 */
-	if(recdatablocknr != itmp) {
+	if(itmp < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block. Expected record nr. %d, but got %d. %dth record. %dth data block. %d records per block."), recdatablocknr, itmp, pxh->px_numrecords+1, datablocknr, recsperdatablock);
 		return -1;
 	}
 	
+	if(itmp != recdatablocknr) {
+		px_error(pxdoc, PX_Warning, _("Position within record has been recalculated. Requested position was %d, new position is %d."), recpos, (datablocknr-1) * recsperdatablock + itmp);
+	}
+
 	/* Update header */
 	pxh->px_numrecords++;
+	pxdoc->last_position = (datablocknr-1) * recsperdatablock + itmp;
 
 	put_px_head(pxdoc, pxh, pxdoc->px_stream);
-	return(pxh->px_numrecords-1);
+	return(pxdoc->last_position+1);
+}
+/* }}} */
+
+/* PX_put_record() {{{
+ * Stores a record into the paradox file. It uses the next free
+ * slot in the database.
+ * Returns the next postion (recpos+1) or -1 in case of an error.
+ */
+PXLIB_API int PXLIB_CALL
+PX_put_record(pxdoc_t *pxdoc, char *data) {
+	return(PX_put_recordn(pxdoc, data, pxdoc->last_position+1));
 }
 /* }}} */
 
