@@ -61,7 +61,7 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>int &funcname;(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo *pxdbinfo)</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
@@ -72,11 +72,56 @@ manpage.1: manpage.sgml
 			not NULL, the function will return some information about the data block
 			where the record has been read from. You will have to allocate memory
 			for pxdbinfo before calling &funcname;.</para>
+		<para>On return *deleted will be set to 1 if the requested record is
+		  deleted or 0 if it is not deleted. The struct pxdatablockinfo_t has
+			the following fields:</para>
+		<variablelist>
+		  <varlistentry>
+			  <term>blockpos (long)</term>
+			  <listitem>
+				  <para>File positon where the block starts. The first six bytes
+					  of the block contain the header, followed by the record data.
+					</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>recordpos (long)</term>
+			  <listitem>
+				  <para>File position where the requested record starts.</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>size (int)</term>
+			  <listitem>
+				  <para>Size of the data block without the six bytes for the header.
+					</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>recno (int)</term>
+			  <listitem>
+				  <para>Record number within the data block. The first record in the
+					  block has number 0.</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>numrecords (int)</term>
+			  <listitem>
+				  <para>The number of records in this block.</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>number (int)</term>
+			  <listitem>
+				  <para>The number of the data block.</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
 		<para>This function may return records with invalid data, because records
-		  are not explizitly marked as deleted, but rather the size of valid data
+		  are not explizitly marked as deleted, but rather the size of a valid data
 			block is modified. A data block is a fixed size area in the file which
 			holds a certain number of records. If for some
-			reason a data block has newer been complete filled with records, the
+			reason a data block has newer been completely filled with records, the
 			algorithmn anticipates deleted records in this data block, which are not
 			there. This often happens with the last data block in a file, which is
 			likely to not being fully filled with records.</para>
@@ -91,7 +136,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_field(3)</para>
+    <para>PX_get_field(3), PX_get_record(3)</para>
 
   </refsect1>
   <refsect1>
