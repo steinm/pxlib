@@ -1,3 +1,7 @@
+Version 0.0.7
+	- functions to recode strings
+	- function to access alpha field data
+
 Version 0.0.6
 	- more documentation
 	- more functions to access database schema (PX_get_field(), PX_get_fields())
