@@ -1,4 +1,5 @@
 Version 0.1.9
+	- fixed reading of primary index, now that I understand how it works
 	- fixed data block handling (still not perfect, but works if records are
 	  stored sequentially)
 	- fixed several errors in fileformat which where due to lack of information
