@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2003-11-17 09:22+0100\n"
+"POT-Creation-Date: 2003-11-17 09:51+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -17,83 +17,77 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: src/paradox.c:146
-msgid "Must be set all memory management functions or none"
+msgid "Must set all memory management functions or none."
 msgstr ""
+"Entweder alle oder keine Speicher-Management-Funktion müssen gesetzt werden."
 
 #: src/paradox.c:151
-msgid "Couldn't allocate PX object"
-msgstr ""
+msgid "Could not allocate memory for PX object."
+msgstr "Konnte Speicher für PX-Objekt nicht allocieren."
 
 #: src/paradox.c:217
 msgid "Allocate memory for self build internal primary index."
-msgstr ""
+msgstr "Alloziere Speicher für selbsterstellten internen Primärindex."
 
 #: src/paradox.c:218
 msgid "Could not allocate memory for self build internal index."
 msgstr ""
+"Konnte Speicher für selbsterstellten internen Primärindex nicht allozieren."
 
 #: src/paradox.c:229 src/paradox.c:871
 #, c-format
 msgid "Could not get head of data block nr. %d."
-msgstr ""
+msgstr "Konnte auf Kopf von Datenblock Nr. %d nicht zugreifen."
 
-#: src/paradox.c:254 src/paradox.c:303 src/paradox.c:969 src/paradox.c:1027
-#: src/paradox.c:1093 src/paradox.c:1115 src/paradox.c:1189 src/paradox.c:1212
-#: src/paradox.c:1241 src/paradox.c:1260 src/paradox.c:1283 src/paradox.c:1337
-#: src/paradox.c:1387
-msgid "Did not pass a paradox database"
-msgstr ""
+#: src/paradox.c:254 src/paradox.c:303 src/paradox.c:351 src/paradox.c:472
+#: src/paradox.c:501 src/paradox.c:513 src/paradox.c:525 src/paradox.c:611
+#: src/paradox.c:630 src/paradox.c:969 src/paradox.c:1027 src/paradox.c:1093
+#: src/paradox.c:1115 src/paradox.c:1189 src/paradox.c:1212 src/paradox.c:1241
+#: src/paradox.c:1260 src/paradox.c:1283 src/paradox.c:1337 src/paradox.c:1387
+msgid "Did not pass a paradox database."
+msgstr "Keine Paradox-Datenbank übergeben."
 
 #. 	fprintf(stderr, "Set headersize to 0x%X (%d)\n", pxh->px_headersize, approxheadersize);
 #: src/paradox.c:258 src/paradox.c:307 src/paradox.c:438
 msgid "Allocate memory for io stream."
-msgstr ""
+msgstr "Alloziere Speicher für IO-Strom."
 
 #: src/paradox.c:259 src/paradox.c:308 src/paradox.c:439
 msgid "Could not allocate memory for io stream."
-msgstr ""
+msgstr "Konnte Speicher für IO-Strom nicht allozieren."
 
 #: src/paradox.c:273 src/paradox.c:322
 msgid "Unable to get header."
-msgstr ""
-
-#: src/paradox.c:351 src/paradox.c:472
-msgid "Did not pass a paradox database."
-msgstr ""
+msgstr "Konnte auf Kopf nicht zugreifen."
 
 #: src/paradox.c:356
 msgid "Could not open file of paradox database."
-msgstr ""
+msgstr "Konnte die Datei der Paradox-Datenbank nicht öffnen"
 
 #: src/paradox.c:361 src/paradox.c:482
 msgid "Could not open paradox database."
-msgstr ""
+msgstr "Konnte Paradox-Datenbank nicht öffnen."
 
 #. The name indicates that this size not accurate,
 #. * actually it is very precise.
 #: src/paradox.c:384
-msgid "PX_create_fp: Allocate memory for document header."
-msgstr ""
+msgid "Allocate memory for database header."
+msgstr "Alloziere Speicher für Datenbankkopf"
 
 #: src/paradox.c:385
-msgid "Could not allocate memory for document header."
-msgstr ""
+msgid "Could not allocate memory for databae header."
+msgstr "Konnte Speicher für Datenbankkopf nicht allozieren."
 
 #: src/paradox.c:453
 msgid "Unable to put header."
-msgstr ""
+msgstr "Konnte Kopf nicht speichern."
 
 #: src/paradox.c:477
 msgid "Could not create file for paradox database."
 msgstr ""
 
-#: src/paradox.c:501 src/paradox.c:513 src/paradox.c:525 src/paradox.c:611
-#: src/paradox.c:630
-msgid "Did not pass a paradox database file"
-msgstr ""
-
-#: src/paradox.c:530 src/paradox.c:1288 src/paradox.c:1342 src/paradox.c:1392
-msgid "Header of file has not been read"
+#: src/paradox.c:530 src/paradox.c:1288 src/paradox.c:1342
+msgid "Header of file has not been read."
 msgstr ""
 
 #: src/paradox.c:544
@@ -114,11 +108,11 @@ msgid "Input encoding could not be set."
 msgstr ""
 
 #: src/paradox.c:637 src/paradox.c:672
-msgid "Did not pass a paradox primary index file"
+msgid "Did not pass a paradox primary index file."
 msgstr ""
 
 #: src/paradox.c:642
-msgid "Primary index file has no index data"
+msgid "Primary index file has no index data."
 msgstr ""
 
 #: src/paradox.c:677
@@ -155,20 +149,20 @@ msgid "The number of records coverd by index level 2 is unequal to level 1."
 msgstr ""
 
 #: src/paradox.c:825
-msgid "Could not fseek start of first data block"
+msgid "Could not fseek start of first data block."
 msgstr ""
 
 #: src/paradox.c:831
-msgid "Could not read"
+msgid "Could not read datablock header."
 msgstr ""
 
 #: src/paradox.c:974 src/paradox.c:1032 src/paradox.c:1194 src/paradox.c:1217
 #: src/paradox.c:1246 src/paradox.c:1265
-msgid "File has no header"
+msgid "File has no header."
 msgstr ""
 
 #: src/paradox.c:988
-msgid "Record number out of range"
+msgid "Record number out of range."
 msgstr ""
 
 #: src/paradox.c:1003
@@ -193,19 +187,23 @@ msgid ""
 msgstr ""
 
 #: src/paradox.c:1224
-msgid "Field number out of range"
+msgid "Field number out of range."
 msgstr ""
 
 #: src/paradox.c:1293
-msgid "Target encoding already set"
+msgid "Target encoding already set."
 msgstr ""
 
 #: src/paradox.c:1347
-msgid "Input encoding already set"
+msgid "Input encoding already set."
+msgstr ""
+
+#: src/paradox.c:1392
+msgid "Header of file has not been read"
 msgstr ""
 
 #: src/paradox.c:1416 src/paradox.c:1510
-msgid "Couldn't get memory for blob."
+msgid "Could not allocate memory for blob."
 msgstr ""
 
 #: src/paradox.c:1486
@@ -217,7 +215,7 @@ msgid "Makes no sense to read blob with 0 or less bytes."
 msgstr ""
 
 #: src/paradox.c:1496
-msgid "Could not fseek"
+msgid "Could not fseek start of blob."
 msgstr ""
 
 #: src/paradox.c:1501
@@ -226,7 +224,7 @@ msgstr ""
 
 #: src/paradox.c:1506
 #, c-format
-msgid "Blob does not have expected size (%d != %d)"
+msgid "Blob does not have expected size (%d != %d)."
 msgstr ""
 
 #: src/paradox.c:1516
