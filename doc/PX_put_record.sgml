@@ -57,7 +57,7 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>Returns record in Paradox file</refpurpose>
+    <refpurpose>Stores record in Paradox file</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
@@ -71,18 +71,19 @@ manpage.1: manpage.sgml
 			<option>data</option> must be constructed with PX_put_data_xxx(3)
 			functions before. It is of the same structure as the record returned
 			by PX_get_record(3) and PX_get_record2(3).</para>
-		<para>The new record will always added to the end of the file.</para>
+		<para>The new record will be stored after the last one added.</para>
 
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns the record number on success and -1 on failure. The first
-		  record has number 0.</para>
+    <para>Returns the record position on success and -1 on failure. The first
+		  position has number 0.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_record(3), PX_get_record2(3), PX_put_data_byte(3),
+    <para>PX_get_record(3), PX_get_record2(3), PX_put_recordn(3),
+		  PX_put_data_byte(3),
 		  PX_put_data_short(3), PX_put_data_long(3), PX_put_data_double(3),
 			PX_put_data_alpha(3)</para>
 
