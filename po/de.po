@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-07-15 10:41+0200\n"
+"POT-Creation-Date: 2004-07-15 23:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -290,50 +290,71 @@ msgstr "Ziel-Kodierung schon gesetzt."
 msgid "Input encoding already set."
 msgstr "Eingabe-Kodierung schon gesetzt."
 
-#: src/paradox.c:1713 src/paradox.c:1817
+#. We may check for identical modificatio number as well, if it
+#. * was passed to PX_read_blobdata()
+#.
+#: src/paradox.c:1713 src/paradox.c:1844 src/paradox.c:1873
 msgid "Could not allocate memory for blob."
 msgstr "Konnte Speicher für Blob nicht allozieren."
 
-#: src/paradox.c:1783
+#: src/paradox.c:1798
 msgid "Did not pass a blob file."
 msgstr "Keine Blob-Datei übergeben."
 
-#: src/paradox.c:1788
+#: src/paradox.c:1803
 msgid "Makes no sense to read blob with 0 or less bytes."
 msgstr ""
 "Es macht keinen Sinn eine Blob-Datei mit 0 oder weniger Bytes zu lesen."
 
-#: src/paradox.c:1793
+#: src/paradox.c:1808 src/paradox.c:1879
 msgid "Could not fseek start of blob."
 msgstr "Konnte nicht zum Start des Blobs gehen."
 
-#: src/paradox.c:1798
+#: src/paradox.c:1814
 msgid "Could not read head of blob data."
 msgstr "Konnte den Kopf des Blobs nicht lesen."
 
-#: src/paradox.c:1803
+#: src/paradox.c:1819
 msgid "Trying to read blob data from 'header' block."
 msgstr "Versuche BLOB-Daten von 'header'-Block zu lesen."
 
-#: src/paradox.c:1806
-msgid "Cannot handle blobs in 'suballocated' blocks."
-msgstr "Kann BLOBs in 'suballocated'-Blöcken nicht verarbeiten."
-
-#: src/paradox.c:1809
+#: src/paradox.c:1822
 msgid "Trying to read blob data from a 'free' block."
 msgstr "Versuch BLOB-Daten von einem 'free'-Block zu lesen."
 
-#: src/paradox.c:1813
+#: src/paradox.c:1828
+msgid "Offset points to a single blob block but index field is not 0xff."
+msgstr ""
+"Offset zeigt auf auf eine 'single blob' Block, aber Index hat nicht den Wert "
+"0xff."
+
+#: src/paradox.c:1833
+msgid "Could not read remaining head of single data block."
+msgstr "Konnte den verbleibenen Kopf des 'single data' Blocks nicht lesen."
+
+#: src/paradox.c:1837 src/paradox.c:1870
 #, c-format
 msgid "Blob does not have expected size (%d != %d)."
 msgstr "Blob hat nicht erwartete Größe. (%d != %d)."
 
-#: src/paradox.c:1823
+#: src/paradox.c:1850 src/paradox.c:1883
 msgid "Could not read all blob data."
 msgstr "Konnte Blob-Daten nicht lesen."
 
+#: src/paradox.c:1856
+msgid "Could not read remaining head of suballocated block."
+msgstr "Konnte den verbleibenen Kopf des 'suballocated' Blocks nicht lesen."
+
+#: src/paradox.c:1861
+msgid "Could not fseek blob pointer."
+msgstr "Konnte nicht zum Start des Blobs Zeigers gehen."
+
+#: src/paradox.c:1866
+msgid "Could not read blob pointer."
+msgstr "Konnte Blob-Zeiger nicht lesen."
+
 #. Copy the encoded string into memory which belongs to pxlib
-#: src/paradox.c:1879
+#: src/paradox.c:1940
 msgid "Allocate memory for field data."
 msgstr "Alloziere Speicher für Feld-Daten."
 
@@ -526,3 +547,6 @@ msgstr "NULL Zeichenkette an px_strdup() übergeben."
 #: src/px_memory.c:34
 msgid "Could not allocate memory for string."
 msgstr "Konnte Speicher für Zeichenkette nicht allozieren."
+
+#~ msgid "Cannot handle blobs in 'suballocated' blocks."
+#~ msgstr "Kann BLOBs in 'suballocated'-Blöcken nicht verarbeiten."
