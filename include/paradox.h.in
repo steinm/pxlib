@@ -138,6 +138,7 @@ typedef struct px_head pxhead_t;
 typedef struct px_field pxfield_t;
 typedef struct px_pindex pxpindex_t;
 typedef struct px_stream pxstream_t;
+typedef struct mb_head mbhead_t;
 
 struct px_doc {
 	/* database file */
@@ -201,10 +202,19 @@ struct px_doc {
 };
 
 struct px_blob {
-	FILE *px_fp;
-	char *px_name;
-	int px_close_fp;
+	char *mb_name;
 	pxdoc_t *pxdoc;
+	pxstream_t *mb_stream; /* input stream to read file from */
+	mbhead_t *mb_head; /* Pointer to header of file */
+	/* input stream functions */
+	int (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
+	long (*tell)(pxdoc_t *p, pxstream_t *stream);
+	long (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+};
+
+struct mb_head {
+	int modcount;
 };
 
 struct px_datablockinfo {
