@@ -96,7 +96,7 @@ AC_OUTPUT([
 Makefile
 include/Makefile
 src/Makefile
-pxview/Makefile
+doc/Makefile
 include/pxversion.h
 ])
 

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = include src pxview
+SUBDIRS = include src doc
 
 spec = $(PACKAGE).spec
 
