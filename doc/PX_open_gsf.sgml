@@ -26,8 +26,8 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_open_fp</refentrytitle>">
-  <!ENTITY funcname    "PX_open_fp">
+  <!ENTITY dhucpackage "<refentrytitle>PX_open_gsf</refentrytitle>">
+  <!ENTITY funcname    "PX_open_gsf">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -60,15 +60,16 @@ manpage.1: manpage.sgml
     <refpurpose>read a Paradox file</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
-    <para>#include &lt;paradox.h&gt;</para>
-		<para>int &funcname;(pxdoc_t *pxdoc, FILE *fp)</para>
+    <para>#include &lt;paradox-gsf.h&gt;</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, GsfInput *gsf)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Reads a Paradox file with the given file pointer which must have
-		  been opened before with fopen(3). pxdoc must be
-		  created before with PX_new(3) or PX_new2(3).
+    <para>Reads a Paradox file previously opened with the gsf library.
+		  pxdoc must be created before with PX_new(3) or PX_new2(3).
+			This function is only available if pxlib has been configured with
+			gsf support.
 		  </para>
 
   </refsect1>
@@ -79,7 +80,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_new2(3), PX_new(3), PX_open_filename(3), PX_open_gsf(3)</para>
+    <para>PX_new2(3), PX_new(3), PX_open_filename(3), PX_open_fp(3)</para>
 
   </refsect1>
   <refsect1>
