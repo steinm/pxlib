@@ -1,5 +1,5 @@
 /*
- * pslibversion.h : compile-time version informations for the pslib.
+ * pxversion.h : compile-time version informations for the pslib.
  *
  * See Copyright for the status of this software.
  *
@@ -26,9 +26,9 @@ extern "C" {
  * Whether Debugging module is configured in
  */
 #if @WITH_DEBUG@
-#define PSLIB_DEBUG_ENABLED
+#define PXLIB_DEBUG_ENABLED
 #else
-#define PSLIB_DEBUG_DISABLED
+#define PXLIB_DEBUG_DISABLED
 #endif
 
 #ifdef __cplusplus
