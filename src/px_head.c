@@ -103,6 +103,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 		}
 		pxh->px_doscodepage = get_short_le(&pxdatahead.dosCodePage);
 	}
+	pxh->px_fileupdatetime = get_long_le(&pxdatahead.fileUpdateTime);
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
 	pxh->px_sortorder = pxhead.sortOrder;
@@ -365,7 +366,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 
 	memset(&datablockhead, 0, sizeof(TDataBlock));
-	put_short_le(&datablockhead.blockNumber, pxh->px_fileblocks+1);
+	put_short_le(&datablockhead.nextBlock, pxh->px_fileblocks+1);
 	put_short_le(&datablockhead.addDataSize, -pxh->px_recordsize);
 	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
