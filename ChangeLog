@@ -1,4 +1,5 @@
 Version 0.2.5
+	- better error checking when setting the number of primary keys
 	- fixed some errors in writing primary index files
 		level 2 index entries are now supported
 	- readded time of modification when writing the header

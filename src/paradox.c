@@ -534,8 +534,17 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 	}
 
 	if(strcmp(name, "numprimkeys") == 0) {
-		pxdoc->px_head->px_primarykeyfields = (int) value;
 		if(pxdoc->px_stream->mode & pxfFileWrite) {
+			if(value < 0) {
+				px_error(pxdoc, PX_Warning, _("Number of primary keys must be greater or equal 0."), name);
+				return -1;
+			}
+			pxdoc->px_head->px_primarykeyfields = (int) value;
+			if(value == 0) {
+				pxdoc->px_head->px_filetype = pxfFileTypNonIndexDB;
+			} else {
+				pxdoc->px_head->px_filetype = pxfFileTypIndexDB;
+			}
 			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
 				return -1;
 			}
