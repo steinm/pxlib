@@ -737,6 +737,13 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 	}
 
 	memset(&mbhead, 0, sizeof(TMbHeader));
+	put_short_le(&mbhead.blocksize, 1);
+	put_short_le(&mbhead.modcount, 1);
+	put_short_le(&mbhead.basesize, 0x1000);
+	put_short_le(&mbhead.subblocksize, 0x1000);
+	mbhead.subchunksize = 0x10;
+	put_short_le(&mbhead.suballoc, 0x0040);
+	put_short_le(&mbhead.subthresh, 0x0800);
 	if(pxblob->write(pxdoc, pxs, sizeof(TMbHeader), &mbhead) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write header of paradox file."));
 		return -1;
