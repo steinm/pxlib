@@ -10,9 +10,9 @@ EXTRA_DIST = fileformat.h \
              px_misc.h \
              sdncal.h
 
-bin_PROGRAMS =
+## bin_PROGRAMS =
 
-bin_SCRIPTS=
+## bin_SCRIPTS=
 
 lib_LTLIBRARIES = libpx.la
 
