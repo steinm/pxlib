@@ -298,9 +298,15 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			tablenamelen = 79;
 			break;
 	}
+	/* The datahead is only in .DB and .Xnn files. If it exists the
+	 * common file header will continue at 0x78
+	 */
 	if(dataheadoffset == 0x78) {
 		switch(pxh->px_fileversion) {
 			case 70:
+				put_short_le(&pxdatahead.fileVerID3, 0x010C);
+				put_short_le(&pxdatahead.fileVerID4, 0x010C);
+				break;
 			case 50:
 				put_short_le(&pxdatahead.fileVerID3, 0x010B);
 				put_short_le(&pxdatahead.fileVerID4, 0x010B);
