@@ -1,4 +1,8 @@
+Version 0.0.8
+	- recoding of data fields with iconv
+
 Version 0.0.7
+	- read more fields from the header
 	- added spec file to build rpms
 	- alpha fields are automatically recoded if required
 	- function to access alpha field data
