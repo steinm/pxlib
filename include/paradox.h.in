@@ -196,7 +196,10 @@ PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename);
 
 PXLIB_API int PXLIB_CALL
-PX_create_db(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename);
+PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, char *filename);
+
+PXLIB_API int PXLIB_CALL
+PX_create_fp(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, FILE *fp);
 
 PXLIB_API int PXLIB_CALL
 PX_read_primary_index(pxdoc_t *pindex);
@@ -233,6 +236,9 @@ PX_get_num_records(pxdoc_t *pxdoc);
 
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding);
+
+PXLIB_API int PXLIB_CALL
+PX_set_tablename(pxdoc_t *pxdoc, char *tablename);
 
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc);
