@@ -18,6 +18,7 @@
  *    Boston, MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -69,8 +70,14 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 	pxdoc->free = freeproc;
 	pxdoc->px_fp = NULL;
 
+#if PX_USE_RECODE
 	pxdoc->recode_outer = recode_new_outer(false);
 	pxdoc->recode_request = recode_new_request(pxdoc->recode_outer);
+#else
+#if PX_USE_ICONV
+	pxdoc->iconvcd = (iconv_t) -1;
+#endif
+#endif
 	pxdoc->targetencoding = NULL;
 
 	return pxdoc;
@@ -208,11 +215,18 @@ PX_delete(pxdoc_t *pxdoc) {
 		return;
 	}
 
+#if PX_USE_RECODE
 	if(pxdoc->recode_outer)
 		recode_delete_outer(pxdoc->recode_outer);
 
 	if(pxdoc->recode_request)
 		recode_delete_request(pxdoc->recode_request);
+#else
+#if PX_USE_ICONV
+	if(pxdoc->iconvcd > 0)
+		iconv_close(pxdoc->iconvcd);
+#endif
+#endif
 
 	if(pxdoc->targetencoding)
 		pxdoc->free(pxdoc, pxdoc->targetencoding);
@@ -306,6 +320,7 @@ PX_get_num_records(pxdoc_t *pxdoc) {
 
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
+#if PX_USE_RECODE || PX_USE_ICONV
 	char buffer[30];
 
 	if(pxdoc == NULL) {
@@ -320,9 +335,26 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 
 	pxdoc->targetencoding = px_strdup(pxdoc, encoding);
 	if(pxdoc->targetencoding) {
+#if PX_USE_RECODE
 		sprintf(buffer, "CP%d/CR-LF..%s", pxdoc->px_head->px_doscodepage, pxdoc->targetencoding);
 		recode_scan_request(pxdoc->recode_request, buffer);
+#else
+#if PX_USE_ICONV
+		sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
+		if(pxdoc->iconvcd > 0)
+			iconv_close(pxdoc->iconvcd);
+		if((iconv_t)(-1) == (pxdoc->iconvcd = iconv_open(pxdoc->targetencoding, buffer))) {
+			pxdoc->free(pxdoc, pxdoc->targetencoding);
+			px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
+			return -1;
+		}
+	
+#endif
+#endif
 	}
+#else
+	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for target encoding."));
+#endif
 	return 0;
 }
 
@@ -426,8 +458,7 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 PXLIB_API int PXLIB_CALL
 PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	char *buffer, *obuf = NULL;
-	int olen;
-	int oallocated = 0;
+	size_t olen;
 	int res;
 
 	if(data[0] == '\0') {
@@ -436,12 +467,30 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	}
 
 	if(pxdoc->targetencoding != NULL) {
+#if PX_USE_RECODE
+		int oallocated = 0;
 		res = recode_buffer_to_buffer(pxdoc->recode_request, data, len, &obuf, &olen, &oallocated);
+#else
+#if PX_USE_ICONV
+		size_t ilen = len;
+		olen = len + 1;
+		obuf = (char *) pxdoc->malloc(pxdoc, olen,  _("Could not allocate memory for field data."));
+//		printf("data(%d) = '%s'\n", ilen, data);
+//		printf("obuf(%d) = '%s'\n", olen, obuf);
+		if(0 > (res = iconv(pxdoc->iconvcd, &data, &ilen, &obuf, &olen))) {
+			*value = NULL;
+			return 0;
+		}
+//		printf("data(%d) = '%s'\n", ilen, data);
+//		printf("obuf(%d) = '%s'\n", olen, obuf);
+		olen = len;
+#endif
+#endif
 	} else {
 		olen = len;
 		obuf = data;
 	}
-	buffer = (char *) pxdoc->malloc(pxdoc, olen+1,  _("Could not reallocate memory for field data."));
+	buffer = (char *) pxdoc->malloc(pxdoc, olen+1,  _("Could not allocate memory for field data."));
 	if(!buffer) {
 		if(pxdoc->targetencoding != NULL) {
 			free(obuf);

@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <paradox.h>
@@ -101,6 +102,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
+	pxh->px_sortorder = pxhead.sortOrder;
+	pxh->px_autoinc = get_long(&pxhead.autoInc);
 	if((pxh->px_fields = (pxfield_t *) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxfield_t), _("Could not get memory for field definitions."))) == NULL)
 		return NULL;
 

@@ -71,21 +71,34 @@ dnl Extra flags
 dnl
 PX_CFLAGS=""
 
-AC_ARG_WITH(recode, [  --with-recode=DIR        Path to recode library (/usr)])
-if test -r ${withval}/include/recode.h ; then
-	RECODE_LIBDIR=-L${withval}/lib
-	RECODE_INCLUDEDIR=-I${withval}/include 
+PX_HAVE_ICONV=0
+PX_HAVE_RECODE=0
+
+AM_ICONV_LINK
+
+if test "$am_cv_func_iconv" != "yes" ; then
+	AC_ARG_WITH(recode, [  --with-recode=DIR        Path to recode library (/usr)])
+	if test -r ${withval}/include/recode.h ; then
+		RECODE_LIBDIR=-L${withval}/lib
+		RECODE_INCLUDEDIR=-I${withval}/include 
+	else
+		RECODE_LIBDIR=-L/usr
+		RECODE_INCLUDEDIR=-I/usr/include 
+	fi
+
+	AC_CHECK_LIB(recode, recode_new_outer,
+		RECODE_LIBDIR="$RECODE_LIBDIR -lrecode",
+		AC_MSG_ERROR([librecode not found]),
+		"$RECODE_LIBDIR")
+
+	RECODE_LIBS=-lrecode
+	AC_DEFINE(HAVE_RECODE, 1, [Define if you have the recode library.])
+	PX_HAVE_RECODE=1
 else
-  RECODE_LIBDIR=-L/usr
-	RECODE_INCLUDEDIR=-I/usr/include 
+	PX_HAVE_ICONV=1
+	AC_MSG_CHECKING([for recode])
+	AC_MSG_RESULT([not needed, using iconv])
 fi
-
-AC_CHECK_LIB(recode, recode_new_outer,
-  RECODE_LIBDIR="$RECODE_LIBDIR -lrecode",
-  AC_MSG_ERROR([librecode not found]),
-  "$RECODE_LIBDIR")
-
-RECODE_LIBS=-lrecode
 
 AC_ARG_WITH(debug, [  --with-debug            Add the debugging module (on)])
 if test "$with_debug" = "no" ; then
@@ -110,11 +123,14 @@ AC_SUBST(RECODE_LIBDIR)
 AC_SUBST(RECODE_LIBS)
 AC_SUBST(RECODE_INCLUDEDIR)
 
+AC_SUBST(PX_HAVE_RECODE)
+AC_SUBST(PX_HAVE_ICONV)
+
 AC_SUBST(M_LIBS)
 
-AC_DEFINE_UNQUOTED(PXLIB_MAJOR_VERSION, "$PXLIB_MAJOR_VERSION", PXLIB_MAJOR_VERSION)
-AC_DEFINE_UNQUOTED(PXLIB_MINOR_VERSION, "$PXLIB_MINOR_VERSION", PXLIB_MINOR_VERSION)
-AC_DEFINE_UNQUOTED(PXLIB_MICRO_VERSION, "$PXLIB_MICRO_VERSION", PXLIB_MICRO_VERSION)
+dnl AC_DEFINE_UNQUOTED(PXLIB_MAJOR_VERSION, "$PXLIB_MAJOR_VERSION", PXLIB_MAJOR_VERSION)
+dnl AC_DEFINE_UNQUOTED(PXLIB_MINOR_VERSION, "$PXLIB_MINOR_VERSION", PXLIB_MINOR_VERSION)
+dnl AC_DEFINE_UNQUOTED(PXLIB_MICRO_VERSION, "$PXLIB_MICRO_VERSION", PXLIB_MICRO_VERSION)
 
 dnl pxlib.spec
 AC_OUTPUT([
@@ -124,5 +140,20 @@ include/Makefile
 src/Makefile
 doc/Makefile
 include/pxversion.h
+include/paradox.h
 ])
 
+echo
+echo "Configuration:"
+echo "  Prefix:     $prefix"
+echo -n "  Recoding:   "
+if test "$PX_HAVE_ICONV" = "1" ; then
+	echo "Use iconv for recoding.";
+else
+	if test "$PX_HAVE_RECODE" = "1" ; then
+		echo "Use recode for recoding.";
+	else
+		echo "No support for recoding.";
+	fi
+fi
+echo

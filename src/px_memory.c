@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdio.h>
 #include "px_intern.h"
 #include "paradox.h"

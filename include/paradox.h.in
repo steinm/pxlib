@@ -1,8 +1,17 @@
 #ifndef __PARADOX_H__
 #define __PARADOX_H__
 
+#define PX_USE_RECODE @PX_HAVE_RECODE@
+#define PX_USE_ICONV @PX_HAVE_ICONV@
+
 #include <stdbool.h>
+#if PX_USE_RECODE
 #include <recode.h>
+#else
+#if PX_USE_ICONV
+#include <iconv.h>
+#endif
+#endif
 
 #ifdef WIN32
 
@@ -86,6 +95,8 @@ struct px_head {
 	int px_writeprotected;
 	int px_doscodepage;
 	int px_primarykeyfields;
+	char px_sortorder;
+	int px_autoinc;
 	struct px_field *px_fields;
 };
 
@@ -111,8 +122,14 @@ struct px_doc {
 	void  (*free)(pxdoc_t *p, void *mem);
 
 	char *targetencoding;
+#if PX_USE_RECODE
 	RECODE_OUTER recode_outer;
 	RECODE_REQUEST recode_request;
+#else
+#if PX_USE_ICONV
+	iconv_t iconvcd;
+#endif
+#endif
 };
 
 struct px_blob {

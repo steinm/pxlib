@@ -5,6 +5,7 @@
  *
  * This file was taken from the php source code ext/dbase/db_misc.c
  */
+#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
