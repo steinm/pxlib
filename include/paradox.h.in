@@ -66,6 +66,7 @@
 #define pxfAutoInc      0x16
 #define pxfBCD          0x17
 #define pxfBytes        0x18
+#define pxfNumTypes     0x18
 
 /* File types */
 #define pxfFileTypIndexDB         0   /* .DB */
