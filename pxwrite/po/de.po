@@ -1,17 +1,17 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Copyright (C) 2003 Uwe Steinmann
+# This file is distributed under the same license as the pxwrite package.
+# Uwe Steinmann <uwe@steinmann.cx>, 2003.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2003-09-24 16:03+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"POT-Creation-Date: 2003-09-24 22:13+0200\n"
+"PO-Revision-Date: 2003-09-25 10:10+0200\n"
+"Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
+"Language-Team: DE <uwe@steinmann.cx>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -71,6 +71,7 @@ msgstr "Konnte neue Paradox-Instanz nicht erzeugen."
 msgid "Could not get memory for field definitions."
 msgstr "Konnte Speicher für Felddefinitionen nicht allozieren."
 
+#. numfields
 #: src/main.c:179 src/main.c:361
 msgid "Could not create output file."
 msgstr "Konnte Ausgabedatei nicht erzeugen."
