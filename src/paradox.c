@@ -221,7 +221,7 @@ PX_get_opaque(pxdoc_t *pxdoc) {
  */
 PXLIB_API int PXLIB_CALL
 PX_set_io_stream(pxdoc_t *pxdoc,
-                 char * (*readproc)(pxdoc_t *p, void *stream),
+                 char * (*readproc)(pxdoc_t *p, void *stream, size_t numbytes, void *buffer),
                  size_t (*writeproc)(pxdoc_t *p, void *stream, const char *data, size_t len),
                  size_t (*seekproc)(pxdoc_t *p, void *stream, size_t offset, int whence),
                  size_t (*tellproc)(pxdoc_t *p, void *stream)
@@ -238,10 +238,10 @@ PX_set_io_stream(pxdoc_t *pxdoc,
 		return -1;
 	}
 	
-	pxs->read = px_gsfread;
-	pxs->seek = px_gsfseek;
-	pxs->tell = px_gsftell;
-	pxs->write = px_gsfwrite;
+	pxs->read = readproc;
+	pxs->seek = seekproc;
+	pxs->tell = tellproc;
+	pxs->write = writeproc;
 
 	pxdoc->px_stream = pxs;
 

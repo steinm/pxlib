@@ -49,6 +49,8 @@
 
 /* IO Stream types */
 #define pxfIOFile 1
+/* pxfIOGsf is defined as 2 in paradox-gsf.h */
+#define pxfIOStream 3
 
 /* Field types */
 #define pxfAlpha        0x01
@@ -120,19 +122,6 @@ struct px_head {
 	struct px_field *px_fields;
 };
 
-struct px_stream {
-	int type;        /* set to pxfIOFile | pxfIOGsf */
-	int mode;        /* set to pxfFileRead | pxfFileWrite */
-	int close;       /* set to true if stream must be closed */
-	union {
-		FILE *fp;
-#if PX_HAVE_GSF
-		GsfInput *gsfin;
-		GsfOutput *gsfout;
-#endif
-	} s;
-};
-
 typedef struct px_doc pxdoc_t;
 typedef struct px_datablockinfo pxdatablockinfo_t;
 typedef struct px_blob pxblob_t;
@@ -141,6 +130,24 @@ typedef struct px_field pxfield_t;
 typedef struct px_pindex pxpindex_t;
 typedef struct px_stream pxstream_t;
 typedef struct mb_head mbhead_t;
+
+struct px_stream {
+	int type;        /* set to pxfIOFile | pxfIOGsf | pxfIOStream*/
+	int mode;        /* set to pxfFileRead | pxfFileWrite */
+	int close;       /* set to true if stream must be closed */
+	union {
+		FILE *fp;
+		void *stream;
+#if PX_HAVE_GSF
+		GsfInput *gsfin;
+		GsfOutput *gsfout;
+#endif
+	} s;
+	char * (*read)(pxdoc_t *p, void *stream, size_t numbytes, void *buffer);
+	size_t (*seek)(pxdoc_t *p, void *stream, size_t offset, int whence);
+	size_t (*tell)(pxdoc_t *p, void *stream);
+	size_t (*write)(pxdoc_t *p, void *stream, const char *buffer, size_t numbytes);
+};
 
 struct px_doc {
 	/* database file */
@@ -367,6 +374,9 @@ PXLIB_API int PXLIB_CALL
 PX_set_blob_file(pxdoc_t *pxdoc, const char *filename);
 
 PXLIB_API int PXLIB_CALL
+PX_set_blob_fp(pxdoc_t *pxdoc, FILE *fp);
+
+PXLIB_API int PXLIB_CALL
 PX_has_blob_file(pxdoc_t *pxdoc);
 
 PXLIB_API pxblob_t* PXLIB_CALL
@@ -377,6 +387,9 @@ PX_open_blob_fp(pxblob_t *pxdoc, FILE *fp);
 
 PXLIB_API int PXLIB_CALL
 PX_open_blob_file(pxblob_t *pxdoc, const char *filename);
+
+PXLIB_API int PXLIB_CALL
+PX_create_blob_fp(pxblob_t *pxdoc, FILE *fp);
 
 PXLIB_API int PXLIB_CALL
 PX_create_blob_file(pxblob_t *pxblob, const char *filename);
