@@ -120,7 +120,10 @@ struct px_doc {
 	char *px_name;     /* Name of file */
 	int px_close_fp;   /* set to true if file pointer must be closed */
 	pxhead_t *px_head; /* Pointer to header of file */
-	void *px_data;     /* Pointer to data of file (only used in prim. index) */
+	void *px_data;     /* Pointer to data of file (used in prim. index for
+						* index data, used in db files for an self build
+						* index) */
+	int px_datalen;    /* length of data field in number of units */
 
 	/* primary index file */
 	pxdoc_t *px_pindex;
@@ -165,9 +168,12 @@ struct px_datablockinfo {
 
 struct px_pindex {
 	char *data;
-	int blocknumber;
+	int blocknumber;   /* Block number of referenced block */
 	int numrecords;
 	int dummy;
+	int myblocknumber; /* Number of block this record is stored in */
+	int level;         /* level of index block, level 1 blocks point to
+						* data block in the database file. */
 };
 
 PXLIB_API int PXLIB_CALL

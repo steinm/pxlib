@@ -62,6 +62,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	pxh->px_numrecords = get_long_le(&pxhead.numRecords);
 	pxh->px_numfields = get_short_le(&pxhead.numFields);
 	pxh->px_fileblocks = get_short_le(&pxhead.fileBlocks);
+	pxh->px_firstblock = get_short_le(&pxhead.firstBlock);
+	pxh->px_lastblock = get_short_le(&pxhead.lastBlock);
 	switch(pxhead.fileVersionID) {
 		case 3:
 			pxh->px_fileversion = 30;
@@ -204,7 +206,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
 
-	char *basehead = &pxhead;
+	char *basehead = (char *) &pxhead;
 
 	put_short_le(&pxhead.recordSize, pxh->px_recordsize);
 	put_short_le(&pxhead.headerSize, pxh->px_headersize);
@@ -298,7 +300,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 		return -1;
 	}
 	/* write fieldNamePtrArray */
-	int base = basehead+0x78+pxh->px_numfields*2*2+4+261;
+	int base = (int) basehead+0x78+pxh->px_numfields*2*2+4+261;
 	pxf = pxh->px_fields;
 	int offset = 0;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
@@ -364,61 +366,155 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 }
 /* }}} */
 
-/* put_px_datablock() {{{
- * writes an empty data block. Returns the number of the new
- * datablock. The first one has number 1 as stored in the datablock
- * head as well.
+/* get_datablock_head() {{{
  */
-int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
-	TDataBlock datablockhead;
-	int i, ret, nullint = 0;
+int get_datablock_head(pxhead_t *pxh, FILE *fp, int datablocknr, TDataBlock *datablockhead)
+{
+	int position, ret;
+	position =  pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
+	if((ret = fseek(fp, position, SEEK_SET)) < 0) {
+		return -1;
+	}
 
-	/* Go to the start of the data block (skip the header) */
+	if((ret = fread(datablockhead, sizeof(TDataBlock), 1, fp)) < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+/* }}} */
+
+/* put_datablock_head() {{{
+ */
+int put_datablock_head(pxhead_t *pxh, FILE *fp, int datablocknr, TDataBlock *datablockhead)
+{
+	int position, ret;
+	position =  pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
+	if((ret = fseek(fp, position, SEEK_SET)) < 0) {
+		return -1;
+	}
+
+	if((ret = fwrite(datablockhead, sizeof(TDataBlock), 1, fp)) < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+/* }}} */
+
+/* put_px_datablock() {{{
+ * adds an empty data block logically after the block 'after'.
+ * The block is physically always added at the end of the file but
+ * logically inserted into the link list. All header entries (px_firstblock,
+ * px_lastblock and px_fileblocks) will be updated.
+ * Returns the number of the new datablock. The first one has number
+ * 1 as stored in the datablock head as well.
+ */
+int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, FILE *fp) {
+	TDataBlock newdatablockhead, prevdatablockhead, nextdatablockhead;
+	int i, next, ret, nullint = 0;
+
+	if(after > pxh->px_fileblocks) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to insert data block after block number %d, but file has only %d blocks."), after, pxh->px_fileblocks);
+		return -1;
+	}
+
+	if(after < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("You did not pass a valid block number."));
+		return -1;
+	}
+
+	/* Goto the block before the new block and read its header. */
+	if(after != 0) {
+		if((ret = get_datablock_head(pxh, fp, after, &prevdatablockhead)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block before the new block."));
+			return -1;
+		}
+		/* Goto the block which will be after the new block and read its header. */
+		next = get_short_le(prevdatablockhead.nextBlock);
+	} else {
+		next = pxh->px_firstblock;
+	}
+	
+//	fprintf(stderr, "Inserting new block after %d and befor %d\n", after, next);
+	if(next != 0) {
+		if((ret = get_datablock_head(pxh, fp, next, &nextdatablockhead)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block after the new block."));
+			return -1;
+		}
+	}
+
+	/* Go to the start of the new data block, which should be identical
+	 * to the end of the file. */
 	if((ret = fseek(fp, pxh->px_headersize+pxh->px_fileblocks*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
 		return -1;
 	}
 
-	memset(&datablockhead, 0, sizeof(TDataBlock));
-	put_short_le(&datablockhead.prevBlock, pxh->px_lastblock);
-	/* FIXME: nextBlock should be 0 and updated when the next block is
-	 * inserted. */
-	put_short_le(&datablockhead.nextBlock, pxh->px_lastblock+2);
-	put_short_le(&datablockhead.addDataSize, -pxh->px_recordsize);
-	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
+	memset(&newdatablockhead, 0, sizeof(TDataBlock));
+	put_short_le(&newdatablockhead.prevBlock, after);
+	put_short_le(&newdatablockhead.nextBlock, next);
+	/* This block is still empty, so set it -recordsize */
+	put_short_le(&newdatablockhead.addDataSize, -pxh->px_recordsize);
+	if(put_datablock_head(pxh, fp, pxh->px_fileblocks+1, &newdatablockhead) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write new data block header."));
 		return -1;
 	}
 
-	/* write an empty block */
+	/* write an empty block. File pointer is still at right position. */
 	for(i=0; i<pxh->px_maxtablesize*0x400-sizeof(TDataBlock); i++) {
 		if(fwrite(&nullint, 1, 1, fp) < 1) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock."));
+			px_error(pxdoc, PX_RuntimeError, _("Could not write empty data block."));
 			return -1;
 		}
 	}
 
-	return(pxh->px_lastblock+1);
+	/* Update the block before the new one */
+	if(after != 0) {
+		put_short_le(&prevdatablockhead.nextBlock, pxh->px_fileblocks+1);
+		if(put_datablock_head(pxh, fp, after, &prevdatablockhead) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not update datablock header before new block."));
+			return -1;
+		}
+	}
+
+	/* Update the block after the new one */
+	if(next != 0) {
+		put_short_le(&nextdatablockhead.prevBlock, pxh->px_fileblocks+1);
+		if(put_datablock_head(pxh, fp, after, &nextdatablockhead) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not update datablock header after new block."));
+			return -1;
+		}
+	}
+
+	/* Update the header */
+	pxh->px_fileblocks++;
+	if(after == 0)
+		pxh->px_firstblock = pxh->px_fileblocks;
+	if(next == 0)
+		pxh->px_lastblock = pxh->px_fileblocks;
+	if(put_px_head(pxdoc, pxh, fp) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Unable to put header."));
+		return -1;
+	}
+	return(pxh->px_fileblocks);
 }
 /* }}} */
 
 /* px_add_data_to_block() {{{
- * stores a record into a data block.
+ * stores a record into a data block. datablocknr is the logical number
+ * of the block (the first block has number 1).
  */
 int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *data, FILE *fp) {
 	TDataBlock datablockhead;
 	int ret, n;
 
-	/* Go to the start of the data block (skip the header) */
-	if((ret = fseek(fp, pxh->px_headersize+datablocknr*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of first data block"));
-		return -1;
-	}
-
-	if((ret = fread(&datablockhead, sizeof(TDataBlock), 1, fp)) < 0) {
+	/* Get header of the data block */
+	if((ret = get_datablock_head(pxh, fp, datablocknr, &datablockhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
 		return -1;
 	}
+
 	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize+1;
 //	fprintf(stderr, "Hexdump des alten datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
@@ -426,19 +522,13 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 //	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
 //	fprintf(stderr, "Datablock %d hat %d Datensätze\n", datablocknr, n);
 
-	/* Go back the beginning of the block */
-	if((ret = fseek(fp, -sizeof(TDataBlock), SEEK_CUR)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of data block"));
-		return -1;
-	}
-
 	/* Update size of data block and write it back */
-	put_short_le(&datablockhead.addDataSize, n*pxh->px_recordsize);
 //	fprintf(stderr, "Hexdump des neuen datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
-	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
+	put_short_le(&datablockhead.addDataSize, n*pxh->px_recordsize);
+	if(put_datablock_head(pxh, fp, datablocknr, &datablockhead) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write updated datablock header."));
 		return -1;
 	}
 

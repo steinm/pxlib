@@ -123,6 +123,7 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 #endif
 	pxdoc->targetencoding = NULL;
 	pxdoc->px_data = NULL;
+	pxdoc->px_datalen = 0;
 
 	return pxdoc;
 }
@@ -338,6 +339,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 		px_error(pindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
 		return -1;
 	}
+	pindex->px_datalen = pxh->px_numrecords;
 
 	pindex_data = (pxpindex_t *) pindex->px_data;
 	memset(pindex_data, 0, pxh->px_numrecords*sizeof(pxpindex_t));
@@ -366,7 +368,9 @@ PX_read_primary_index(pxdoc_t *pindex) {
 		return(-1);
 	}
 	for(j=0; j<pxh->px_numrecords; j++) {
-		if(PX_get_record(pindex, j, data)) {
+		pxdatablockinfo_t pxdbinfo;
+		int isdeleted;
+		if(PX_get_record2(pindex, j, data, &isdeleted, &pxdbinfo)) {
 			short int value;
 			/* Copy the data part for later sorting */
 			pindex_data[j].data = pindex->malloc(pindex, datalen, _("Allocate memory for data part of index record."));
@@ -378,6 +382,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 			pindex_data[j].numrecords = value;
 			PX_get_data_short(pindex, &data[datalen+4], 2, &value);
 			pindex_data[j].dummy = value;
+			pindex_data[j].myblocknumber = pxdbinfo.number;
 		} else {
 			px_error(pindex, PX_RuntimeError, _("Could not read record no. %d of primary index data."), j);
 			/* FIXME: Need to free all already allocated data parts */
@@ -388,7 +393,42 @@ PX_read_primary_index(pxdoc_t *pindex) {
 		}
 	}
 	/* sort the data */
-	while(swap) {
+	/* find level of index blocks. Index blocks of level 1 contain references
+	 * to data blocks. Index blocks of level n+1 contain references to index
+	 * blocks of level n. */
+	/* If the number of data blocks is 1 then there will be no index blocks
+	 * of level 2, and all blocks will be of level 1.
+	 * In all other case we expect only blocks of level 2 and 1.
+	 * This is an assumption which is only true for a
+	 * certain number of records, which is usually quite high. If for example
+	 * each data block in the database contains 10 records, and each level 1
+	 * index block contains 50 block references, you will end up in 500
+	 * records. The next index level will enlarge this to 25000 if only
+	 * on block will be used in this level.
+	 * For now this has to be sufficient. */
+	if(pxh->px_fileblocks == 1) {
+		for(j=0; j<pxh->px_numrecords-1; j++)
+			pindex_data[j].level = 1;
+	} else {
+		int firstblock = pindex_data[0].myblocknumber;
+		int numrecords = 0;
+		for(j=0; j<pxh->px_numrecords-1, pindex_data[j].myblocknumber == firstblock; j++) {
+			numrecords += pindex_data[j].numrecords;
+			pindex_data[j].level = 2;
+		}
+		for(; j<pxh->px_numrecords-1; j++) {
+			numrecords -= pindex_data[j].numrecords;
+			pindex_data[j].level = 1;
+		}
+		if(numrecords != 0) {
+			px_error(pindex, PX_Warning, _("The number of records coverd by index level 2 is unequal to level 1."));
+		}
+	}
+	for(j=0; j<pxh->px_numrecords-1; j++) {
+		printf("%d\t%d\n", pindex_data[j].myblocknumber, pindex_data[j].level);
+	}
+
+/*	while(swap) {
 		swap = 0;
 		for(j=0; j<pxh->px_numrecords-1; j++) {
 			if(strncmp(pindex_data[j].data, pindex_data[j+1].data, datalen) > 0) {
@@ -399,6 +439,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 			}
 		}
 	}
+*/
 	pindex->free(pindex, data);
 	return 0;
 }
@@ -432,74 +473,44 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 	numrecords = 0 ;
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))/pxh->px_recordsize;
 	for(j=0; j<pxih->px_numrecords; j++) {
-		/* Check if the number of records is in the possible range.
-		 * I have seen prim. index files with very strange values.
-		 * If the number of records in a datablock according to the index file
-		 * is actually greater than the theoretical maximum, we will
-		 * read the datablock header and get the real value from there.
+		/* We currently just take level 1 index blocks into account.
+		 * This is only for large databases a speed disadvantage.
 		 */
-		if(pindex_data[j].numrecords > recsperdatablock) {
-			int ret;
-			TDataBlock datablock;
-			px_error(pxdoc, PX_Warning, _("The number of records in data block %d according to the index file is larger than the theoretical number of records (%d > %d). I will try to get the number from the header of the data block."), pindex_data[j].blocknumber, pindex_data[j].numrecords, recsperdatablock);
-//			printf("Records per block in index file is wrong (%d)\n", pindex_data[j].numrecords);
-			/* Go to the start of the data block (skip the header) */
-			if((ret = fseek(pxdoc->px_fp, pxh->px_headersize + (pindex_data[j].blocknumber-1)*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
-				return 0;
-			}
-
-			/* Get the info about this data block */
-			if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
-				return 0;
-			}
-			/* Get the number of records in this block */
-			n = get_short_le((char *) &datablock.addDataSize)/pxh->px_recordsize+1;
-			/* Make sure the real number or records in the block is not bigger
-			 * than the theoretical maximum
-			 */
-			if(n > recsperdatablock) {
-				n = 0;
-			}
-			pindex_data[j].numrecords = n;
-//			printf("Set number of records in block to %d (%d)\n", n, get_short_le((char *) &datablock.addDataSize));
-
-		} else {
+		if(pindex_data[j].level == 1) {
 			n = pindex_data[j].numrecords;
-		}
-		numrecords += n;
-		if(recno >= n) {
-			recno -= n;
-		} else {
-			int blocksize, ret;
-			TDataBlock datablock;
+			numrecords += n;
+			if(recno >= n) {
+				recno -= n;
+			} else {
+				int blocksize, ret;
+				TDataBlock datablock;
 
-			pxdbinfo->number = pindex_data[j].blocknumber;
-			pxdbinfo->recno = recno;
-			pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
-			pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
+				pxdbinfo->number = pindex_data[j].blocknumber;
+				pxdbinfo->recno = recno;
+				pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
+				pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
 
-			/* Go to the start of the data block (skip the header) */
-			if((ret = fseek(pxdoc->px_fp, pxdbinfo->blockpos, SEEK_SET)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
-				return 0;
+				/* Go to the start of the data block (skip the header) */
+				if((ret = fseek(pxdoc->px_fp, pxdbinfo->blockpos, SEEK_SET)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
+					return 0;
+				}
+
+				/* Get the info about this data block */
+				if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not read"));
+					return 0;
+				}
+
+				blocksize = get_short_le((char *) &datablock.addDataSize);
+
+				pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
+				pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
+				pxdbinfo->size = blocksize+pxh->px_recordsize;
+				pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+				deleted = 0;
+				return 1;
 			}
-
-			/* Get the info about this data block */
-			if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not read"));
-				return 0;
-			}
-
-			blocksize = get_short_le((char *) &datablock.addDataSize);
-
-			pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
-			pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
-			pxdbinfo->size = blocksize+pxh->px_recordsize;
-			pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
-			deleted = 0;
-			return 1;
 		}
 	}
 	return 0;
@@ -718,7 +729,7 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	/* Check if we need a new datablock */
 	if(datablocknr > pxh->px_fileblocks) {
 //		fprintf(stderr, "We need an new datablock\n");
-		itmp = put_px_datablock(pxdoc, pxh, pxdoc->px_fp);
+		itmp = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_fp);
 //		fprintf(stderr, "Added data block no. %d\n", itmp);
 	
 		/* The datablock number return by px_put_datablock() should be
@@ -728,15 +739,10 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 			px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing data block. Expected data block nr. %d, but got %d."), datablocknr, itmp);
 			return -1;
 		}
-
-		if(pxh->px_firstblock == 0)
-			pxh->px_firstblock = itmp;
-		pxh->px_lastblock = itmp;
-		pxh->px_fileblocks++;
 	}
 
 	/* write data */
-	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr-1, data, pxdoc->px_fp);
+	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, data, pxdoc->px_fp);
 
 	/* The record number within the data block must be the same
 	 * as the calculated one.
@@ -824,6 +830,7 @@ PX_delete(pxdoc_t *pxdoc) {
 		 * FIXME: need to free the memory pointed to by px_data->data
 		 */
 		pxdoc->free(pxdoc, pxdoc->px_data);
+		pxdoc->px_datalen = 0;
 	}
 
 	pxdoc->free(pxdoc, pxdoc);
