@@ -70,7 +70,7 @@ manpage.1: manpage.sgml
 		  This functions internally calls PX_create_fp(3) after the file is
 			opened.</para>
 		<para>The table name will be set to the filename be default. It can
-		  be overwritten by calling PX_set_tablename(3) afterwards.</para>
+		  be overwritten by calling PX_set_parameter(3) afterwards.</para>
 
   </refsect1>
   <refsect1>
@@ -80,7 +80,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_new2(3), PX_new(3), PX_create_fp(3), PX_set_tablename(3)</para>
+    <para>PX_new2(3), PX_new(3), PX_create_fp(3), PX_set_parameter(3)</para>
 
   </refsect1>
   <refsect1>
