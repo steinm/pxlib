@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-05-14 10:27+0200\n"
+"POT-Creation-Date: 2004-05-27 08:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -39,7 +39,7 @@ msgstr "Keine Paradox-Datenbank übergeben."
 #. * of the datablock in the primary index file. Level 2 entries
 #. * will be created when the primary index file is written.
 #. * Nevertheless the internal index entry has a field level, which
-#. * currently always set to 1.
+#. * is currently always set to 1.
 #.
 #. Allocate memory for internal list of index entries
 #: src/paradox.c:244
