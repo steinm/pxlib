@@ -103,7 +103,7 @@ binary-arch: build install
 	dh_fixperms
 #	dh_perl
 #	d_python
-	dh_makeshlibs
+	dh_makeshlibs -V 'pxlib1 (>= 0.4.0)'
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
