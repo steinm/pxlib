@@ -103,6 +103,8 @@ struct px_head {
 	int px_firstblock;           // block number of first block
 	int px_lastblock;            // block number of last block
 	int px_indexfieldnumber;
+	int px_indexroot;            // number of root index block (only px files)
+	int px_numindexlevels;       // number of index levels (only px files)
 	int px_writeprotected;
 	int px_doscodepage;
 	int px_primarykeyfields;
