@@ -17,10 +17,10 @@ manpage.1: manpage.sgml
   -->
 
   <!-- Fill in your name for FIRSTNAME and SURNAME. -->
-  <!ENTITY dhfirstname "<firstname>FIRSTNAME</firstname>">
-  <!ENTITY dhsurname   "<surname>SURNAME</surname>">
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>July 20, 2004</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2003, 2004</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -57,7 +57,7 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>opens Paradox blob file</refpurpose>
+    <refpurpose>Opens Paradox blob file (deprecated)</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
@@ -67,6 +67,11 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Opens a file containing blobs with name <option>filename</option>.
+		  </para>
+		<para>This function is deprecated. Use
+		  <function>PX_set_blob_file(3)</function>
+			and <function>PX_get_data_blob(3)</function>
+			or <function>PX_get_data_graphic(3)</function> instead.
 		  </para>
 
   </refsect1>

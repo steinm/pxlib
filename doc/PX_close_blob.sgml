@@ -17,10 +17,10 @@ manpage.1: manpage.sgml
   -->
 
   <!-- Fill in your name for FIRSTNAME and SURNAME. -->
-  <!ENTITY dhfirstname "<firstname>FIRSTNAME</firstname>">
-  <!ENTITY dhsurname   "<surname>SURNAME</surname>">
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>July 20, 2004</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -57,7 +57,7 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>closes Paradox blob file</refpurpose>
+    <refpurpose>Closes Paradox blob file (deprecated)</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
@@ -66,8 +66,11 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Closes a Paradox blob file which was opened with PX_open_file(3)
-		  or PX_open_blob_file(3).</para>
+    <para>Closes a Paradox blob file which was opened with
+		  <function>PX_open_file(3)</function> or PX_open_blob_file(3).</para>
+		<para>This function is deprecated. If
+		  <function>PX_set_blob_file(3)</function> is used the blob file
+			will be closed when the Paradox database is close.</para>
 
   </refsect1>
   <refsect1>
