@@ -1,3 +1,7 @@
+Version 0.2.9
+	- new function PX_strdup() to duplicate a string but use the
+	  memory management functions of the paradox document.
+
 Version 0.2.8
 	- new function PX_get_opaque()
 	- fixed all references to PX_open_filename which is now PX_open_file

@@ -1,3 +1,9 @@
+pxlib (0.2.9-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Uwe Steinmann <steinm@debian.org>  Thu, 27 Mai 2004 14:14:12 +0200
+
 pxlib (0.2.8-1) unstable; urgency=low
 
   * New upstream release.
