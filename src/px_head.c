@@ -87,6 +87,8 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 	pxh->px_indexfieldnumber = pxhead.indexFieldNumber;
 	pxh->px_writeprotected = pxhead.writeProtected;
+	pxh->px_modifiedflags1 = pxhead.modifiedFlags1;
+	pxh->px_modifiedflags2 = pxhead.modifiedFlags2;
 	pxh->px_primarykeyfields = get_short_le(&pxhead.primaryKeyFields);
 
 	if(((pxh->px_filetype == 0) ||
@@ -105,6 +107,14 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	pxh->px_sortorder = pxhead.sortOrder;
 	pxh->px_refintegrity = pxhead.refIntegrity;
 	pxh->px_autoinc = get_long_le(&pxhead.autoInc);
+
+	/* The theoretical number of records is calculated from the number
+	 * of data blocks and the number of records that fit into a data
+	 * block. The '-6' is decreasing the available space of the data
+	 * block due to its header, which takes up 6 Bytes.
+	 */
+	pxh->px_theonumrecords = pxh->px_fileblocks * (int) ((pxh->px_maxtablesize*0x400-6) / pxh->px_recordsize);
+
 	if((pxh->px_fields = (pxfield_t *) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxfield_t), _("Could not get memory for field definitions."))) == NULL)
 		return NULL;
 
