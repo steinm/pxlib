@@ -71,6 +71,10 @@ manpage.1: manpage.sgml
 			before in order to recode the string. If you do not set the encoding
 			the data will be returned as is. You should use this function
 			instead of accessing the data directly.</para>
+		<para><option>data</option> points to the start of the data field in the
+		  record. It must be calculated by summing up all field length before
+			the field to operate on and add it to the base pointer of the
+			record.</para>
 
   </refsect1>
   <refsect1>
