@@ -1,4 +1,5 @@
 Version 0.2.5
+	- Issue a warning if setting a value which does not exist
 	- better error checking when setting the number of primary keys
 	- fixed some errors in writing primary index files
 		level 2 index entries are now supported

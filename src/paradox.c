@@ -552,8 +552,11 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
 			return -1;
 		}
+	} else {
+		px_error(pxdoc, PX_Warning, _("There is no such value like '%s' to set."), name);
+		return -1;
 	}
-
+	return(0);
 }
 /* }}} */
 
