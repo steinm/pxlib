@@ -47,6 +47,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %files
 %attr(-,root,root) %doc README AUTHORS ChangeLog COPYING INSTALL
 %attr(-,root,root) %{prefix}/lib/lib*.so.*
+%attr(-,root,root) %{prefix}/share/locale/*/LC_MESSAGES/*
 
 %files devel
 %attr(-,root,root) %{prefix}/lib/lib*.so
