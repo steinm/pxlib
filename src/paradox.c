@@ -713,22 +713,74 @@ PX_get_parameter(pxdoc_t *pxdoc, const char *name, char **value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
-	if(pxdoc == NULL ||
-	   pxdoc->px_head == NULL ||
-	   pxdoc->px_head->px_filetype != pxfFileTypIndexDB) {
+	pxfield_t *pfielddb, *pfieldpx;
+	pxpindex_t *pindex_data;
+	int records, i;
+
+	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
 		return -1;
 	}
 
-	if(pindex == NULL ||
-	   pindex->px_head == NULL ||
-	   pindex->px_head->px_filetype != pxfFileTypPrimIndex) {
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
+		return -1;
+	}
+
+	if(pxdoc->px_head->px_filetype != pxfFileTypIndexDB) {
+		px_error(pxdoc, PX_RuntimeError, _("Cannot add a primary index to a database which is not of type 'IndexDB'."));
+		return -1;
+	}
+
+	if(pindex == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox index file."));
+		return -1;
+	}
+	if(pindex->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of index file has not been read."));
+		return -1;
+	}
+
+	if(pindex->px_head->px_filetype != pxfFileTypPrimIndex) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox primary index file."));
 		return -1;
 	}
 
 	if(pindex->px_data == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Primary index file has no index data."));
+		return -1;
+	}
+
+	if(pindex->px_head->px_numfields != pxdoc->px_head->px_primarykeyfields) {
+		px_error(pxdoc, PX_RuntimeError, _("Number of primay index fields in database and and number fields in primary index differ."));
+		return -1;
+	}
+
+	for(i=0; i<pindex->px_head->px_numfields; i++) {
+		pfielddb = PX_get_field(pxdoc, i);
+		pfieldpx = PX_get_field(pindex, i);
+		if(pfielddb->px_ftype != pfieldpx->px_ftype) {
+			px_error(pxdoc, PX_RuntimeError, _("Type of primay key field '%s' in database differs from index file."), pfielddb->px_fname);
+			return -1;
+		}
+		if(pfielddb->px_flen != pfieldpx->px_flen) {
+			px_error(pxdoc, PX_RuntimeError, _("Length of primay key field '%s' in database differs from index file."), pfielddb->px_fname);
+			return -1;
+		}
+	}
+
+	/* Calculate the number of records covered by the index file and
+	 * compare it with the number of records in the db file. They must
+	 * be identical, otherwise the index file is probably does not belong to
+	 * the db file. */
+	records = 0;
+	pindex_data = (pxpindex_t *) pindex->px_data;
+	for(i=0; i<pindex->px_head->px_numrecords; i++) {
+		if(pindex_data[i].level == 1)
+			records += pindex_data[i].numrecords;
+	}
+	if(records != pxdoc->px_head->px_numrecords) {
+		px_error(pxdoc, PX_RuntimeError, _("Index file is for database with %d records, but database has %d records."), records, pxdoc->px_head->px_numrecords);
 		return -1;
 	}
 
