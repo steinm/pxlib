@@ -320,8 +320,16 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		put_long_le(&pxdatahead.fileUpdateTime, dummy);
 		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
 		put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
-		pxdatahead.unknown6Cx6F[0] = 0x01;
-		pxdatahead.unknown6Cx6F[1] = 0x01;
+		switch(pxh->px_filetype) {
+			case pxfFileTypIndexDB:
+			case pxfFileTypNonIndexDB:
+				pxdatahead.unknown6Cx6F[0] = 0x01;
+				pxdatahead.unknown6Cx6F[1] = 0x01;
+				break;
+			case pxfFileTypPrimIndex:
+				pxdatahead.unknown6Cx6F[0] = 0x0;
+				pxdatahead.unknown6Cx6F[1] = 0x0;
+		}
 	}
 
 	/* Goto the begining of the file */
