@@ -1,4 +1,5 @@
 Version 0.0.9
+	- fixed many endianess bugs
 	- new function PX_is_bigendian()
 	- new function PX_has_recode_support()
 	- fixed compile error with older versions of gcc
