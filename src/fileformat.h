@@ -46,7 +46,9 @@ struct _TPxHeader {
 	longint autoInc;
 	word firstFreeBlock;
 	byte indexUpdateRequired;
-	byte unknown50x54[5];
+	byte unknown50;
+	word realHeaderSize;
+	byte unknown53x54[2];
 	byte refIntegrity;
 	byte unknown56x57[2];
 };

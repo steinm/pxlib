@@ -250,10 +250,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	 * this is identical to fileBlocks. */
 	put_short_le(&pxhead.lastBlock, pxh->px_fileblocks);
 	put_short_le(&pxhead.maxBlocks, pxh->px_fileblocks);
-	/* The field unknown12x13 is probably the number of changes.
-	 * In several files it was just 5. */
-	put_short_le(&pxhead.unknown12x13, 5);
 	pxhead.fileType = pxh->px_filetype;
+	put_long_le(&pxhead.autoInc, pxh->px_autoinc);
 	pxhead.maxTableSize = pxh->px_maxtablesize;
 	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
 	pxhead.writeProtected = pxh->px_writeprotected;
@@ -263,8 +261,16 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	pxhead.numIndexLevels = pxh->px_numindexlevels;
 	switch(pxh->px_filetype) {
 		case pxfFileTypIndexDB:
+			/* The field unknown12x13 is probably the number of changes.
+			 * In several files it was just 12 in .DB and 17 in .PX files. */
+			put_short_le(&pxhead.unknown12x13, 12);
 			put_short_le(&pxhead.primaryKeyFields, pxh->px_primarykeyfields);
 			put_long_le(&pxhead.primaryIndexWorkspace, basehead-100);  /* just to set a value */
+			put_long_le(&pxhead.unknownPtr1A, basehead-500);  /* just to set a value */
+			break;
+		case pxfFileTypPrimIndex:
+			put_short_le(&pxhead.unknown12x13, 17);
+			pxhead.unknown2Bx2C[1] = 102;
 			break;
 		case pxfFileTypNonIncSecIndex:
 		case pxfFileTypIncSecIndex:
@@ -285,8 +291,6 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			break;
 	}
 	pxhead.sortOrder = pxh->px_sortorder;
-	pxhead.unknown50x54[1] = 0x15;
-	pxhead.unknown50x54[2] = 0x01;
 	if(!isindex && (pxh->px_fileversion >= 40)) {
 		dataheadoffset = 0x78;
 	} else {
@@ -308,15 +312,18 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	pxf = pxh->px_fields;
 	sumfieldlen = 0;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
-		sumfieldlen += strlen(pxf->px_fname)+1;
+		if(pxf->px_fname)
+			sumfieldlen += strlen(pxf->px_fname)+1;
+		else
+			sumfieldlen += 1;
 	}
 	/* +9 is for sortOrderID and trailing 0 */
 	switch(pxh->px_filetype) {
 		case pxfFileTypPrimIndex:
-			put_short_le(&pxhead.unknown50x54[1], dataheadoffset+pxh->px_numfields*2+4+tablenamelen);
+			put_short_le(&pxhead.realHeaderSize, dataheadoffset+pxh->px_numfields*2+4+tablenamelen);
 			break;
 		default:
-			put_short_le(&pxhead.unknown50x54[1], dataheadoffset+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+9);
+			put_short_le(&pxhead.realHeaderSize, dataheadoffset+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+9);
 	}
 	/* The datahead is only in .DB and .Xnn files. If it exists the
 	 * common file header will continue at 0x78
