@@ -1,5 +1,5 @@
 Version 0.0.7
-	- functions to recode strings
+	- alpha fields are automatically recoded if required
 	- function to access alpha field data
 
 Version 0.0.6
