@@ -1,14 +1,14 @@
 Summary: A library to read Paradox DB files
-Name: pxlib
+Name: @PACKAGE@
 Version: @PACKAGE_VERSION@
 Release: 1
 Copyright: see doc/COPYING
 Group: Applications/Utils
-Url: http://pxlib.sourceforge.net/
+Url: http://@PACKAGE@.sourceforge.net/
 Packager: Uwe Steinmann <uwe@steinmann.cx>
-Source: http://prdownloads.sourceforge.net/pxlib/pxlib-%{PACKAGE_VERSION}.tar.gz
-BuildRoot: /var/tmp/rpm/pxlib-root
-Prefix: /usr
+Source: http://prdownloads.sourceforge.net/@PACKAGE@/@PACKAGE@-%{PACKAGE_VERSION}.tar.gz
+BuildRoot: /var/tmp/rpm/@PACKAGE@-root
+Prefix: @prefix@
 
 %description
 pxlib is a simply and still small C library to read Paradox DB files. It
@@ -18,7 +18,7 @@ functions like to open a DB file, read its header and read every single record.
 %package devel
 Summary: A library to read Paradox DB files (Development)
 Group: Development/Libraries
-Requires: pxlib = %{version}
+Requires: @PACKAGE@ = %{version}
 
 %description devel
 pxlib is a simply and still small C library to read Paradox DB files. It
@@ -29,7 +29,7 @@ functions like to open a DB file, read its header and read every single record.
 %setup
 
 %build
-./configure --prefix=%prefix --mandir=%prefix/share/man --infodir=%prefix/share/info
+./configure --prefix=%prefix --with-gsf --mandir=%prefix/share/man --infodir=%prefix/share/info
 make
 
 %install
@@ -51,5 +51,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %files devel
 %attr(-,root,root) %{prefix}/lib/lib*.so
 %attr(-,root,root) %{prefix}/lib/*.a
+%attr(-,root,root) %{prefix}/lib/*.la
+%attr(-,root,root) %{prefix}/lib/pkgconfig/*
 %attr(-,root,root) %{prefix}/include/*
 %attr(-,root,root) %{prefix}/share/man/man3/*
