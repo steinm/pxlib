@@ -402,6 +402,9 @@ PX_SdnToGregorian(long int sdn, int *pYear, int *pMonth, int *pDay);
 PXLIB_API long int PXLIB_CALL
 PX_GregorianToSdn(int year, int month, int day);
 
+PXLIB_API char * PXLIB_CALL
+PX_strdup(pxdoc_t *pxdoc, const char *str);
+
 #endif
 
 /*

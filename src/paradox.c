@@ -2143,6 +2143,18 @@ PX_put_data_byte(pxdoc_t *pxdoc, char *data, int len, char value) {
 }
 /* }}} */
 
+/******* Function for memory management ******/
+
+/* PX_strdup() {{{
+ * Same as strdup but uses the memory management functions of
+ * the paradox document as set with PX_new2()
+ */
+PXLIB_API char * PXLIB_CALL
+PX_strdup(pxdoc_t *pxdoc, const char *str) {
+	return(px_strdup(pxdoc, str));
+}
+/* }}} */
+
 /*
  * Local variables:
  * tab-width: 4
