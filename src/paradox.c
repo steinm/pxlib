@@ -215,11 +215,21 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 
 	pxh = pxdoc->px_head;
 	pxs = pxdoc->px_stream;
+
+	/* The internal list of index entries will only contain level 1
+	 * entries. Whether we need level 2 entries depends on the size
+	 * of the datablock in the primary index file. Level 2 entries
+	 * will be created when the primary index file is written.
+	 * Nevertheless the internal index entry has a field level, which
+	 * currently always set to 1.
+	 */
+	/* Allocate memory for internal list of index entries */
 	if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
 		return -1;
 	}
 
+	/* Build Index of Level 1 */
 	pxdoc->px_indexdata = pindex;
 	pxdoc->px_indexdatalen = pxh->px_fileblocks;
 	blockcount = 0; /* Just a block counter */
@@ -231,6 +241,8 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 			pxdoc->free(pxdoc, pindex);
 			return -1;
 		}
+		/* The data can be NULL because we don't support searching for field
+		 * data yet. */
 		pindex[blockcount].data = NULL;
 		pindex[blockcount].blocknumber = blocknumber;
 		pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
@@ -838,14 +850,21 @@ PXLIB_API int PXLIB_CALL
 PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 	pxpindex_t *indexdata;
 	pxfield_t *pxf;
-	pxhead_t *pxh;
+	pxhead_t *pxh, *pih;
 	char *data;
-	int i, recordsize, indexdatalen, numrecords;
+	int i, j, recsperblock, blocknumber;
+	int recordsize, indexdatalen, numrecords, recordnr;
 
 	pxh = pxdoc->px_head;
 	pxf = pxh->px_fields;
+	pih = pxindex->px_head;
 
-	recordsize = pxindex->px_head->px_recordsize;
+	/* Allocate memory for a complete data record. Actually it would be
+	 * sufficient to just read the first n fields which make up the
+	 * primary index fields, but it doesn't really harm to read the
+	 * whole record.
+	 */
+	recordsize = pih->px_recordsize;
 	if((data = (char *) pxindex->malloc(pxindex, recordsize, _("Allocate memory for data of index record."))) == NULL) {
 		px_error(pxindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
 		return -1;
@@ -855,14 +874,44 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 		build_primary_index(pxdoc);
 	indexdata = pxdoc->px_indexdata;
 	indexdatalen = pxdoc->px_indexdatalen;
-	numrecords = 0;
+	/* Check if we need level 2 index entries. If the space needed for
+	 * all level 1 entries is larger than a datablock in the index file,
+	 * we will need level 2 entries. The record size for an index entry
+	 * in the index file is 12 Bytes (3*4) larger than the recordsize, 
+	 * because of the three intergers containing the accounting info.
+	 */
+	if(pih->px_maxtablesize*0x400-sizeof(TDataBlock) < indexdatalen*(pih->px_recordsize+12)) {
+		int recsperblock = (pih->px_maxtablesize*0x400-sizeof(TDataBlock)) / (pih->px_recordsize+12);
+		blocknumber = 1;
+		recordnr = 0;
+		for(i=0; i<indexdatalen; i++) {
+			PX_get_record(pxdoc, recordnr, data);
+
+			/* Accumulate index entries until a data block is filled. */
+			j = 0;
+			numrecords = 0;
+			while((j < recsperblock) && (i < indexdatalen))
+				numrecords += indexdata[i].numrecords;
+
+			PX_put_data_short(pxindex, &data[recordsize-6], 2, blocknumber);
+			PX_put_data_short(pxindex, &data[recordsize-4], 2, numrecords);
+			PX_put_data_short(pxindex, &data[recordsize-2], 2, 0);
+			PX_put_record(pxindex, data);
+			blocknumber++;
+			recordnr += numrecords;
+		}
+	}
+	/* Loop through the index. Each entry points to first record of a
+	 * datablock.
+	 */
+	recordnr = 0;
 	for(i=0; i<indexdatalen; i++) {
-		PX_get_record(pxdoc, i, data);
+		PX_get_record(pxdoc, recordnr, data);
 		PX_put_data_short(pxindex, &data[recordsize-6], 2, indexdata[i].blocknumber);
 		PX_put_data_short(pxindex, &data[recordsize-4], 2, indexdata[i].numrecords);
 		PX_put_data_short(pxindex, &data[recordsize-2], 2, 0);
 		PX_put_record(pxindex, data);
-		numrecords += indexdata[i].numrecords;
+		recordnr += indexdata[i].numrecords;
 	}
 	pxindex->free(pxindex, data);
 	return(0);
