@@ -26,8 +26,8 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_open_file</refentrytitle>">
-  <!ENTITY funcname    "PX_open_file">
+  <!ENTITY dhucpackage "<refentrytitle>PX_open_filename</refentrytitle>">
+  <!ENTITY funcname    "PX_open_filename">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
