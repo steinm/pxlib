@@ -4,6 +4,7 @@
 #define PX_USE_RECODE @PX_HAVE_RECODE@
 #define PX_USE_ICONV @PX_HAVE_ICONV@
 
+#include <stdio.h>
 #include <stdbool.h>
 #if PX_USE_RECODE
 #include <recode.h>
@@ -159,7 +160,10 @@ struct px_doc {
 	size_t (*writeproc)(pxdoc_t *p, void *data, size_t size);
 
 	/* error handler function */
-	void (*errorhandler)(pxdoc_t *p, int level, const char* msg);
+	void (*errorhandler)(pxdoc_t *p, int level, const char* msg, void *data);
+
+	/* user data passed to error handler */
+	void *errorhandler_user_data;
 
 	/* Memory allocation functions */
 	void *(*malloc)(pxdoc_t *p, size_t size, const char *caller);
@@ -349,6 +353,12 @@ PX_put_data_short(pxdoc_t *pxdoc, char *data, int len, short int value);
 
 PXLIB_API void PXLIB_CALL
 PX_put_data_byte(pxdoc_t *pxdoc, char *data, int len, char value);
+
+PXLIB_API void PXLIB_CALL
+PX_SdnToGregorian(long int sdn, int *pYear, int *pMonth, int *pDay);
+
+PXLIB_API long int PXLIB_CALL
+PX_GregorianToSdn(int year, int month, int day);
 
 #endif
 
