@@ -4,9 +4,10 @@ pxlibincdir = $(includedir)
 
 pxlibinc_HEADERS = \
 	paradox.h \
+	paradox-gsf.h \
 	pxversion.h
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(pxlibincdir)
 
-EXTRA_DIST = paradox.h.in pxversion.h.in
+EXTRA_DIST = paradox.h.in paradox-gsf.h.in pxversion.h.in
