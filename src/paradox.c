@@ -1689,17 +1689,19 @@ PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
-	if(data[0] & 0x80) {
-		data[0] &= 0x7f;
-	} else if(*((long long int *)data) != 0) {
+	char tmp[8];
+	memcpy(&tmp, data, 8);
+	if(tmp[0] & 0x80) {
+		tmp[0] &= 0x7f;
+	} else if(*((long long int *)tmp) != 0) {
 		int k;
 		for(k=0; k<len; k++)
-			data[k] = ~data[k];
+			tmp[k] = ~tmp[k];
 	} else {
 		*value = 0;
 		return 0;
 	}
-	*value = get_double_be(data); //*((double *)data);
+	*value = get_double_be(tmp); //*((double *)tmp);
 	return 1;
 }
 /* }}} */
@@ -1709,14 +1711,16 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
-	if(data[0] & 0x80) {
-		data[0] &= 0x7f;
-	} else if(*((long int *)data) != 0) {
-		data[0] |= 0x80;
+	char tmp[4];
+	memcpy(&tmp, data, 4);
+	if(tmp[0] & 0x80) {
+		tmp[0] &= 0x7f;
+	} else if(*((long int *)tmp) != 0) {
+		tmp[0] |= 0x80;
 	} else {
 		return 0;
 	}
-	*value = get_long_be(data); //*((long int *)data);
+	*value = get_long_be(tmp);
 	return 1;
 }
 /* }}} */
@@ -1726,14 +1730,16 @@ PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
-	if(data[0] & 0x80) {
-		data[0] &= 0x7f;
-	} else if(*((short int *)data) != 0) {
-		data[0] |= 0x80;
+	char tmp[2];
+	memcpy(&tmp, data, 2);
+	if(tmp[0] & 0x80) {
+		tmp[0] &= 0x7f;
+	} else if(*((short int *)tmp) != 0) {
+		tmp[0] |= 0x80;
 	} else {
 		return 0;
 	}
-	*value = get_short_be(data);
+	*value = get_short_be(tmp);
 	return 1;
 }
 /* }}} */
@@ -1744,14 +1750,15 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 PXLIB_API int PXLIB_CALL
 PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	if(data[0] & 0x80) {
-		data[0] &= 0x7f;
-	} else if(*data != 0) {
-		data[0] |= 0x80;
-	} else {
-		return 0;
+		*value = data[0] & 0x7f;
+		return 1;
+	}
+	if(*data != 0) {
+		*value = data[0] = 0x80;
+		return 1;
 	}
 	*value = *data;
-	return 1;
+	return 0;
 }
 /* }}} */
 
