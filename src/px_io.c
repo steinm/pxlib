@@ -24,7 +24,7 @@ long px_fwrite(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
 /* gsf */
 #if PX_HAVE_GSF
 int px_gsfread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
-	return(gsf_input_read(stream->s.gsfin, len, buffer));
+	return((int) gsf_input_read(stream->s.gsfin, len, buffer));
 }
 
 int px_gsfseek(pxdoc_t *p, pxstream_t *stream, long offset, int whence) {
