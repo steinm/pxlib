@@ -61,7 +61,7 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>int &funcname;(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, const const char *filename, int type)</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, const char *filename, int type)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
