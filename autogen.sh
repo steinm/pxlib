@@ -17,7 +17,7 @@ done
 
 aclocal
 autoheader
-#automake --verbose --foreign --add-missing
+automake --verbose --foreign --copy --add-missing
 autoconf
 
 # For the Debian build
