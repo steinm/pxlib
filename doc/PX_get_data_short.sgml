@@ -27,7 +27,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
   <!ENTITY dhucpackage "<refentrytitle>PX_get_data_short</refentrytitle>">
-  <!ENTITY funcname    "PX_open_fp">
+  <!ENTITY funcname    "PX_get_data_short">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -61,7 +61,7 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>int &funcname;(char *data, int len, int *value)</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, char *data, int len, int *value)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
@@ -78,7 +78,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_data_long(3), PX_get_data_double(3)</para>
+    <para>PX_get_data_long(3), PX_get_data_double(3), PX_get_data_alpha(3)</para>
 
   </refsect1>
   <refsect1>
