@@ -1670,7 +1670,7 @@ PX_open_blob_fp(pxblob_t *pxblob, FILE *fp) {
 	pxstream_t *pxs;
 
 	if(NULL == (pxdoc = pxblob->pxdoc)) {
-		px_error(pxdoc, PX_RuntimeError, _("No paradox document accociated with blob file."));
+		px_error(pxdoc, PX_RuntimeError, _("No paradox document associated with blob file."));
 		return -1;
 	}
 
@@ -1740,7 +1740,7 @@ PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
 	}
 
 	if(NULL == (pxdoc = pxblob->pxdoc)) {
-		px_error(pxdoc, PX_RuntimeError, _("No paradox doument accociated with blob file."));
+		px_error(pxdoc, PX_RuntimeError, _("No paradox document associated with blob file."));
 		return -1;
 	}
 
@@ -1791,13 +1791,17 @@ PXLIB_API void PXLIB_CALL
 PX_close_blob(pxblob_t *pxblob) {
 	pxdoc_t *pxdoc;
 	if(NULL == (pxdoc = pxblob->pxdoc)) {
-		px_error(pxdoc, PX_RuntimeError, _("No paradox document accociated with blob file."));
+		px_error(pxdoc, PX_RuntimeError, _("No paradox document associated with blob file."));
 	}
 
 	if(pxblob->mb_stream && pxblob->mb_stream->close && (pxblob->mb_stream->s.fp != NULL)){
 		fclose(pxblob->mb_stream->s.fp);
 		pxdoc->free(pxdoc, pxblob->mb_stream);
 		pxblob->mb_stream = NULL;
+		pxdoc->free(pxdoc, pxblob->mb_name);
+		pxblob->mb_name = NULL;
+		pxdoc->free(pxdoc, pxblob->mb_head);
+		pxblob->mb_head = NULL;
 	}
 }
 /* }}} */
@@ -2009,52 +2013,6 @@ PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blo
 PXLIB_API char* PXLIB_CALL
 PX_read_graphicdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blobsize) {
 	return(_px_read_blobdata(pxblob, data, len, 17, mod, blobsize));
-}
-/* }}} */
-
-/* _px_write_blobdata() {{{
- * Write data of blob into file and returns the offset of it
- */
-static size_t
-_px_write_blobdata(pxblob_t *pxblob, const char *data, int len) {
-	pxdoc_t *pxdoc;
-	pxstream_t *pxs;
-	TMbBlockHeader mbbh;
-	int used_blocks;
-
-	if(!pxblob || !pxblob->mb_stream) {
-		return(-1);
-	}
-
-	pxs = pxblob->mb_stream;
-	if(pxblob->seek(pxdoc, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
-		return -1;
-	}
-	if((len+6) % 4096)
-		used_blocks = ((len+6) / 4096) + 1;
-	else
-		used_blocks = ((len+6) / 4096);
-	mbbh.type = 2;
-	put_short_le((char *) &mbbh.numBlocks, used_blocks);
-
-	if(pxblob->write(pxdoc, pxs, sizeof(TMbBlockHeader), &mbbh) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write header of blob data to file."));
-		return -1;
-	}
-	if(pxblob->write(pxdoc, pxs, len, data) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write blob data to file."));
-		return -1;
-	}
-}
-/* }}} */
-
-/* PX_write_blobdata() {{{
- * Writes data of a blob into file and returns a file offset of it
- */
-PXLIB_API size_t PXLIB_CALL
-PX_write_blobdata(pxblob_t *pxblob, const char *data, int len) {
-	return(_px_write_blobdata(pxblob, data, len));
 }
 /* }}} */
 
