@@ -26,7 +26,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_create_fp</refentrytitle>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_CREATE_FP</refentrytitle>">
   <!ENTITY funcname    "PX_create_fp">
 
   <!ENTITY debian      "<productname>Debian</productname>">
@@ -61,21 +61,23 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>int &funcname;(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp)</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int type)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Creates a new Paradox database in an already open file with the given
+    <para>Creates a new Paradox document in an already open file with the given
 		  field specification. <option>pxdoc</option> must be created before
-			with PX_new(3) or PX_new2(3). The file must be open in read/write mode
+			with PX_new(3) or PX_new2(3). The file must be opened in read/write mode
 			(w+) with fopen(3). <option>fields</option> is an array
 			of <option>numfields</option> field specifications to set the
 			schema of the database. The memory for the field specifications and
 			field names must be allocated by the caller by may not be freed, since
-			the memory is freed when the document is deleted.</para>
+			the memory is freed when the document is deleted. The type of the
+			file can be set in the last parameter. Currently only database and
+			primary index files are supported.</para>
 		<para>After creating the paradox database you may want to call
-		  PX_set_tablename(3) in order to set the table name as it stored
+		  PX_set_tablename(3) in order to set the table name as it is stored
 			in the header of the database.</para>
 
   </refsect1>
@@ -86,8 +88,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_new2(3), PX_new(3), PX_open_fp(3), PX_open_filename(3),
-		  PX_set_tablename(3)</para>
+    <para>PX_new2(3), PX_new(3), PX_create_file(3), PX_set_tablename(3)</para>
 
   </refsect1>
   <refsect1>
