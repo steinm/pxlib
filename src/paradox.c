@@ -2127,26 +2127,6 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 }
 /* }}} */
 
-/* PX_get_data_timestamp() {{{
- * Extracts a timestamp from a data block
- */
-PXLIB_API int PXLIB_CALL
-PX_get_data_timestamp(pxdoc_t *pxdoc, char *data, int len, long long *value) {
-	char tmp[8];
-	memcpy(&tmp, data, 8);
-	if(tmp[0] & 0x80) {
-		tmp[0] &= 0x7f;
-	} else if(*((long long *)tmp) != 0) {
-		tmp[0] |= 0x80;
-	} else {
-		*value = 0;
-		return 0;
-	}
-	*value = get_longlong_be(tmp);
-	return 1;
-}
-/* }}} */
-
 /* PX_get_data_long() {{{
  * Extracts a long integer from a data block
  */
@@ -2537,25 +2517,6 @@ PX_put_data_double(pxdoc_t *pxdoc, char *data, int len, double value) {
 			int k;
 			for(k=0; k<len; k++)
 				data[k] = ~data[k];
-		}
-	}
-}
-/* }}} */
-
-/* PX_put_data_timestamp() {{{
- * Stores a timestamp in a data block.
- * A len of 0 means to store a NULL value.
- */
-PXLIB_API void PXLIB_CALL
-PX_put_data_timestamp(pxdoc_t *pxdoc, char *data, int len, long long value) {
-	if(len == 0) {
-		memset(data, 0, 8);
-	} else {
-		put_longlong_be(data, value);
-		if(value >= 0) {
-			data[0] |= 0x80;
-		} else {
-			data[0] &= 0x7f;
 		}
 	}
 }
