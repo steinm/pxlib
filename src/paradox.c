@@ -1371,6 +1371,11 @@ PX_close(pxdoc_t *pxdoc) {
 		return;
 	}
 
+	if(pxdoc->px_blob) {
+		PX_close_blob(pxdoc->px_blob);
+		pxdoc->px_blob = NULL;
+	}
+
 	if(pxdoc->px_stream && pxdoc->px_stream->close && (pxdoc->px_stream->s.fp != NULL)){
 		fclose(pxdoc->px_stream->s.fp);
 		pxdoc->free(pxdoc, pxdoc->px_stream);
@@ -1697,6 +1702,34 @@ PX_set_tablename(pxdoc_t *pxdoc, const char *tablename) {
 	if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
 		return -1;
 	}
+	return 0;
+}
+/* }}} */
+
+/* PX_set_blob_file() {{{
+ * Sets the name of the file containing the blobs.
+ */
+PXLIB_API int PXLIB_CALL
+PX_set_blob_file(pxdoc_t *pxdoc, const char *filename) {
+	pxblob_t *pxblob;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(NULL == (pxblob = PX_new_blob(pxdoc))) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not create new blob file object."));
+		return -1;
+	}
+
+	if(0 > PX_open_blob_file(pxblob, filename)) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file."));
+		return -1;
+	}
+
+	pxdoc->px_blob = pxblob;
+
 	return 0;
 }
 /* }}} */
@@ -2060,7 +2093,7 @@ PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value) {
 
 /* PX_get_data_bcd() {{{
  * Extracts a bcd number in a data block
- * len is the number bytes consumed by a bcd value, which is always 17
+ * len is the number decimal numbers
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
@@ -2075,7 +2108,7 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 		*value = NULL;
 		return 0;
 	}
-	buffer = (char *) pxdoc->malloc(pxdoc, len*2+3, _("Allocate memory for field data."));
+	buffer = (char *) pxdoc->malloc(pxdoc, 34+3, _("Allocate memory for field data."));
 	if(!buffer) {
 		*value = NULL;
 		return -1;
@@ -2089,6 +2122,10 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 		sign = 0x0F;
 	}
 	size = data[0] & 0x3f;
+	if(size != len) {
+		*value = NULL;
+		return -1;
+	}
 	lz = 1;
 	for(i=2; i<34-size; i++) {
 		if(i%2)
@@ -2260,6 +2297,70 @@ PX_put_data_byte(pxdoc_t *pxdoc, char *data, int len, char value) {
 			data[0] &= 0x7f;
 		}
 	}
+}
+/* }}} */
+
+/* PX_put_data_bcd() {{{
+ * Stores bcd number bytes in a data block.
+ * len is the number of decimal numbers.
+ */
+PXLIB_API void PXLIB_CALL
+PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
+	unsigned char obuf[17];
+	unsigned char sign;
+	char *dpptr;
+	int i, j;
+
+	memset(obuf, 0, 17);
+	if(NULL != value) {
+		j = 0;
+		obuf[0] = 0xC0 + (unsigned char) len;
+		sign = 0x00;
+		if(value[0] == '-') {
+			obuf[0] = 0x40 + (unsigned char) len;
+			sign = 0x0f;
+			memset(obuf+1, 255, 16);
+		} 
+		dpptr = strchr(value, '.');
+		if(dpptr) {
+			j = dpptr-value+1;
+			i = 0;
+			while(i<len && value[j] != '\0') {
+				char nibble;
+				int index;
+				nibble = value[j]-48;
+				if(nibble >= 0 && nibble < 10) {
+					index = (34-len+i)/2;
+					if((34-len+i)%2)
+						obuf[index] = (obuf[index] & 0xf0) | (nibble^sign) ;
+					else
+						obuf[index] = (obuf[index] & 0x0f) | ((nibble^sign) << 4);
+					i++;
+				}
+				j++;
+			}
+		} else {
+			dpptr = value + len;
+		}
+		j = dpptr-value-1;
+		i = 34-len-1;
+		while(i>1 && j>=0) {
+			char nibble;
+			int index;
+			nibble = value[j]-48;
+			if(nibble >= 0 && nibble < 10) {
+				index = i/2;
+				if(i%2)
+					obuf[index] = (obuf[index] & 0xf0) | (nibble^sign) ;
+				else
+					obuf[index] = (obuf[index] & 0x0f) | ((nibble^sign) << 4);
+				i--;
+			}
+			j--;
+		}
+	}
+
+	memcpy(data, obuf, 17);
 }
 /* }}} */
 
