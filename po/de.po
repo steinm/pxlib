@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-11-03 18:06+0100\n"
+"POT-Creation-Date: 2004-12-01 21:01+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -402,23 +402,40 @@ msgstr ""
 "Blob-Daten sind nicht im Datensatz enthalten und eine Blob-Datei ist nicht "
 "gesetzt."
 
-#: src/paradox.c:2665
+#: src/paradox.c:2664
 msgid "Paradox database has no blob file."
 msgstr "Paradox Datenbank hat keine Blob-Datei gesetzt."
 
-#: src/paradox.c:2671
+#: src/paradox.c:2674 src/paradox.c:2710
 msgid "Could not go to the begining of the first free block in the blob file."
 msgstr ""
 "Konnte nicht an den Anfang des ersten freien Blocks in der Blob-Datei "
 "springen."
 
-#: src/paradox.c:2688
+#: src/paradox.c:2691 src/paradox.c:2718
 msgid "Could not write header of blob data to file."
 msgstr "Konnte den Kopf der Blob-Datei nicht schreiben."
 
-#: src/paradox.c:2693
+#: src/paradox.c:2696 src/paradox.c:2754
 msgid "Could not write blob data to file."
 msgstr "Konnte Daten nicht in Blob-Datei schreiben."
+
+#: src/paradox.c:2733
+#, fuzzy
+msgid "Could not go to table entry for the blob data."
+msgstr "Konnte Speicher für Blob nicht allozieren."
+
+#: src/paradox.c:2745
+#, fuzzy
+msgid "Could not write table entry for blob data to file."
+msgstr "Konnte den Kopf der Blob-Datei nicht schreiben."
+
+#: src/paradox.c:2750
+#, fuzzy
+msgid "Could not go to the begining of the slot for the blob."
+msgstr ""
+"Konnte nicht an den Anfang des ersten freien Blocks in der Blob-Datei "
+"springen."
 
 #: src/px_head.c:28 src/px_head.c:703
 msgid "Allocate memory for document header."
@@ -463,7 +480,7 @@ msgstr "Konnte Speicher für Felddefinitionen nicht allozieren."
 msgid "Could not go to the begining paradox file."
 msgstr "Konnte nicht an den Anfang der Paradox-Datei springen."
 
-#: src/px_head.c:382 src/px_head.c:388 src/px_head.c:741
+#: src/px_head.c:382 src/px_head.c:388 src/px_head.c:748
 msgid "Could not write header of paradox file."
 msgstr "Konnte den Kopf der Paradox-Datenbank nicht schreiben."
 
@@ -575,7 +592,7 @@ msgstr "Konnte Datensatzes nicht schreiben."
 msgid "Blob file has no associated paradox database."
 msgstr "Blob hat keine assoziierte Paradox-Datenbank."
 
-#: src/px_head.c:748
+#: src/px_head.c:755
 msgid "Could not write remaining blob file header."
 msgstr "Konnte den restlichen Kopf der Blob-Datei nicht schreiben."
 
