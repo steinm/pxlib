@@ -211,6 +211,8 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp) {
 	pxh->px_writeprotected = 0;
 	pxh->px_headersize = 0x0800;
 	pxh->px_fileblocks = 0;
+	pxh->px_firstblock = 0;
+	pxh->px_lastblock = 0;
 	pxh->px_maxtablesize = 16;
 	pxh->px_doscodepage = 1252;
 	pxh->px_primarykeyfields = 0;
@@ -698,16 +700,23 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 	}
 	pxh = pxdoc->px_head;
 
+	/* All the following calculation assume sequentially writting of
+	 * records and filling a datablock first before starting a new one.
+	 * This should be fixed. Better would be, if we keep record
+	 * in px_data (like a primary index) which datablocks are available
+	 * an how much space they still have.
+	 */
 	/* Check if record still fits into a existing data block */
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize;
-	/* Calculate the number of the data block for this record */
-	datablocknr = (pxh->px_numrecords) / recsperdatablock;
+	/* Calculate the number of the data block for this record.
+	 * Datablock numbers start at 1. */
+	datablocknr = (pxh->px_numrecords / recsperdatablock) + 1;
 	/* Calculate the position within the datablock */
 	recdatablocknr = (pxh->px_numrecords) % recsperdatablock;
 
 //	fprintf(stderr, "Data goes into block %d at record no %d (%d)\n", datablocknr, recdatablocknr, recsperdatablock);
 	/* Check if we need a new datablock */
-	if(datablocknr >= pxh->px_fileblocks) {
+	if(datablocknr > pxh->px_fileblocks) {
 //		fprintf(stderr, "We need an new datablock\n");
 		itmp = put_px_datablock(pxdoc, pxh, pxdoc->px_fp);
 //		fprintf(stderr, "Added data block no. %d\n", itmp);
@@ -720,11 +729,14 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 			return -1;
 		}
 
+		if(pxh->px_firstblock == 0)
+			pxh->px_firstblock = itmp;
+		pxh->px_lastblock = itmp;
 		pxh->px_fileblocks++;
 	}
 
 	/* write data */
-	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, data, pxdoc->px_fp);
+	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr-1, data, pxdoc->px_fp);
 
 	/* The record number within the data block must be the same
 	 * as the calculated one.

@@ -233,6 +233,12 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	pxhead.sortOrder = pxh->px_sortorder;
 	pxhead.changeCount1 = 1;
 	pxhead.changeCount2 = 1;
+	pxhead.unknown3Ex3F[0] = 0x1f; // this seems to be a fixed value
+	pxhead.unknown3Ex3F[1] = 0x0f; // this seems to be a fixed value
+	pxhead.unknown50x54[1] = 0x97;
+	pxhead.unknown50x54[2] = 0x01;
+	pxhead.unknown56x57[0] = 0x20;
+	/* All the pointers, though we probably don't need them for a valid file */
 	put_long_le(&pxhead.fldInfoPtr, basehead+0x78);
 	put_long_le(&pxhead.tableNamePtrPtr, basehead+0x78+pxh->px_numfields*2);
 	switch(pxh->px_fileversion) {
@@ -243,8 +249,16 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 			break;
 	}
 
-	put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
+	/* Writing the file update time leads to random writes at other
+	 * postions in the file (usually either right after the field,
+	 * or some bytes before). Strange: the order of bytes is always
+	 * reversed.
+	put_long_le(&pxdatahead.fileUpdateTime, (long) time());
+	 */
 	put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
+	put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
+	pxdatahead.unknown6Cx6F[0] = 0x01;
+	pxdatahead.unknown6Cx6F[1] = 0x01;
 
 	/* Goto the begining of the file */
 	if(fseek(fp, 0, SEEK_SET) < 0) {
@@ -352,8 +366,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 
 /* put_px_datablock() {{{
  * writes an empty data block. Returns the number of the new
- * datablock. The first one has number 0. In the datablock head
- * the first block has number 1.
+ * datablock. The first one has number 1 as stored in the datablock
+ * head as well.
  */
 int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	TDataBlock datablockhead;
@@ -366,7 +380,10 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 
 	memset(&datablockhead, 0, sizeof(TDataBlock));
-	put_short_le(&datablockhead.nextBlock, pxh->px_fileblocks+1);
+	put_short_le(&datablockhead.prevBlock, pxh->px_lastblock);
+	/* FIXME: nextBlock should be 0 and updated when the next block is
+	 * inserted. */
+	put_short_le(&datablockhead.nextBlock, pxh->px_lastblock+2);
 	put_short_le(&datablockhead.addDataSize, -pxh->px_recordsize);
 	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
@@ -381,7 +398,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 		}
 	}
 
-	return(pxh->px_fileblocks);
+	return(pxh->px_lastblock+1);
 }
 /* }}} */
 
