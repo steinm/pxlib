@@ -66,11 +66,17 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Opens the given blob file and associates it with the Paradox
+    <para>Opens or creates the given blob file and associates it with the Paradox
 		  database. This function must be called before accessing records
-			whose blob data is stored in a .MB file. If the blob data is contained
-			in the record itself, this function may not be called.
+			whose blob data is stored in a .MB file. It must also be called after
+			opening or creating the paradox database. If the blob data is contained
+			in the record itself or can be stored in the record, this function may
+			not be called.
 			</para>
+		<para>This function must be called after opening or creating the database
+		  file, because it uses the same file open mode. If you call it before
+			<function>PX_open_file(3)</function> or <function>PX_create_file(3)</function>
+			it will quit with an error.</para>
 
   </refsect1>
   <refsect1>
@@ -80,7 +86,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_open_file(3)</para>
+    <para>PX_open_file(3), PX_create_file(3)</para>
 
   </refsect1>
   <refsect1>
