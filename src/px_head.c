@@ -243,9 +243,11 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	 * file, which will not happen. */
 	put_short_le(&pxhead.nextBlock, pxh->px_fileblocks);
 	/* firstBlock should be zero unless there is at least one data
-	 * block in the file. We set it to 1, because completely empty
-	 * files are bogus anyway. */
-	put_short_le(&pxhead.firstBlock, 1);
+	 * block in the file. */
+	if(pxh->px_fileblocks > 0)
+		put_short_le(&pxhead.firstBlock, 1);
+	else
+		put_short_le(&pxhead.firstBlock, 0);
 	/* The last block is similar to nextBlock. If all blocks are filled
 	 * this is identical to fileBlocks. */
 	put_short_le(&pxhead.lastBlock, pxh->px_fileblocks);
@@ -480,6 +482,19 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		}
 	}
 
+	i = pxdoc->tell(pxdoc, pxs);
+	if(i<pxh->px_headersize-1) {
+		if(pxdoc->seek(pxdoc, pxs, pxh->px_headersize-1, SEEK_SET) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fill header with zeros."));
+			return -1;
+		}
+		if(pxdoc->write(pxdoc, pxs, 1, "\0") < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fill header with zeros."));
+			return -1;
+		}
+			
+	}
+	
 	return 0;
 }
 /* }}} */
