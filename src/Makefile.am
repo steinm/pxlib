@@ -2,13 +2,13 @@
 
 INCLUDES = -I@srcdir@/../include -I./include -I@RECODE_INCLUDEDIR@ -DLOCALEDIR=\""$(datadir)/locale"\"
 
-EXTRA_DIST = fileformat.h \
-             px_error.h \
-             px_head.h \
-             px_intern.h \
-             px_memory.h \
-             px_misc.h \
-             sdncal.h
+noinst_HEADERS = fileformat.h \
+                 px_error.h \
+                 px_head.h \
+                 px_intern.h \
+                 px_memory.h \
+                 px_misc.h \
+                 sdncal.h
 
 ## bin_PROGRAMS =
 
