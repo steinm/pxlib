@@ -9,7 +9,7 @@ Section: devel
 Architecture: any
 Depends: pxlib1 (= ${Source-Version})
 Description: library to read Paradox database files
- Library wiht C API to read Paradox DB files. All versions
+ Library with C API to read Paradox DB files. All versions
  of Paradox are supported.
 
 Package: pxlib1
@@ -17,5 +17,5 @@ Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}
 Description: library to read Paradox database files
- Library wiht C API to read Paradox DB files. All versions
+ Library with C API to read Paradox DB files. All versions
  of Paradox are supported.
