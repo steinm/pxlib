@@ -61,7 +61,7 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>char* &funcname;(pxblob_t *pxblob, int offset, size_t size)</pPrimIndeara>
+		<para>char* &funcname;(pxblob_t *pxblob, int offset, size_t size)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
