@@ -312,7 +312,10 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		return -1;
 	}
 	/* write fieldNamePtrArray */
-	base = (int) basehead+0x78+pxh->px_numfields*2*2+4+261;
+	/* base = 'Paradox Common File Header' + numfields * sizeof(TFldInfoRec) +
+	 * numfields sizeof(* Fieldname) + sizeof(* Tablename) + strlen(tablename)
+	 */
+	base = (int) basehead+0x78+pxh->px_numfields*(2+4)+4+261;
 	pxf = pxh->px_fields;
 	offset = 0;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
