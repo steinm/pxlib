@@ -1,6 +1,9 @@
 #ifndef __PARADOX_H__
 #define __PARADOX_H__
 
+#include <stdbool.h>
+#include <recode.h>
+
 #ifdef WIN32
 
 #define PXLIB_CALL __cdecl
@@ -106,6 +109,10 @@ struct px_doc {
 	void *(*calloc)(pxdoc_t *p, size_t size, const char *caller);
 	void *(*realloc)(pxdoc_t *p, void *mem, size_t size, const char *caller);
 	void  (*free)(pxdoc_t *p, void *mem);
+
+	char *targetencoding;
+	RECODE_OUTER recode_outer;
+	RECODE_REQUEST recode_request;
 };
 
 struct px_blob {
@@ -160,6 +167,9 @@ PX_get_num_fields(pxdoc_t *pxdoc);
 PXLIB_API int PXLIB_CALL
 PX_get_num_records(pxdoc_t *pxdoc);
 
+PXLIB_API int PXLIB_CALL
+PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding);
+
 PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc);
 
@@ -177,11 +187,14 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size);
 
 /* Data conversion functions */
 PXLIB_API int PXLIB_CALL
-PX_get_data_double(char *data, int len, double *value);
+PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value);
 
 PXLIB_API int PXLIB_CALL
-PX_get_data_long(char *data, int len, long *value);
+PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value);
 
 PXLIB_API int PXLIB_CALL
-PX_get_data_short(char *data, int len, short int *value);
+PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value);
+
+PXLIB_API int PXLIB_CALL
+PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value);
 #endif
