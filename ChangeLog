@@ -6,3 +6,5 @@ Version 0.0.4
 
 Version 0.0.5
   - check for zero record size and header size
+	- added missing header files in distribution
+	- added conversion routine from Gregorian date to serial date number
