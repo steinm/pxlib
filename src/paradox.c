@@ -644,8 +644,22 @@ PXLIB_API const char * PXLIB_CALL
 PX_get_parameter(pxdoc_t *pxdoc, char *name) {
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return;
+		return NULL;
 	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read."));
+		return NULL;
+	}
+
+	if(strcmp(name, "tablename") == 0) {
+		return(pxdoc->px_head->px_tablename);
+	} else if(strcmp(name, "targetencoding") == 0) {
+		return(pxdoc->targetencoding);
+	} else if(strcmp(name, "inputencoding") == 0) {
+		return(pxdoc->inputencoding);
+	}
+	return(NULL);
 }
 /* }}} */
 
