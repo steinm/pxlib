@@ -85,11 +85,9 @@ manpage.1: manpage.sgml
     <para>This manual page documents the
       <command>&dhpackage;</command> command.</para>
 
-    <para>&dhpackage; reads Paradox files and prints information about
-		  the file or dumps the records to stdout or a file. &dhpackage; is mostly
-			applied on Paradox .DB files but can also be used to show
-			information about other Paradox files. It can also read associated
-			blob files (.MB) and write each blob into a separate file.
+    <para>&dhpackage; reads a comma separated input file and outputs it
+		  as as paradox database table. The input data can be read from a file
+			or stdin. The output is always written to a file.
       </para>
   </refsect1>
   <refsect1>
@@ -117,12 +115,11 @@ manpage.1: manpage.sgml
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-o</option>
-          <option>--output</option>
+        <term><option>-i</option>
+          <option>--input-file</option>
         </term>
         <listitem>
-          <para>All output except for usage information and error messages
-					 will be written to the given file instead of stdout.</para>
+          <para>Input data will be read from a file instead of stdin.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -148,7 +145,7 @@ manpage.1: manpage.sgml
           <option>--csv</option>
         </term>
         <listitem>
-          <para>Dump data records in CSV format. This
+          <para>Expect input in csv format. This
 						option is the short form for --mode=csv.</para>
         </listitem>
       </varlistentry>
@@ -156,18 +153,9 @@ manpage.1: manpage.sgml
         <term><option>--mode=MODE</option>
         </term>
         <listitem>
-          <para>Sets the ouput mode. This options provides a different way
-					 to set the output format. --mode=sql is equivalent to --sql,
-					 --mode=csv to --csv, --mode=html to --html and --mode=schema
-					 to --schema.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-o FILE</option>
-          <option>--output=FILE</option>
-        </term>
-        <listitem>
-          <para>Dump records into given file instead of stdout.</para>
+          <para>Sets the input mode. This options provides a different way
+					 to set the output format. 
+					 --mode=csv to --csv, --mode=test to --test</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -175,8 +163,8 @@ manpage.1: manpage.sgml
           <option>--primary-index-file=FILE</option>
         </term>
         <listitem>
-          <para>Read the primary index from file. This option is only valid
-					  it you are reading a database file.</para>
+          <para>Write a primary index into file. This option is only valid
+					  it you are setting the index fields with --fields.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -195,32 +183,25 @@ manpage.1: manpage.sgml
         <term><option>--separator=CHAR</option>
         </term>
         <listitem>
-          <para>If the database is exported in csv format the given character
-					 will be used to separate field values. Other output formats will not
-					 be affected by this option.</para>
+          <para>If the input data is in csv format the given character
+					 has to be used to separate field values.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--enclosure=CHAR</option>
         </term>
         <listitem>
-          <para>If the database is exported in csv format the given character
-					 will be used to enclose field values if the field is of type char().
-					 The enclosure will only take place if the delimiter between fields
-					 is part of the field value.  Other output formats will not
-					 be affected by this option.</para>
+          <para>If the input data is in csv format the given character
+					 has to be used to enclose field values if the field is of type char().
+					 </para>
         </listitem>
       </varlistentry>
     </variablelist>
 
-		<para>The none optional parameter FILE is the Paradox file which shall
-		 be read.</para>
-		<para>If you pass two or more options to set the output format then
-		 each format
-		 will be output one after the other starting with csv followed by
-		 html and finally sql.</para>
-		<para>The default field separator if exporting csv format is a tabulator.
-		 Fields will be enclosed in " if required.</para>
+		<para>The none optional parameter FILE is the Paradox output file which
+		 will be written.</para>
+		<para>The default field separator if reading csv format is a comma.
+		 Fields has to be enclosed in " if required.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
