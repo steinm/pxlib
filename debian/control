@@ -2,20 +2,21 @@ Source: pxlib
 Priority: optional
 Maintainer: Uwe Steinmann <steinm@debian.org>
 Build-Depends: debhelper (>> 4.0.0), intltool (>= 0.30), docbook-to-man
-Standards-Version: 3.5.8
+Standards-Version: 3.6.1
 
 Package: pxlib-dev
 Section: libdevel
 Architecture: any
 Depends: pxlib1 (= ${Source-Version})
 Description: Library to read/write Paradox database files
- Library with C API to read and write Paradox DB files. All versions
- of Paradox are supported.
+ Library to read and write Paradox DB files. This package
+ contains the development files.
 
 Package: pxlib1
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: Library to read Paradox database files
- Library with C API to read Paradox DB files. All versions
- of Paradox are supported.
+Description: Library to read/write Paradox database files
+ Library to read and write Paradox DB files. All versions
+ of Paradox are supported. Binary large objects can only be
+ read. Primary index files can be read and written.
