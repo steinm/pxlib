@@ -1,3 +1,7 @@
+Version 0.2.11
+	- PX_read_blob_data() has been completely rewritten and can now handle
+	  any type of blob data. Watch for the new prototype.
+
 Version 0.2.10
 	- creating a paradox db without records led to a corrupted file
 	  because the header was not fill with zeros to its full size.
