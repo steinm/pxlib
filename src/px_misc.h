@@ -1,16 +1,16 @@
 extern void put_long_le(char *cp, long lval);
-extern long get_long_le(char *cp);
-extern short int get_short_le(char *cp);
+extern long get_long_le(const char *cp);
+extern short int get_short_le(const char *cp);
 extern void put_short_le(char *cp, short int sval);
 extern void put_double_le(char *cp, double fval);
-extern double get_double_le(char *cp);
+extern double get_double_le(const char *cp);
 
 extern void put_long_be(char *cp, long lval);
-extern long get_long_be(char *cp);
-extern short int get_short_be(char *cp);
+extern long get_long_be(const char *cp);
+extern short int get_short_be(const char *cp);
 extern void put_short_be(char *cp, short int sval);
 extern void put_double_be(char *cp, double fval);
-extern double get_double_be(char *cp);
+extern double get_double_be(const char *cp);
 
 extern void copy_fill(char *dp, char *sp, int len);
 extern void copy_crimp(char *dp, char *sp, int len);

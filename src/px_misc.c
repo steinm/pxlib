@@ -17,7 +17,7 @@
  * routine to change little endian long to host long
  * these functions are used read header data
  */
-long get_long_le(char *cp)
+long get_long_le(const char *cp)
 {
 	int ret;
 	unsigned char *source = (unsigned char *)cp;
@@ -44,7 +44,7 @@ void put_long_le(char *cp, long lval)
 /*
  * routine to change little endian short to host short
  */
-short int get_short_le(char *cp)
+short int get_short_le(const char *cp)
 {
 	short int ret;
 	unsigned char *source = (unsigned char *)cp;
@@ -64,7 +64,7 @@ void put_short_le(char *cp, short int sval)
 	*cp++ = (sval >> 8) & 0xff;
 }
 
-double get_double_le(char *cp)
+double get_double_le(const char *cp)
 {
 	double ret;
 	unsigned char *dp = (unsigned char *)&ret;
@@ -109,7 +109,7 @@ void put_double_le(char *cp, double fval)
  * routine to change big endian long to host long
  * these functions are used read table data
  */
-long get_long_be(char *cp)
+long get_long_be(const char *cp)
 {
 	int ret;
 	unsigned char *source = (unsigned char *)cp;
@@ -136,7 +136,7 @@ void put_long_be(char *cp, long lval)
 /*
  * routine to change little endian short to host short
  */
-short int get_short_be(char *cp)
+short int get_short_be(const char *cp)
 {
 	short int ret;
 	unsigned char *source = (unsigned char *)cp;
@@ -156,7 +156,7 @@ void put_short_be(char *cp, short int sval)
 	*cp++ = sval & 0xff;
 }
 
-double get_double_be(char *cp)
+double get_double_be(const char *cp)
 {
 	double ret;
 	unsigned char *dp = (unsigned char *)&ret;
