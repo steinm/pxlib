@@ -305,8 +305,10 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		 * postions in the file (usually either right after the field,
 		 * or some bytes before). Strange: the order of bytes is always
 		 * reversed.
-		put_long_le(&pxdatahead.fileUpdateTime, (long) time());
+		 * Update: The error has disappeared. Maybe this has been fixed
+		 * when the header size was calculated properly.
 		 */
+		put_long_le(&pxdatahead.fileUpdateTime, (long) time());
 		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
 		put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
 		pxdatahead.unknown6Cx6F[0] = 0x01;
