@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-05-27 08:36+0200\n"
+"POT-Creation-Date: 2004-07-15 10:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -376,53 +376,57 @@ msgstr "Paradox-Datei hat eine Kopflänge von Null."
 msgid "Could not get memory for field definitions."
 msgstr "Konnte Speicher für Felddefinitionen nicht allozieren."
 
-#: src/px_head.c:374
+#: src/px_head.c:376
 msgid "Could not go to the begining paradox file."
 msgstr "Konnte nicht an den Anfang der Paradox-Datei springen."
 
-#: src/px_head.c:379 src/px_head.c:385
+#: src/px_head.c:381 src/px_head.c:387
 msgid "Could not write header of paradox file."
 msgstr "Konnte den Kopf der Paradox-Datenbank nicht schreiben."
 
-#: src/px_head.c:395
+#: src/px_head.c:397
 msgid "Could not write field specification."
 msgstr "Konnte Felddefinition nicht schreiben."
 
-#: src/px_head.c:409
+#: src/px_head.c:411
 msgid "Could not write pointer to tablename."
 msgstr "Konnte den Zeiger auf den Tabellennamen nicht schreiben."
 
-#: src/px_head.c:424
+#: src/px_head.c:426
 msgid "Could not write pointers to field names."
 msgstr "Konnte die Zeiger auf die Feldnamen nicht schreiben"
 
-#: src/px_head.c:433
+#: src/px_head.c:435
 msgid "Tablename is empty."
 msgstr "Tabellenname ist leer."
 
-#: src/px_head.c:437 src/px_head.c:445
+#: src/px_head.c:439 src/px_head.c:447
 msgid "Could not write tablename."
 msgstr "Konnte den Tabellennamen nicht schreiben."
 
-#: src/px_head.c:455 src/px_head.c:461
+#: src/px_head.c:457 src/px_head.c:463
 #, c-format
 msgid "Could not write field name %d."
 msgstr "Konnte Feldname %d nicht schreiben."
 
-#: src/px_head.c:459
+#: src/px_head.c:461
 msgid "Field name is NULL."
 msgstr "Feldname ist NULL."
 
-#: src/px_head.c:471
+#: src/px_head.c:473
 #, c-format
 msgid "Could not write field number %d."
 msgstr "Konnte die Nummer des Feldes %d nicht schreiben."
 
-#: src/px_head.c:478
+#: src/px_head.c:480
 msgid "Could not write field numbers."
 msgstr "Konnte die Feldnummern nicht schreiben."
 
-#: src/px_head.c:542
+#: src/px_head.c:488 src/px_head.c:492
+msgid "Could not fill header with zeros."
+msgstr "Konnte den Kopf nicht mit Nullen füllen."
+
+#: src/px_head.c:557
 #, c-format
 msgid ""
 "Trying to insert data block after block number %d, but file has only %d "
@@ -431,56 +435,56 @@ msgstr ""
 "Versuch einen Datenblock nach dem Block %d einzufügen, obwohl die Datei nur %"
 "d Blöcke hat."
 
-#: src/px_head.c:547
+#: src/px_head.c:562
 msgid "You did not pass a valid block number."
 msgstr "Es wurde keine gültige Blocknummer übergeben."
 
-#: src/px_head.c:554
+#: src/px_head.c:569
 msgid "Could not get head of data block before the new block."
 msgstr ""
 "Konnte den auf Kopf des Datenblocks vor dem neuen Datenblock nicht zugreifen."
 
-#: src/px_head.c:566
+#: src/px_head.c:581
 msgid "Could not get head of data block after the new block."
 msgstr ""
 "Konnte auf den Kopf von Datenblocks nach dem neuen Datenblock nicht "
 "zugreifen."
 
-#: src/px_head.c:581
+#: src/px_head.c:596
 msgid "Could not write new data block header."
 msgstr "Konnte den neuen Datenblockkopf nicht schreiben."
 
-#: src/px_head.c:588
+#: src/px_head.c:603
 msgid "Could not write empty data block."
 msgstr "Konnte einen leeren Datenblock nicht schreiben."
 
-#: src/px_head.c:597
+#: src/px_head.c:612
 msgid "Could not update data block header before new block."
 msgstr ""
 "Konnte den Datenblockkopf vor dem neuen Datenblock nicht aktualisieren."
 
-#: src/px_head.c:606
+#: src/px_head.c:621
 msgid "Could not update datablock header after new block."
 msgstr ""
 "Konnte den Datenblockkopf nach dem neuen Datenblock nicht aktualisieren."
 
-#: src/px_head.c:618
+#: src/px_head.c:633
 msgid "Unable to write file header."
 msgstr "Konnte den Dateikopf nicht schreiben."
 
-#: src/px_head.c:635
+#: src/px_head.c:650
 msgid "Could not read data block header."
 msgstr "Konnte den Datenblockkopf nicht lesen."
 
-#: src/px_head.c:652
+#: src/px_head.c:667
 msgid "Could not write updated data block header."
 msgstr "Konnte den aktualisierten Datenblockkopf nicht schreiben."
 
-#: src/px_head.c:658
+#: src/px_head.c:673
 msgid "Could not fseek to start of new record."
 msgstr "Konnte nicht zum Start des neuen Datensatzes springen."
 
-#: src/px_head.c:664
+#: src/px_head.c:679
 msgid "Could not write record."
 msgstr "Konnte Datensatzes nicht schreiben."
 
