@@ -1285,6 +1285,12 @@
                        The mod number is stored with the blob data.
                        Again, I don't know why.
 
+          000005       0x82  (found to be always this value, Uwe)
+          000006       0x73  (found to be always this value, Uwe)
+          000007       0x02  (found to be always this value, Uwe)
+          000008       0x00  (found to be always this value, Uwe)
+          000009       0x29  (found to be always this value, Uwe)
+
                        *** ALL OF THE FOLLOWING ARE GUESSES ***
 
           00000B US    Base size of data blocks (1000h).
@@ -1300,6 +1306,8 @@
                fields. I assume that there's some kind of garbage
                collection scheme that saves data in the header block, but I
                haven't been able to figure it out.
+
+          000029 US    0x02a1 (found to be always this value, Uwe)
 
 
           Single Blob Block (Type 02)
