@@ -12,5 +12,5 @@ extern int px_date_month(char *cp);
 extern int px_date_day(char *cp);
 extern char *px_cur_date(char *cp);
 int px_get_date(char *cp);
-void hex_dump(char *p, int len);
+void hex_dump(FILE *outfp, char *p, int len);
 

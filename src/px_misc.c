@@ -191,7 +191,7 @@ char *px_cur_date(char *cp)
 	return cp;
 }
 
-void hex_dump(outfp *FILE, char *p, int len) {
+void hex_dump(FILE *outfp, char *p, int len) {
 	int i;
 
 	if(NULL == p)
