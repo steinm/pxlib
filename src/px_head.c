@@ -571,7 +571,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 			return -1;
 		}
 		/* Goto the block which will be after the new block and read its header. */
-		next = get_short_le(prevdatablockhead.nextBlock);
+		next = get_short_le((char *) &prevdatablockhead.nextBlock);
 	} else {
 		next = pxh->px_firstblock;
 	}
