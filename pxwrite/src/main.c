@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
 	char *progname = NULL;
 	char *targetencoding = NULL;
 	char *outputfile = NULL;
+	char *tablename = NULL;
 	int c, i;
 	int verbose = 0;
 	int modetest = 0;
@@ -90,6 +91,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'r':
 				targetencoding = strdup(optarg);
+				break;
+			case 3:
+				tablename = strdup(optarg);
 				break;
 			case 4:
 				if(!strcmp(optarg, "test")) {
@@ -154,8 +158,10 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "\n");
 			exit(1);
 		}
+		if(tablename)
+			PX_set_tablename(pxdoc, tablename);
 
-		for(i=-1000; i<10; i++) {
+		for(i=-100; i<100; i++) {
 			char buffer[30];
 			PX_put_data_short(pxdoc, &data[0], 2, i);
 			PX_put_data_short(pxdoc, &data[2], 2, -23);
