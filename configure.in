@@ -34,6 +34,11 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", GETTEXT_PACKAGE)
 
 AM_PROG_LIBTOOL
 
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_BIGENDIAN
+AC_STRUCT_TM
+
 dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
