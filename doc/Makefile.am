@@ -32,6 +32,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_record.sgml \
 						 PX_get_record2.sgml \
 						 PX_put_record.sgml \
+						 PX_put_recordn.sgml \
 						 PX_get_field.sgml \
 						 PX_get_fields.sgml \
 						 PX_get_num_fields.sgml \
