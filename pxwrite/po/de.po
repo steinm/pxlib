@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2003-09-17 11:05+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.c:17
+#, c-format
+msgid "Version: %s %s http://sourceforge.net/projects/pxlib"
+msgstr "Version: %s %s http://sourceforge.net/projects/pxlib"
+
+#: src/main.c:19
+msgid "Copyright: Copyright (C) 2003 Uwe Steinmann <uwe@steinmann.cx>"
+msgstr "Copyright: Copyright (C) 2003 Uwe Steinmann <uwe@steinmann.cx>"
+
+#: src/main.c:21
+#, c-format
+msgid "%s writes a paradox file."
+msgstr "%s schreibt Paradox Dateien"
+
+#: src/main.c:23
+#, c-format
+msgid "Usage: %s [OPTIONS] FILE"
+msgstr "Aufruf: %s [OPTIONEN] Datei"
+
+#: src/main.c:25
+msgid "Options:"
+msgstr "Optionen"
+
+#: src/main.c:27
+msgid "  -h, --help          this usage information."
+msgstr "  -h, --help          diese Hilfe."
+
+#: src/main.c:29
+msgid "  -v, --verbose       be more verbose."
+msgstr "  -v, --verbose       mehr Informationen anzeigen"
+
+#: src/main.c:32
+msgid "libpx has been compiled for big endian architecture."
+msgstr "libpx wurde für Architekturen mit big endian übersetzt."
+
+#: src/main.c:34
+msgid "libpx has been compiled for little endian architecture."
+msgstr "libpx wurde für Architekturen mit little endian übersetzt."
