@@ -316,6 +316,9 @@ PXLIB_API int PXLIB_CALL
 PX_get_num_records(pxdoc_t *pxdoc);
 
 PXLIB_API int PXLIB_CALL
+PX_get_recordsize(pxdoc_t *pxdoc);
+
+PXLIB_API int PXLIB_CALL
 PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value);
 
 PXLIB_API int PXLIB_CALL

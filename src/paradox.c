@@ -895,12 +895,18 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 		build_primary_index(pxdoc);
 	indexdata = pxdoc->px_indexdata;
 	indexdatalen = pxdoc->px_indexdatalen;
+
+	/* set default values for indexRoot and numIndexLevels */
+	pih->px_indexroot = 1;
+	pih->px_numindexlevels = 1;
+
 	/* Check if we need level 2 index entries. If the space needed for
 	 * all level 1 entries is larger than a datablock in the index file,
 	 * we will need level 2 entries.
 	 * There is currently no support for level 3 entries.
 	 */
 	if(pih->px_maxtablesize*0x400-sizeof(TDataBlock) < indexdatalen*pih->px_recordsize) {
+		pih->px_numindexlevels = 2;
 		recsperblock = (pih->px_maxtablesize*0x400-sizeof(TDataBlock)) / pih->px_recordsize;
 		blocknumber = 2; /* The first block contains the level 2 entries */
 		recordnr = 0;
@@ -1467,6 +1473,25 @@ PX_get_num_records(pxdoc_t *pxdoc) {
 	}
 
 	return(pxdoc->px_head->px_numrecords);
+}
+/* }}} */
+
+/* PX_get_recordsize() {{{
+ * Returns the number of bytes per records in a Paradox file.
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_recordsize(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
+		return -1;
+	}
+
+	return(pxdoc->px_head->px_recordsize);
 }
 /* }}} */
 
