@@ -1381,9 +1381,9 @@ PX_delete(pxdoc_t *pxdoc) {
 		recode_delete_request(pxdoc->in_recode_request);
 #else
 #if PX_USE_ICONV
-	if(pxdoc->out_iconvcd > 0)
+	if((int) pxdoc->out_iconvcd > 0)
 		iconv_close(pxdoc->out_iconvcd);
-	if(pxdoc->in_iconvcd > 0)
+	if((int) pxdoc->in_iconvcd > 0)
 		iconv_close(pxdoc->in_iconvcd);
 #endif
 #endif
