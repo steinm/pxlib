@@ -44,9 +44,9 @@ void put_long_le(char *cp, long lval)
 /*
  * routine to change little endian short to host short
  */
-int get_short_le(char *cp)
+short int get_short_le(char *cp)
 {
-	int ret;
+	short int ret;
 	unsigned char *source = (unsigned char *)cp;
 
 	if(NULL == cp)
@@ -58,7 +58,7 @@ int get_short_le(char *cp)
 	return ret;
 }
 
-void put_short_le(char *cp, int sval)
+void put_short_le(char *cp, short int sval)
 {
 	*cp++ = sval & 0xff;
 	*cp++ = (sval >> 8) & 0xff;
@@ -136,9 +136,9 @@ void put_long_be(char *cp, long lval)
 /*
  * routine to change little endian short to host short
  */
-int get_short_be(char *cp)
+short int get_short_be(char *cp)
 {
-	int ret;
+	short int ret;
 	unsigned char *source = (unsigned char *)cp;
 
 	if(NULL == cp)
@@ -150,7 +150,7 @@ int get_short_be(char *cp)
 	return ret;
 }
 
-void put_short_be(char *cp, int sval)
+void put_short_be(char *cp, short int sval)
 {
 	*cp++ = (sval >> 8) & 0xff;
 	*cp++ = sval & 0xff;
