@@ -104,24 +104,31 @@ PX_is_bigendian(void) {
 /* PX_new3() {{{
  * Create a new Paradox DB file and set memory management, error
  * handling functions and the user data passed to the error handler.
+ * errorhandler can be NULL. If allocproc is NULL then none of the
+ * memory management functions will be used.
  */
 PXLIB_API pxdoc_t* PXLIB_CALL
-PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
+PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
         void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller),
         void  (*freeproc)(pxdoc_t *p, void *mem),
 		void* errorhandler_user_data) {
 	pxdoc_t *pxdoc;
 
+	if (errorhandler == NULL)
+		errorhandler = px_errorhandler; 
+
 	if(allocproc == NULL) {
 		allocproc = px_malloc;
 		reallocproc = px_realloc;
 		freeproc  = px_free;
+	} else if(allocproc != NULL && (reallocproc == NULL || freeproc == NULL)) {
+		(*errorhandler)(NULL, PX_RuntimeError, _("Must be set all memory management functions or none"), errorhandler_user_data);
+		return(NULL);
 	}
-	if (errorhandler == NULL)
-		errorhandler = px_errorhandler; 
+
 	if(NULL == (pxdoc = (pxdoc_t *) (* allocproc) (NULL, sizeof(pxdoc_t), "PX_new3: Allocate memory for px document."))) {
-		(*errorhandler)(NULL, PX_MemoryError, _("Couldn't allocate PX object"));
+		(*errorhandler)(NULL, PX_MemoryError, _("Couldn't allocate PX object"), errorhandler_user_data);
 		return(NULL);
 	}
 	memset((void *)pxdoc, 0, (size_t) sizeof(pxdoc_t));
@@ -158,7 +165,7 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
  * handling functions.
  */
 PXLIB_API pxdoc_t* PXLIB_CALL
-PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
+PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data),
         void* (*allocproc)(pxdoc_t *p, size_t size, const char *caller),
         void* (*reallocproc)(pxdoc_t *p, void *mem, size_t size, const char *caller),
         void  (*freeproc)(pxdoc_t *p, void *mem)) {
