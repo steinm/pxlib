@@ -197,7 +197,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	TFldInfoRec pxinfo;
 	pxfield_t *pxf;
 	int nullint = 0;
-	int i;
+	int i, len = 0;
 
 	memset(&pxhead, 0, sizeof(pxhead));
 	memset(&pxdatahead, 0, sizeof(pxdatahead));
@@ -262,13 +262,20 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 
 	/* write tablename */
-	if(fwrite(pxh->px_tablename, strlen(pxh->px_tablename), 1, fp) < 1) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
-		return -1;
+	fprintf(stderr, "Tablename: %s\n", pxh->px_tablename);
+	if(pxh->px_tablename == NULL) {
+		len = 0;
+		px_error(pxdoc, PX_Warning, _("Tablename is empty."));
+	} else {
+		len = strlen(pxh->px_tablename);
+		if(fwrite(pxh->px_tablename, len, 1, fp) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+			return -1;
+		}
 	}
 
 	/* write zeros to fill space for tablename */
-	for(i=0; i<261-strlen(pxh->px_tablename); i++) {
+	for(i=0; i<261-len; i++) {
 		if(fwrite(&nullint, 1, 1, fp) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 			return -1;
@@ -276,9 +283,18 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 	pxf = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
-		if(fwrite(pxf->px_fname, strlen(pxf->px_fname)+1, 1, fp) < 1) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
-			return -1;
+		if(pxf->px_fname != NULL) {
+			fprintf(stderr, "Col name %s\n", pxf->px_fname);
+			if(fwrite(pxf->px_fname, strlen(pxf->px_fname)+1, 1, fp) < 1) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+				return -1;
+			}
+		} else {
+			px_error(pxdoc, PX_Warning, _("Column name is NULL"));
+			if(fputc(0, fp) != 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
+				return -1;
+			}
 		}
 	}
 
