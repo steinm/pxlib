@@ -1,3 +1,12 @@
+pxlib (0.4.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * pushed policy version to 3.6.1
+  * better package description
+  * fixed lintian reported errors
+
+ -- Uwe Steinmann <steinm@debian.org>  Mon, 08 Nov 2004 14:37:58 +0100
+
 pxlib (0.4.0-1) unstable; urgency=low
 
   * New upstream release.
