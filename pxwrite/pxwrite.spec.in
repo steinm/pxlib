@@ -1,19 +1,17 @@
-Summary: Program to read and convert Paradox DB files
-Name: pxview
+Summary: Program to write Paradox DB files
+Name: pxwrite
 Version: @PACKAGE_VERSION@
 Release: 1
 Copyright: see doc/COPYING
 Group: Applications/Utils
 Url: http://pxlib.sourceforge.net/
 Packager: Uwe Steinmann <uwe@steinmann.cx>
-Source: http://prdownloads.sourceforge.net/pxlib/pxview-%{PACKAGE_VERSION}.tar.gz
-BuildRoot: /var/tmp/rpm/pxview-root
+Source: http://prdownloads.sourceforge.net/pxlib/pxwrite-%{PACKAGE_VERSION}.tar.gz
+BuildRoot: /var/tmp/rpm/pxwrite-root
 Prefix: /usr
 
 %description
-pxview is a simple program based on pxlib to read and convert Paradox DB files.
-Possible conversions are to csv and sql. pxview can also read blob data and
-write each object to a single file.
+pxwrite is a simple program to write Paradox DB files.
 
 %prep
 %setup
@@ -26,7 +24,6 @@ make
 rm -rf ${RPM_BUILD_ROOT}
 install -d -m 755 ${RPM_BUILD_ROOT}
 make DESTDIR=${RPM_BUILD_ROOT} install
-(cd ${RPM_BUILD_ROOT}/usr/bin; ln -s pxview px2sql; ln -s pxview px2csv, ln -s pxview px2html)
 
 %clean
 rm -rf ${RPM_BUILD_ROOT}
