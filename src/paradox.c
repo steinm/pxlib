@@ -1706,34 +1706,6 @@ PX_set_tablename(pxdoc_t *pxdoc, const char *tablename) {
 }
 /* }}} */
 
-/* PX_set_blob_file() {{{
- * Sets the name of the file containing the blobs.
- */
-PXLIB_API int PXLIB_CALL
-PX_set_blob_file(pxdoc_t *pxdoc, const char *filename) {
-	pxblob_t *pxblob;
-
-	if(pxdoc == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
-		return -1;
-	}
-
-	if(NULL == (pxblob = PX_new_blob(pxdoc))) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not create new blob file object."));
-		return -1;
-	}
-
-	if(0 > PX_open_blob_file(pxblob, filename)) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file."));
-		return -1;
-	}
-
-	pxdoc->px_blob = pxblob;
-
-	return 0;
-}
-/* }}} */
-
 /******* Function to access Blob files *******/
 
 /* PX_new_blob() {{{
@@ -1802,6 +1774,66 @@ PX_close_blob(pxblob_t *pxblob) {
 }
 /* }}} */
 
+/* PX_delete_blob() {{{
+ * Deletes a blob object
+ */
+PXLIB_API void PXLIB_CALL
+PX_delete_blob(pxblob_t *pxblob) {
+	PX_close_blob(pxblob);
+	pxblob->pxdoc->free(pxblob->pxdoc, pxblob);
+}
+/* }}} */
+
+/* PX_set_blob_file() {{{
+ * Sets the name of the file containing the blobs.
+ */
+PXLIB_API int PXLIB_CALL
+PX_set_blob_file(pxdoc_t *pxdoc, const char *filename) {
+	pxblob_t *pxblob;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_blob != NULL) {
+		PX_delete_blob(pxdoc->px_blob);
+		pxdoc->px_blob = NULL;
+	}
+
+	if(NULL == (pxblob = PX_new_blob(pxdoc))) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not create new blob file object."));
+		return -1;
+	}
+
+	if(0 > PX_open_blob_file(pxblob, filename)) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file."));
+		return -1;
+	}
+
+	pxdoc->px_blob = pxblob;
+
+	return 0;
+}
+/* }}} */
+
+/* PX_has_blob_file() {{{
+ * Returns 1 if a blob file has been set before, otherwise 0.
+ */
+PXLIB_API int PXLIB_CALL
+PX_has_blob_file(pxdoc_t *pxdoc) {
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_blob != NULL)
+		return 1;
+	else
+		return 0;
+}
+/* }}} */
+
 /* PX_read_blobdata() {{{
  * Reads data of blob into memory and returns a pointer to it
  */
@@ -1814,15 +1846,9 @@ PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blo
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
 
-	offset = get_long_le(&data[leader]) & 0xffffff00;
-	if(offset == 0) {
-		*blobsize = 0;
-		return(NULL);
-	}
 	*blobsize = size = get_long_le(&data[leader+4]);
 	index = get_long_le(&data[leader]) & 0x000000ff;
 	*mod = mod_nr = get_short_le(&data[leader+8]);
-//	fprintf(stderr, "offset=%ld ", offset);
 //	fprintf(stderr, "index=%ld ", index);
 //	fprintf(stderr, "size=%ld ", size);
 //	fprintf(stderr, "mod_nr=%d \n", mod_nr);
@@ -1837,87 +1863,101 @@ PX_read_blobdata(pxblob_t *pxblob, const char *data, int len, int *mod, int *blo
 		return(NULL);
 	}
 
-	if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
-		return NULL;
-	}
-
-	/* Just read the first 3 Bytes because they are common for all block */
-	if((ret = fread(head, 3, 1, pxblob->px_fp)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
-		return NULL;
-	}
-
-	if(head[0] == 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
-		return NULL;
-	} else if(head[0] == 4) {
-		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
-		return NULL;
-	}
-
-	if(head[0] == 2) { /* Reading data from a block type 2 */
-		if(index != 0xff) {
-			px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
-			return NULL;
-		}
-		/* Read the remaining 6 bytes from the header */
-		if((ret = fread(head, 6, 1, pxblob->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
-			return NULL;
-		}
-		if(size != get_long_le(&head[0])) {
-			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
-			return(NULL);
-		}
-		/* We may check for identical modificatio number as well, if it
-		 * was passed to PX_read_blobdata()
-		 */
-
+	if(size <= leader) {
 		blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
 		if(!blobdata) {
 			return(NULL);
 		}
+		memcpy(blobdata, data, size);
+	} else {
+		offset = get_long_le(&data[leader]) & 0xffffff00;
+		if(offset == 0) {
+			*blobsize = 0;
+			return(NULL);
+		}
+//		fprintf(stderr, "offset=%ld ", offset);
 
-		if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
-			return NULL;
-		}
-	} else if(head[0] == 3) { /* Reading data from a block type 3 */
-		/* Read the remaining 9 bytes from the header */
-		if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of suballocated block."));
-			return NULL;
-		}
-		/* Goto the blob pointer with the passed index */
-		if((ret = fseek(pxblob->px_fp, offset+12+index*5, SEEK_SET)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not fseek blob pointer."));
-			return NULL;
-		}
-		/* Read the blob pointer */
-		if((ret = fread(head, 5, 1, pxblob->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
-			return NULL;
-		}
-		if(size != ((int)head[1]-1)*16+head[4]) {
-			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
-			return(NULL);
-		}
-		blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
-		if(!blobdata) {
-			return(NULL);
-		}
-		/* Goto the start of the blob */
-		if((ret = fseek(pxblob->px_fp, offset+head[0]*16, SEEK_SET)) < 0) {
+		if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
 			return NULL;
 		}
-		if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+
+		/* Just read the first 3 Bytes because they are common for all block */
+		if((ret = fread(head, 3, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
 			return NULL;
 		}
-	}
 
+		if(head[0] == 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
+			return NULL;
+		} else if(head[0] == 4) {
+			px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
+			return NULL;
+		}
+
+		if(head[0] == 2) { /* Reading data from a block type 2 */
+			if(index != 0xff) {
+				px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
+				return NULL;
+			}
+			/* Read the remaining 6 bytes from the header */
+			if((ret = fread(head, 6, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
+				return NULL;
+			}
+			if(size != get_long_le(&head[0])) {
+				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
+				return(NULL);
+			}
+			/* We may check for identical modificatio number as well, if it
+			 * was passed to PX_read_blobdata()
+			 */
+
+			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+			if(!blobdata) {
+				return(NULL);
+			}
+
+			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+				return NULL;
+			}
+		} else if(head[0] == 3) { /* Reading data from a block type 3 */
+			/* Read the remaining 9 bytes from the header */
+			if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of suballocated block."));
+				return NULL;
+			}
+			/* Goto the blob pointer with the passed index */
+			if((ret = fseek(pxblob->px_fp, offset+12+index*5, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek blob pointer."));
+				return NULL;
+			}
+			/* Read the blob pointer */
+			if((ret = fread(head, 5, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
+				return NULL;
+			}
+			if(size != ((int)head[1]-1)*16+head[4]) {
+				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
+				return(NULL);
+			}
+			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+			if(!blobdata) {
+				return(NULL);
+			}
+			/* Goto the start of the blob */
+			if((ret = fseek(pxblob->px_fp, offset+head[0]*16, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+				return NULL;
+			}
+			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+				return NULL;
+			}
+		}
+	}
 	return(blobdata);
 }
 /* }}} */
@@ -2154,6 +2194,155 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 }
 /* }}} */
 
+/* PX_get_data_blob() {{{
+ * Reads data of blob into memory and returns a pointer to it
+ */
+PXLIB_API int PXLIB_CALL
+PX_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int *mod, int *blobsize, char **value) {
+	int ret;
+	char *blobdata;
+	char head[12];
+	pxblob_t *pxblob = pxdoc->px_blob;
+	size_t size, offset, mod_nr, index;
+	int leader = len - 10;
+
+	*blobsize = size = get_long_le(&data[leader+4]);
+	index = get_long_le(&data[leader]) & 0x000000ff;
+	*mod = mod_nr = get_short_le(&data[leader+8]);
+//	fprintf(stderr, "index=%ld ", index);
+//	fprintf(stderr, "size=%ld ", size);
+//	fprintf(stderr, "mod_nr=%d \n", mod_nr);
+
+	if(!pxblob || !pxblob->px_fp) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not set a blob file."));
+		*value = NULL;
+		return -1;
+	}
+
+	if(size <= 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
+		*value = NULL;
+		return -1;
+	}
+
+	if(size <= leader) {
+		blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+		if(!blobdata) {
+			*value = NULL;
+			return -1;
+		}
+		memcpy(blobdata, data, size);
+	} else {
+		offset = get_long_le(&data[leader]) & 0xffffff00;
+		if(offset == 0) {
+			*blobsize = 0;
+			*value = NULL;
+			return -1;
+		}
+//		fprintf(stderr, "offset=%ld ", offset);
+
+		if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+			*value = NULL;
+			return -1;
+		}
+
+		/* Just read the first 3 Bytes because they are common for all block */
+		if((ret = fread(head, 3, 1, pxblob->px_fp)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
+			*value = NULL;
+			return -1;
+		}
+
+		if(head[0] == 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
+			*value = NULL;
+			return -1;
+		} else if(head[0] == 4) {
+			px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
+			*value = NULL;
+			return -1;
+		}
+
+		if(head[0] == 2) { /* Reading data from a block type 2 */
+			if(index != 0xff) {
+				px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
+				*value = NULL;
+				return -1;
+			}
+			/* Read the remaining 6 bytes from the header */
+			if((ret = fread(head, 6, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
+				*value = NULL;
+				return -1;
+			}
+			if(size != get_long_le(&head[0])) {
+				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
+				*value = NULL;
+				return -1;
+			}
+			/* We may check for identical modificatio number as well, if it
+			 * was passed to PX_read_blobdata()
+			 */
+
+			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+			if(!blobdata) {
+				*value = NULL;
+				return -1;
+			}
+
+			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+				*value = NULL;
+				return -1;
+			}
+		} else if(head[0] == 3) { /* Reading data from a block type 3 */
+			/* Read the remaining 9 bytes from the header */
+			if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of suballocated block."));
+				*value = NULL;
+				return -1;
+			}
+			/* Goto the blob pointer with the passed index */
+			if((ret = fseek(pxblob->px_fp, offset+12+index*5, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek blob pointer."));
+				*value = NULL;
+				return -1;
+			}
+			/* Read the blob pointer */
+			if((ret = fread(head, 5, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
+				*value = NULL;
+				return -1;
+			}
+			if(size != ((int)head[1]-1)*16+head[4]) {
+				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
+				*value = NULL;
+				return -1;
+			}
+			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
+			if(!blobdata) {
+				*value = NULL;
+				return -1;
+			}
+			/* Goto the start of the blob */
+			if((ret = fseek(pxblob->px_fp, offset+head[0]*16, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+				*value = NULL;
+				return -1;
+			}
+			if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
+				*value = NULL;
+				return -1;
+			}
+		}
+	}
+	*value = blobdata;
+	return(1);
+}
+/* }}} */
+
 /* PX_put_data_alpha() {{{
  * Stores a string in a data block.
  */
@@ -2329,7 +2518,7 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 				char nibble;
 				int index;
 				nibble = value[j]-48;
-				if(nibble >= 0 && nibble < 10) {
+				if((nibble >= 0) && (nibble < 10)) {
 					index = (34-len+i)/2;
 					if((34-len+i)%2)
 						obuf[index] = (obuf[index] & 0xf0) | (nibble^sign) ;
