@@ -90,7 +90,6 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 
 PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, char *filename) {
-	pxhead_t *pxh;
 	FILE *fp;
 
 	if((fp = fopen(filename, "r")) < 0) {
@@ -165,4 +164,100 @@ PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc) {
 	if((pxdoc->closefp) && (pxdoc->px_fp != 0))
 		fclose(pxdoc->px_fp);
+}
+
+/******* Function to access Blob files *******/
+
+PXLIB_API pxblob_t* PXLIB_CALL
+PX_new_blob(pxdoc_t *pxdoc) {
+	pxblob_t *pxblob;
+
+	pxblob = px_malloc(pxdoc, sizeof(pxblob_t), _("Couldn't get memory for blob."));
+	if(!pxblob) {
+		return(NULL);
+	} else {
+		pxblob->pxdoc = pxdoc;
+		return(pxblob);
+	}
+}
+
+PXLIB_API int PXLIB_CALL
+PX_open_blob_fp(pxblob_t *pxblob, FILE *fp) {
+
+	pxblob->px_fp = fp;
+}
+
+PXLIB_API int PXLIB_CALL
+PX_open_blob_file(pxblob_t *pxblob, char *filename) {
+	FILE *fp;
+
+	if(!pxblob) {
+		return(-1);
+	}
+
+	if((fp = fopen(filename, "r")) < 0) {
+		return -1;
+	}
+
+	if(0 > PX_open_blob_fp(pxblob, fp)) {
+		fclose(fp);
+		return -1;
+	}
+
+	pxblob->px_name = px_strdup(pxblob->pxdoc, filename);
+	pxblob->closefp = px_true;
+	return 0;
+}
+
+PXLIB_API void PXLIB_CALL
+PX_close_blob(pxblob_t *pxblob) {
+	if((pxblob->closefp) && (pxblob->px_fp != 0)) {
+		fclose(pxblob->px_fp);
+		pxblob->px_fp = NULL;
+		pxblob->pxdoc = NULL;
+	}
+}
+
+PXLIB_API char* PXLIB_CALL
+PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
+	int ret;
+	char *blobdata;
+	char head[9];
+
+	if(!pxblob || !pxblob->px_fp) {
+		px_error(pxblob->pxdoc, PX_RuntimeError, _("PXDoc may not be NULL."));
+		return(NULL);
+	}
+
+	if(size <= 0) {
+		px_error(pxblob->pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
+		return(NULL);
+	}
+
+	if((ret = fseek(pxblob->px_fp, offset, SEEK_SET)) < 0) {
+		printf("Could not fseek\n");
+		return NULL;
+	}
+
+	if((ret = fread(head, 9, 1, pxblob->px_fp)) < 0) {
+		printf("Could not read head of blob data.\n");
+		return NULL;
+	}
+
+	if(size != get_long(&head[3])) {
+		px_error(pxblob->pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)"), size, get_long(&head[3]));
+		return(NULL);
+	}
+
+	blobdata = px_malloc(pxblob->pxdoc, size, _("Couldn't get memory for blob."));
+	if(!blobdata) {
+		return(NULL);
+	}
+
+	if((ret = fread(blobdata, size, 1, pxblob->px_fp)) < 0) {
+		printf("Could not read all blob data.\n");
+		return NULL;
+	}
+
+	return(blobdata);
 }

@@ -87,6 +87,7 @@ struct px_head {
 };
 
 typedef struct px_doc pxdoc_t;
+typedef struct px_blob pxblob_t;
 typedef struct px_head pxhead_t;
 typedef struct px_field pxfield_t;
 
@@ -105,6 +106,13 @@ struct px_doc {
 	void *(*calloc)(pxdoc_t *p, size_t size, const char *caller);
 	void *(*realloc)(pxdoc_t *p, void *mem, size_t size, const char *caller);
 	void  (*free)(pxdoc_t *p, void *mem);
+};
+
+struct px_blob {
+	FILE *px_fp;
+	char *px_name;
+	int closefp;
+	pxdoc_t *pxdoc;
 };
 
 PXLIB_API int PXLIB_CALL
@@ -136,4 +144,20 @@ PX_get_record(pxdoc_t *pxdoc, int recno, char *data);
 
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc);
+
+PXLIB_API pxblob_t* PXLIB_CALL
+PX_new_blob(pxdoc_t *pxdoc);
+
+PXLIB_API int PXLIB_CALL
+PX_open_blob_fp(pxblob_t *pxdoc, FILE *fp);
+
+PXLIB_API int PXLIB_CALL
+PX_open_blob_file(pxblob_t *pxdoc, char *filename);
+
+PXLIB_API void PXLIB_CALL
+PX_close_blob(pxblob_t *pxdoc);
+
+PXLIB_API char* PXLIB_CALL
+PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size);
+
 #endif
