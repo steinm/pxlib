@@ -32,6 +32,20 @@ void usage(char *progname) {
 	printf("\n");
 	printf(_("  -v, --verbose       be more verbose."));
 	printf("\n\n");
+
+	recode = PX_has_recode_support();
+	switch(recode) {
+		case 1:
+			printf(_("libpx uses librecode for recoding."));
+			break;
+		case 2:
+			printf(_("libpx uses iconv for recoding."));
+			break;
+		case 0:
+			printf(_("libpx has no support for recoding."));
+			break;
+	}
+	printf("\n\n");
 	if(PX_is_bigendian())
 		printf(_("libpx has been compiled for big endian architecture."));
 	else
@@ -43,6 +57,7 @@ int main(int argc, char *argv[]) {
 	pxdoc_t *pxdoc = NULL;
 	char *progname = NULL;
 	char *targetencoding = NULL;
+	char *inputencoding = NULL;
 	char *inputfile = NULL;
 	char *outputfile = NULL;
 	char *tablename = NULL;
@@ -68,16 +83,17 @@ int main(int argc, char *argv[]) {
 			{"test", 0, 0, 't'},
 			{"csv", 0, 0, 'c'},
 			{"verbose", 0, 0, 'v'},
-			{"recode", 1, 0, 'r'},
 			{"input-file", 1, 0, 'f'},
 			{"help", 0, 0, 'h'},
 			{"separator", 1, 0, 0},
 			{"enclosure", 1, 0, 1},
 			{"tablename", 1, 0, 3},
 			{"mode", 1, 0, 4},
+			{"input-encoding", 1, 0, 5},
+			{"output-encoding", 1, 0, 'r'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long (argc, argv, "vtcf:r:o:h",
+		c = getopt_long (argc, argv, "vtcf:o:r:h",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -94,6 +110,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case 't':
 				modetest = 1;
+				break;
+			case 5:
+				inputencoding = strdup(optarg);
 				break;
 			case 'r':
 				targetencoding = strdup(optarg);
@@ -128,15 +147,15 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	if(inputfile) {
+	if((inputfile == NULL) || !strcmp(inputfile, "-")) {
+		infp = stdin;
+	} else {
 		infp = fopen(inputfile, "r");
 		if(infp == NULL) {
 			fprintf(stderr, _("Could not open input file."));
 			fprintf(stderr, "\n");
 			exit(1);
 		}
-	} else {
-		infp = stdin;
 	}
 
 	if(modetest) {
@@ -183,14 +202,18 @@ int main(int argc, char *argv[]) {
 		if(tablename)
 			PX_set_tablename(pxdoc, tablename);
 
-		for(i=-100; i<100; i++) {
+		for(i=0; i<200; i++) {
 			char buffer[30];
+			memset(data, 0, 40);
 			PX_put_data_short(pxdoc, &data[0], 2, i);
 			PX_put_data_short(pxdoc, &data[2], 2, -23);
-			PX_put_data_long(pxdoc, &data[4], 4, i*2);
+			PX_put_data_long(pxdoc, &data[4], 4, i*4);
 			PX_put_data_double(pxdoc, &data[8], 8, i*1.0001);
-			snprintf(buffer, 30, "---------- Nummer %d", i);
+			snprintf(buffer, 30, "------ Nummer %d", i);
 			PX_put_data_alpha(pxdoc, &data[16], 20, buffer);
+//			hex_dump(stderr, data, 30);
+//			    fprintf(stderr, "\n");
+
 			if(0 > PX_put_record(pxdoc, data)) {
 				fprintf(stderr, _("Could not write record."));
 				fprintf(stderr, "\n");
@@ -362,6 +385,9 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "\n");
 			exit(1);
 		}
+
+		if(inputencoding != NULL)
+			PX_set_inputencoding(pxdoc, inputencoding);
 		if(tablename)
 			PX_set_tablename(pxdoc, tablename);
 
