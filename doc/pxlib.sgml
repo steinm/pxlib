@@ -805,30 +805,6 @@ main(int argc, char *argv[]) {
 
   </refsect1>
   <refsect1>
-    <title>DOCUMENT INFORMATION</title>
-
-    <para>PostScript documents usually contain a header made of comments
-		  with information about the document. The printer usually disregards
-			this information but many PostScript viewer use it. Besides that,
-			one can also place pdfmarks into the PostScript document which contain
-			the title, keywords, author and other information. pslib provides the
-			function <function>PS_set_info(3)</function> to set those fields.</para>
-    <funcsynopsis>
-      <funcprototype>
-		    <funcdef>int <function>PS_set_info</function></funcdef>
-		    <paramdef>pxdoc_t *<parameter>psdoc</parameter></paramdef>
-		    <paramdef>const char *<parameter>key</parameter></paramdef>
-		    <paramdef>const char *<parameter>value</parameter></paramdef>
-      </funcprototype>
-	  </funcsynopsis>
-    <para><function>PS_set_info(3)</function> must be called before the
-		  first page. Calling it later will have no effect and produces a warning.
-			The function may also be used to set the bounding box of the document.
-			Usually there is no need for it, because the dimension of the first
-			page will be used for the bounding box.</para>
-
-  </refsect1>
-  <refsect1>
     <title>SEE ALSO</title>
 
     <para>The detailed manual pages for each function of the library.</para>
