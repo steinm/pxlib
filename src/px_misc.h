@@ -9,6 +9,8 @@ extern double get_double_le(const char *cp);
 
 extern void put_long_be(char *cp, long lval);
 extern long get_long_be(const char *cp);
+extern void put_longlong_be(char *cp, long long lval);
+extern long long get_longlong_be(const char *cp);
 extern short int get_short_be(const char *cp);
 extern void put_short_be(char *cp, short int sval);
 extern void put_double_be(char *cp, double fval);
