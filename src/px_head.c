@@ -174,7 +174,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 		}
 	}
 
-	/* skip the tableName */
+	/* read the tableName */
 	ret = pxdoc->read(pxdoc, pxs, tablenamelen, dummy);
 	if(ret < 0) {
 		pxdoc->free(pxdoc, pxh->px_fields);
@@ -198,6 +198,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 			return NULL;
 		}
 		dummy[j] = '\0';
+//		PX_get_data_alpha(pxdoc, dummy, strlen(dummy), &pfield->px_fname);
 		pfield->px_fname = px_strdup(pxdoc, (const char *)dummy);
 		pfield++;
 	}
