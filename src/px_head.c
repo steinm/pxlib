@@ -28,7 +28,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 
 	/* check some header fields for reasonable values */
-	if(pxhead.fileType > 8 || pxhead.fileType < 0) {
+	if((pxhead.fileType > 8) || (pxhead.fileType < 0)) {
 		px_free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has unknown file type (%d)."), pxhead.fileType);
 		return NULL;
