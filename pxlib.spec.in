@@ -2,9 +2,9 @@ Summary: A library to read Paradox DB files
 Name: pxlib
 Version: @PACKAGE_VERSION@
 Release: 1
-Copyright: see doc/PDFlib-license.pdf
+Copyright: see doc/COPYING
 Group: Applications/Utils
-Url: http://www.pdflib.com/pdflib/index.html
+Url: http://pxlib.sourceforge.net/
 Packager: Uwe Steinmann <uwe@steinmann.cx>
 Source: http://prdownloads.sourceforge.net/pxlib/pxlib-%{PACKAGE_VERSION}.tar.gz
 BuildRoot: /var/tmp/rpm/pxlib-root
