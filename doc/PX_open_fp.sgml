@@ -79,7 +79,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_new2(3), PX_new(3), PX_open_file(3)</para>
+    <para>PX_new2(3), PX_new(3), PX_open_filename(3)</para>
 
   </refsect1>
   <refsect1>
