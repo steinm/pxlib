@@ -1632,7 +1632,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		if(0 > (res = iconv(pxdoc->out_iconvcd, &iptr, &ilen, &optr, &olen))) {
 			*value = NULL;
 			free(obuf);
-			return 0;
+			return -1;
 		}
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
@@ -1650,7 +1650,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 			free(obuf);
 		}
 		*value = NULL;
-		return 0;
+		return -1;
 	}
 	memcpy(buffer, obuf, olen);
 	buffer[olen] = '\0';
@@ -1666,6 +1666,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 
 /* PX_get_data_bytes() {{{
  * Extracts a bytes field value from a data block
+ * FIXME: This function should allocate the memory for the return value
  */
 PXLIB_API int PXLIB_CALL
 PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
@@ -1674,7 +1675,7 @@ PX_get_data_bytes(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	int res;
 
 	if(data[0] == '\0') {
-		*value = NULL;
+//		*value = NULL;
 		return 0;
 	}
 
@@ -1718,6 +1719,7 @@ PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
 	} else if(*((long int *)tmp) != 0) {
 		tmp[0] |= 0x80;
 	} else {
+		*value = 0;
 		return 0;
 	}
 	*value = get_long_be(tmp);
@@ -1737,6 +1739,7 @@ PX_get_data_short(pxdoc_t *pxdoc, char *data, int len, short int *value) {
 	} else if(*((short int *)tmp) != 0) {
 		tmp[0] |= 0x80;
 	} else {
+		*value = 0;
 		return 0;
 	}
 	*value = get_short_be(tmp);
@@ -1754,7 +1757,7 @@ PX_get_data_byte(pxdoc_t *pxdoc, char *data, int len, char *value) {
 		return 1;
 	}
 	if(*data != 0) {
-		*value = data[0] = 0x80;
+		*value = data[0] | 0x80;
 		return 1;
 	}
 	*value = *data;
