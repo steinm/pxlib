@@ -1,0 +1,39 @@
+/*
+ * pslibversion.h : compile-time version informations for the pslib.
+ *
+ * See Copyright for the status of this software.
+ *
+ * Uwe@steinmann.cx
+ */
+
+#ifndef __PXLIB_VERSION_H__
+#define __PXLIB_VERSION_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * use those to be sure nothing nasty will happen if
+ * your library and includes mismatch
+ */
+#define PXLIB_DOTTED_VERSION "@VERSION@"
+#define PXLIB_MAJOR_VERSION @PXLIB_MAJOR_VERSION@
+#define PXLIB_MINOR_VERSION @PXLIB_MINOR_VERSION@
+#define PXLIB_MICRO_VERSION @PXLIB_MICRO_VERSION@
+
+/*
+ * Whether Debugging module is configured in
+ */
+#if @WITH_DEBUG@
+#define PSLIB_DEBUG_ENABLED
+#else
+#define PSLIB_DEBUG_DISABLED
+#endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+#endif
+
+
