@@ -1,3 +1,6 @@
+Version 0.2.8
+	- Better checking whether px file belongs to db file
+
 Version 0.2.7
 	- added man pages for blob file handling
 	- set some more header fields. db and px files are now read correctly
