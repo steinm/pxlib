@@ -206,6 +206,7 @@ struct px_blob {
 	pxdoc_t *pxdoc;
 	pxstream_t *mb_stream; /* input stream to read file from */
 	mbhead_t *mb_head; /* Pointer to header of file */
+	int used_datablocks;
 	/* input stream functions */
 	int (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
