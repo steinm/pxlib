@@ -1,5 +1,7 @@
 Version 0.4.3
 	- various fixed for writing blob files
+	- return value for bcd fields uses decimal_point from locale
+	- added spanish translations (thanks to jrodriguez@innox.com.mx)
 
 Version 0.4.2
 	- fixed possible errors in header of mb files
