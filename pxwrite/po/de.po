@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2003-09-21 15:20+0200\n"
+"POT-Creation-Date: 2003-09-23 19:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,22 +55,22 @@ msgstr "libpx wurde für Architekturen mit big endian übersetzt."
 msgid "libpx has been compiled for little endian architecture."
 msgstr "libpx wurde für Architekturen mit little endian übersetzt."
 
-#: src/main.c:109
+#: src/main.c:113
 msgid "You must at least specify an output file."
 msgstr "Sie müssen mindestens eine Ausgabedatei angeben."
 
-#: src/main.c:122
+#: src/main.c:126
 msgid "Could not create new paradox instance."
 msgstr "Konnte neue Paradox-Instanz nicht erzeugen."
 
-#: src/main.c:127
+#: src/main.c:131
 msgid "Could not get memory for field definitions."
 msgstr "Konnte Speicher für Felddefinitionen nicht allozieren."
 
-#: src/main.c:153
+#: src/main.c:157
 msgid "Could not create output file."
 msgstr "Konnte Ausgabedatei nicht erzeugen."
 
-#: src/main.c:167
+#: src/main.c:173
 msgid "Could not write record."
 msgstr "Konnte Datensatz nicht schreiben."
