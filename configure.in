@@ -27,7 +27,7 @@ AC_PROG_INSTALL
 AC_PROG_CPP
 
 dnl Add the languages which your application supports here.
-ALL_LINGUAS="de"
+ALL_LINGUAS="de es"
 AM_GLIB_GNU_GETTEXT
 GETTEXT_PACKAGE=pxlib
 AC_SUBST(GETTEXT_PACKAGE)
