@@ -26,7 +26,7 @@ char *px_strdup(pxdoc_t *p, const char *str) {
 	char *buf;
 
 	if (str == NULL) {
-		p->errorhandler(p, PX_Warning, "NULL string in pdf_strdup");
+		p->errorhandler(p, PX_Warning, "NULL string in px_strdup");
 		return(NULL);
 	}
 	len = px_strlen(str);
