@@ -84,7 +84,7 @@ manpage.1: manpage.sgml
 			<function>PX_boot(3)</function>. It will set the locale and selects
 			the messages in your language as defined by the environment variable
 			LC_ALL. The library should
-			be finalized by <function>PS_shutdown(3)</function>.</para>
+			be finalized by <function>PX_shutdown(3)</function>.</para>
 		<para>A Paradox database is
 			represented by a pointer to <literal>pxdoc_t</literal>. Such an object
 			can be created with <function>PX_new(3)</function> and destroyed
@@ -173,7 +173,7 @@ main(int argc, char *argv[]) {
 	pxdoc_t *pxdoc;
 
 	PX_boot();
-	pxdoc = PS_new();
+	pxdoc = PX_new();
 	PX_open_file(pxdoc, "test.db");
 	PX_close(pxdoc);
 	PX_delete(pxdoc);
@@ -679,7 +679,7 @@ main(int argc, char *argv[]) {
 	int numfields = 2;
 
 	PX_boot();
-	pxdoc = PS_new();
+	pxdoc = PX_new();
 	pxf[0].px_fname = PX_strdup(pxdoc, "column1");
 	pxf[0].px_ftype = pxfShort;
 	pxf[0].px_flen = 2;
