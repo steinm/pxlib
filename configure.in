@@ -179,6 +179,7 @@ dnl pxlib.spec
 AC_OUTPUT([
 Makefile
 pxlib.spec
+pxlib.pc
 include/Makefile
 src/Makefile
 doc/Makefile
