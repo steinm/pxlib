@@ -5,6 +5,7 @@ pxlibincdir = $(includedir)
 pxlibinc_HEADERS = \
 	paradox.h \
 	paradox-gsf.h \
+	paradox-mp.h \
 	pxversion.h
 
 install-exec-hook:
