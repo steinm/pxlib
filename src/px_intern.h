@@ -30,4 +30,7 @@ typedef TPxDataHeader *PPxDataHeader;
 typedef struct _TDataBlock TDataBlock;
 typedef TDataBlock *PDataBlock;
 
+typedef struct _TMbHeader TMbHeader;
+typedef TMbHeader *PMbHeader;
+
 #endif

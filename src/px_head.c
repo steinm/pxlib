@@ -685,6 +685,62 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 }
 /* }}} */
 
+/* get_px_head() {{{
+ * get the header info from the file
+ * basic header info & field descriptions
+ */
+mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
+	pxdoc_t *pxdoc;
+	TMbHeader mbhead;
+	mbhead_t *mbh;
+	int ret;
+
+	pxdoc = pxblob->pxdoc;
+	if(NULL == pxdoc) {
+		return(NULL);
+	}
+
+	if((mbh = (mbhead_t *) pxdoc->malloc(pxdoc, sizeof(mbhead_t), _("Allocate memory for document header."))) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
+		return NULL;
+	}
+	if(pxblob->seek(pxdoc, pxs, 0, SEEK_SET) < 0)
+		return NULL;
+	if((ret = pxblob->read(pxdoc, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
+		pxdoc->free(pxdoc, mbh);
+		return NULL;
+	}
+
+	mbh->modcount = get_short_le(&mbhead.modcount);
+	return(mbh);
+}
+/* }}} */
+
+/* put_mb_head() {{{
+ * writes the header of a .mb file.
+ */
+int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
+	pxdoc_t *pxdoc;
+	TMbHeader mbhead;
+
+	pxdoc = pxblob->pxdoc;
+	if(NULL == pxdoc) {
+		return(-1);
+	}
+
+	if(pxblob->seek(pxdoc, pxs, 0, SEEK_SET) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining paradox file."));
+		return -1;
+	}
+
+	if(pxblob->write(pxdoc, pxs, sizeof(TMbHeader), &mbhead) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write header of paradox file."));
+		return -1;
+	}
+}
+/* }}} */
+
 /*
  * Local variables:
  * tab-width: 4
