@@ -272,7 +272,8 @@
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 002B...002C        unknown    (always 0)                                   |
-|      |        0x2C has a value in .PX files (Uwe)                          |
+|      |        0x2C has a value in .PX files. If it is not set Paradox will |
+|      |        with a message like 'the index is not valid anymore'. (Uwe)  |
 +------+---------------------------------------------------------------------+
 | 002D | byte        changeCount1                                            |
 |      |                                                                     |
@@ -336,7 +337,7 @@
 |      |        Number of auxiliary passwords assigned to the table.         |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
-| 003E...003F        unknown (Uwe: this field is always $1f0f)               |
+| 003E...003F        unknown (Uwe: this field is always $1f0f in .DB files)  |
 +------+---------------------------------------------------------------------+
 | 0040 | pointer     cryptInfoStartPtr                                       |
 |      |                                                                     |
