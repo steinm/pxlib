@@ -238,7 +238,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	 * of the datablock in the primary index file. Level 2 entries
 	 * will be created when the primary index file is written.
 	 * Nevertheless the internal index entry has a field level, which
-	 * currently always set to 1.
+	 * is currently always set to 1.
 	 */
 	/* Allocate memory for internal list of index entries */
 	if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
