@@ -124,6 +124,8 @@ struct px_doc {
 						* index data, used in db files for an self build
 						* index) */
 	int px_datalen;    /* length of data field in number of units */
+	void *px_indexdata;/* Pointer to index data */
+	int px_indexdatalen; /* number of index data records */
 
 	/* primary index file */
 	pxdoc_t *px_pindex;
@@ -138,12 +140,15 @@ struct px_doc {
 	void  (*free)(pxdoc_t *p, void *mem);
 
 	char *targetencoding;
+	char *inputencoding;
 #if PX_USE_RECODE
 	RECODE_OUTER recode_outer;
-	RECODE_REQUEST recode_request;
+	RECODE_REQUEST out_recode_request; /* Encoding of written data */
+	RECODE_REQUEST in_recode_request; /* Encoding of read data */
 #else
 #if PX_USE_ICONV
-	iconv_t iconvcd;
+	iconv_t out_iconvcd;  /* Encoding of written data */
+	iconv_t in_iconvcd;   /* Encoding of read data */
 #endif
 #endif
 };
@@ -247,6 +252,9 @@ PX_get_num_records(pxdoc_t *pxdoc);
 
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding);
+
+PXLIB_API int PXLIB_CALL
+PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding);
 
 PXLIB_API int PXLIB_CALL
 PX_set_tablename(pxdoc_t *pxdoc, char *tablename);

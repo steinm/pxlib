@@ -115,13 +115,16 @@ PX_new2(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg),
 
 #if PX_USE_RECODE
 	pxdoc->recode_outer = recode_new_outer(false);
-	pxdoc->recode_request = recode_new_request(pxdoc->recode_outer);
+	pxdoc->out_recode_request = recode_new_request(pxdoc->recode_outer);
+	pxdoc->in_recode_request = recode_new_request(pxdoc->recode_outer);
 #else
 #if PX_USE_ICONV
-	pxdoc->iconvcd = (iconv_t) -1;
+	pxdoc->out_iconvcd = (iconv_t) -1;
+	pxdoc->in_iconvcd = (iconv_t) -1;
 #endif
 #endif
 	pxdoc->targetencoding = NULL;
+	pxdoc->inputencoding = NULL;
 	pxdoc->px_data = NULL;
 	pxdoc->px_datalen = 0;
 
@@ -144,6 +147,9 @@ PX_new(void) {
  */
 PXLIB_API int PXLIB_CALL
 PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
+	pxpindex_t *pindex;
+	pxhead_t *pxh;
+	int blockcount, blocknumber;
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
 		return -1;
@@ -156,6 +162,37 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 
 	pxdoc->px_fp = fp;
 
+	/* Build primary index. This index misses all index blocks with a level
+	 * greater than 1. Since they are not used currently this is of no harm.
+	 */
+	pxh = pxdoc->px_head;
+	if(pxh->px_filetype == pxfFileTypIndexDB ||
+	   pxh->px_filetype == pxfFileTypNonIndexDB) {
+		if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for selb build internal primary index")))) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for self build internal index."));
+			return -1;
+		}
+
+		pxdoc->px_indexdata = pindex;
+		pxdoc->px_indexdatalen = pxh->px_fileblocks;
+		blockcount = 0; /* Just a block counter */
+		blocknumber = pxh->px_firstblock; /* Will be set to next block number */
+		while((blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
+			TDataBlock datablockhead;
+			if(get_datablock_head(pxh, fp, blocknumber, &datablockhead) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
+				pxdoc->free(pxdoc, pindex);
+				return -1;
+			}
+			pindex[blockcount].data = NULL;
+			pindex[blockcount].blocknumber = blocknumber;
+			pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
+			pindex[blockcount].myblocknumber = 0;
+			pindex[blockcount].level = 1;
+			blockcount++;
+			blocknumber = get_short_le((char *) &datablockhead.nextBlock);
+		}
+	}
 	return 0;
 }
 /* }}} */
@@ -310,6 +347,8 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
 		PX_delete(pxdoc->px_pindex);
 	}
 	pxdoc->px_pindex = pindex;
+	pxdoc->px_indexdata = pindex->px_data;
+	pxdoc->px_indexdatalen = pindex->px_head->px_numrecords;
 
 	return 0;
 }
@@ -369,7 +408,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	}
 	for(j=0; j<pxh->px_numrecords; j++) {
 		pxdatablockinfo_t pxdbinfo;
-		int isdeleted;
+		int isdeleted=0;
 		if(PX_get_record2(pindex, j, data, &isdeleted, &pxdbinfo)) {
 			short int value;
 			/* Copy the data part for later sorting */
@@ -385,14 +424,15 @@ PX_read_primary_index(pxdoc_t *pindex) {
 			pindex_data[j].myblocknumber = pxdbinfo.number;
 		} else {
 			px_error(pindex, PX_RuntimeError, _("Could not read record no. %d of primary index data."), j);
-			/* FIXME: Need to free all already allocated data parts */
+			/* Free so far allocated data memory */
+			for(j--; j>=0; j--)
+				pindex->free(pindex, pindex_data->data);
 			pindex->free(pindex, data);
 			pindex->free(pindex, pindex->px_data);
 			pindex->px_data = NULL;
 			return -1;
 		}
 	}
-	/* sort the data */
 	/* find level of index blocks. Index blocks of level 1 contain references
 	 * to data blocks. Index blocks of level n+1 contain references to index
 	 * blocks of level n. */
@@ -407,16 +447,16 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	 * on block will be used in this level.
 	 * For now this has to be sufficient. */
 	if(pxh->px_fileblocks == 1) {
-		for(j=0; j<pxh->px_numrecords-1; j++)
+		for(j=0; j<pxh->px_numrecords; j++)
 			pindex_data[j].level = 1;
 	} else {
 		int firstblock = pindex_data[0].myblocknumber;
 		int numrecords = 0;
-		for(j=0; j<pxh->px_numrecords-1, pindex_data[j].myblocknumber == firstblock; j++) {
+		for(j=0; j<pxh->px_numrecords, pindex_data[j].myblocknumber == firstblock; j++) {
 			numrecords += pindex_data[j].numrecords;
 			pindex_data[j].level = 2;
 		}
-		for(; j<pxh->px_numrecords-1; j++) {
+		for(; j<pxh->px_numrecords; j++) {
 			numrecords -= pindex_data[j].numrecords;
 			pindex_data[j].level = 1;
 		}
@@ -424,22 +464,10 @@ PX_read_primary_index(pxdoc_t *pindex) {
 			px_error(pindex, PX_Warning, _("The number of records coverd by index level 2 is unequal to level 1."));
 		}
 	}
-	for(j=0; j<pxh->px_numrecords-1; j++) {
-		printf("%d\t%d\n", pindex_data[j].myblocknumber, pindex_data[j].level);
-	}
+//	for(j=0; j<pxh->px_numrecords-1; j++) {
+//		printf("%d\t%d\n", pindex_data[j].myblocknumber, pindex_data[j].level);
+//	}
 
-/*	while(swap) {
-		swap = 0;
-		for(j=0; j<pxh->px_numrecords-1; j++) {
-			if(strncmp(pindex_data[j].data, pindex_data[j+1].data, datalen) > 0) {
-				memcpy(&pdata, pindex_data[j].data, datalen);
-				memcpy(pindex_data[j].data, pindex_data[j+1].data, datalen);
-				memcpy(pindex_data[j+1].data, &pdata, datalen);
-				swap = 1;
-			}
-		}
-	}
-*/
 	pindex->free(pindex, data);
 	return 0;
 }
@@ -458,21 +486,22 @@ PX_read_primary_index(pxdoc_t *pindex) {
 int
 px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
 	int j, numrecords, n, recsperdatablock;
-	pxdoc_t *pindexdoc;
-	pxhead_t *pxh, *pxih;
+//	pxdoc_t *pindexdoc;
+	pxhead_t *pxh; //, *pxih;
 	pxpindex_t *pindex_data;
 
 	pxh = pxdoc->px_head;
-	pindexdoc = pxdoc->px_pindex;
-	pxih = pindexdoc->px_head;
-	pindex_data = pindexdoc->px_data;
+//	pindexdoc = pxdoc->px_pindex;
+//	pxih = pindexdoc->px_head;
+//	pindex_data = pindexdoc->px_data;
+	pindex_data = pxdoc->px_indexdata;
 
 	if(!pindex_data)
 		return 0;
 
 	numrecords = 0 ;
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))/pxh->px_recordsize;
-	for(j=0; j<pxih->px_numrecords; j++) {
+	for(j=0; j<pxdoc->px_indexdatalen; j++) {
 		/* We currently just take level 1 index blocks into account.
 		 * This is only for large databases a speed disadvantage.
 		 */
@@ -533,19 +562,12 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 
 	found = 0;
 	blockcount = 0; /* Just a block counter */
-	blocknumber = 1; /* Will be set to next block number */
+	blocknumber = pxh->px_firstblock; /* Will be set to next block number */
 	while(!found && (blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
 		int datasize, blocksize;
 
-		/* Go to the start of the next block (skip the header) */
-		if((ret = fseek(pxdoc->px_fp, pxh->px_headersize + (blocknumber-1) * pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
-			return 0;
-		}
-
-		/* Get the info about this data block */
-		if((ret = fread(&datablock, sizeof(TDataBlock), 1, pxdoc->px_fp)) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not read header of data block"));
+		if(get_datablock_head(pxh, pxdoc->px_fp, blocknumber, &datablock) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
 			return 0;
 		}
 
@@ -666,7 +688,7 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 		return NULL;
 	}
 
-	if(pxdoc->px_pindex)
+	if(pxdoc->px_indexdata)
 		found = px_get_record_pos_with_index(pxdoc, recno, deleted, &tmppxdbinfo);
 	else
 		found = px_get_record_pos(pxdoc, recno, deleted, &tmppxdbinfo);
@@ -800,17 +822,23 @@ PX_delete(pxdoc_t *pxdoc) {
 	if(pxdoc->recode_outer)
 		recode_delete_outer(pxdoc->recode_outer);
 
-	if(pxdoc->recode_request)
-		recode_delete_request(pxdoc->recode_request);
+	if(pxdoc->out_recode_request)
+		recode_delete_request(pxdoc->out_recode_request);
+	if(pxdoc->in_recode_request)
+		recode_delete_request(pxdoc->in_recode_request);
 #else
 #if PX_USE_ICONV
-	if(pxdoc->iconvcd > 0)
-		iconv_close(pxdoc->iconvcd);
+	if(pxdoc->out_iconvcd > 0)
+		iconv_close(pxdoc->out_iconvcd);
+	if(pxdoc->in_iconvcd > 0)
+		iconv_close(pxdoc->in_iconvcd);
 #endif
 #endif
 
 	if(pxdoc->targetencoding)
 		pxdoc->free(pxdoc, pxdoc->targetencoding);
+	if(pxdoc->inputencoding)
+		pxdoc->free(pxdoc, pxdoc->inputencoding);
 
 	if(pxdoc->px_head != NULL) {
 		if(pxdoc->px_head->px_tablename) pxdoc->free(pxdoc, pxdoc->px_head->px_tablename);
@@ -831,6 +859,15 @@ PX_delete(pxdoc_t *pxdoc) {
 		 */
 		pxdoc->free(pxdoc, pxdoc->px_data);
 		pxdoc->px_datalen = 0;
+	}
+	/* px_indexdata will be set if the index was read from an index file
+	 * or build during PX_open_fp(). In the first case it is just a
+	 * pointer to pxdoc->px_index->px_data and should not be freed
+	 * because it is freed when the index file is deleted.
+	 */
+	if(pxdoc->px_indexdata && !pxdoc->px_pindex) {
+		pxdoc->free(pxdoc, pxdoc->px_indexdata);
+		pxdoc->px_indexdatalen = 0;
 	}
 
 	pxdoc->free(pxdoc, pxdoc);
@@ -947,18 +984,24 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 		return -1;
 	}
 
+	if(pxdoc->targetencoding) {
+		px_error(pxdoc, PX_RuntimeError, _("Target encoding already set"));
+		return -1;
+	}
+
 	pxdoc->targetencoding = px_strdup(pxdoc, encoding);
 	if(pxdoc->targetencoding) {
 #if PX_USE_RECODE
 		sprintf(buffer, "CP%d/CR-LF..%s", pxdoc->px_head->px_doscodepage, pxdoc->targetencoding);
-		recode_scan_request(pxdoc->recode_request, buffer);
+		recode_scan_request(pxdoc->out_recode_request, buffer);
 #else
 #if PX_USE_ICONV
 		sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
-		if(pxdoc->iconvcd > 0)
-			iconv_close(pxdoc->iconvcd);
-		if((iconv_t)(-1) == (pxdoc->iconvcd = iconv_open(pxdoc->targetencoding, buffer))) {
+		if(pxdoc->out_iconvcd > 0)
+			iconv_close(pxdoc->out_iconvcd);
+		if((iconv_t)(-1) == (pxdoc->out_iconvcd = iconv_open(pxdoc->targetencoding, buffer))) {
 			pxdoc->free(pxdoc, pxdoc->targetencoding);
+			pxdoc->targetencoding = NULL;
 			px_error(pxdoc, PX_RuntimeError, _("Target encoding could not be set."));
 			return -1;
 		}
@@ -967,7 +1010,60 @@ PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding) {
 #endif
 	}
 #else
-	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for target encoding."));
+	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
+#endif
+	return 0;
+}
+/* }}} */
+
+/* PX_set_inputencoding() {{{
+ * Sets the encoding of the input data. This is one of
+ * the encodings supported by iconv or recode. The input encoding
+ * must be set before the target encoding to have effect. If the input
+ * encoding is not set it will be taken from the paradox header.
+ */
+PXLIB_API int PXLIB_CALL
+PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding) {
+#if PX_USE_RECODE || PX_USE_ICONV
+	char buffer[30];
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database"));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Header of file has not been read"));
+		return -1;
+	}
+
+	if(pxdoc->inputencoding) {
+		px_error(pxdoc, PX_RuntimeError, _("Input encoding already set"));
+		return -1;
+	}
+
+	pxdoc->inputencoding = px_strdup(pxdoc, encoding);
+
+	if(pxdoc->inputencoding) {
+#if PX_USE_RECODE
+		sprintf(buffer, "%s..CP%d/CR-LF", pxdoc->inputencoding, pxdoc->px_head->px_doscodepage);
+		recode_scan_request(pxdoc->in_recode_request, buffer);
+#else
+#if PX_USE_ICONV
+		sprintf(buffer, "CP%d", pxdoc->px_head->px_doscodepage);
+		if(pxdoc->in_iconvcd > 0)
+			iconv_close(pxdoc->in_iconvcd);
+		if((iconv_t)(-1) == (pxdoc->in_iconvcd = iconv_open(buffer, pxdoc->inputencoding))) {
+			pxdoc->free(pxdoc, pxdoc->inputencoding);
+			pxdoc->inputencoding = NULL;
+			px_error(pxdoc, PX_RuntimeError, _("Input encoding could not be set."));
+			return -1;
+		}
+#endif
+#endif
+	}
+#else
+	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 #endif
 	return 0;
 }
@@ -1118,6 +1214,8 @@ PX_read_blobdata(pxblob_t *pxblob, int offset, size_t size) {
 }
 /* }}} */
 
+/******* Function to access record data ******/
+
 /* PX_get_data_alpha() {{{
  * Extracts an alpha field value from a data block
  */
@@ -1135,7 +1233,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	if(pxdoc->targetencoding != NULL) {
 #if PX_USE_RECODE
 		int oallocated = 0;
-		res = recode_buffer_to_buffer(pxdoc->recode_request, data, len, &obuf, &olen, &oallocated);
+		res = recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
 		size_t ilen = len;
@@ -1149,7 +1247,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		iptr = data;
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
-		if(0 > (res = iconv(pxdoc->iconvcd, &iptr, &ilen, &optr, &olen))) {
+		if(0 > (res = iconv(pxdoc->out_iconvcd, &iptr, &ilen, &optr, &olen))) {
 			*value = NULL;
 			free(obuf);
 			return 0;
@@ -1292,7 +1390,7 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	if(pxdoc->targetencoding != NULL) {
 #if PX_USE_RECODE
 		int oallocated = 0;
-		res = recode_buffer_to_buffer(pxdoc->recode_request, value, strlen(value), &obuf, &olen, &oallocated);
+		res = recode_buffer_to_buffer(pxdoc->in_recode_request, value, strlen(value), &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
 		size_t ilen = strlen(value);
@@ -1306,7 +1404,7 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 		iptr = value;
 //		printf("value(%d) = '%s'\n", ilen, value);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
-		if(0 > (res = iconv(pxdoc->iconvcd, &iptr, &ilen, &optr, &olen))) {
+		if(0 > (res = iconv(pxdoc->in_iconvcd, &iptr, &ilen, &optr, &olen))) {
 			memset(data, 0, len);
 			free(obuf);
 			return;
