@@ -26,7 +26,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PXVIEW</refentrytitle>">
+  <!ENTITY dhucpackage "<refentrytitle>PXWRITE</refentrytitle>">
   <!ENTITY dhpackage   "pxwrite">
 
   <!ENTITY debian      "<productname>Debian</productname>">
