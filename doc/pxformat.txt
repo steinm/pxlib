@@ -291,6 +291,13 @@
 | 002D | byte        changeCount1                                            |
 |      |                                                                     |
 |      |        This is incremented whenever the file header is updated.     |
+|      |        Uwe: Set this to 2 in the .DB file if you plan to provide    |
+|      |        a primary index file. Usually a 1 is sufficient, but it      |
+|      |        seems like the Paradox software will use the index file only |
+|      |        if this is not set to 2 (maybe higher). The error msg will   |
+|      |        be something like 'index is not up to date'. An explanation  |
+|      |        for that could be, that a file whose header has not at least |
+|      |        been update once can't have a primary index.                 |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 002E | byte        changeCount2                                            |
