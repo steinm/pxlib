@@ -73,8 +73,8 @@ manpage.1: manpage.sgml
 		  <varlistentry>
 			  <term>numprimkeys</term>
 			  <listitem>
-				  <para>The number of primary keys. Paradox databases always to the
-					  'numprimkeys' fields for the primary index.
+				  <para>The number of primary keys. Paradox databases always use the
+					  first 'numprimkeys' fields for the primary index.
 					</para>
 				</listitem>
 			</varlistentry>
