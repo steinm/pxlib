@@ -67,8 +67,37 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Sets the parameter <option>name</option> to the value
-		  <option>value</option>.</para>
+		  <option>value</option>. This function must be used for all values
+			of type string. float-values can be set with PX_set_value(3).
+			<option>name</option> may be one of the following.</para>
 
+		<variablelist>
+		  <varlistentry>
+			  <term>tablename</term>
+			  <listitem>
+				  <para>The name of the table as it will be stored in the datbase
+					  header.
+					</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>targetencoding</term>
+			  <listitem>
+				  <para>The encoding for the output. Data which is being read with
+					  one of the PX_get_data_xxx(3) functions will return string data
+						in the targetencoding.
+					</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>inputencoding</term>
+			  <listitem>
+				  <para>The econding of the input data which is to be stored into the
+					  database.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

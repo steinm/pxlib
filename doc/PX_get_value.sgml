@@ -67,7 +67,7 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Get the value of parameter <option>name</option>.</para>
-
+    <para>For a list a available parameter names see PX_set_value(3).</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

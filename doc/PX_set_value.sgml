@@ -69,6 +69,17 @@ manpage.1: manpage.sgml
     <para>Sets the float parameter <option>name</option> to the value
 		  <option>value</option>.</para>
 
+		<variablelist>
+		  <varlistentry>
+			  <term>numprimkeys</term>
+			  <listitem>
+				  <para>The number of primary keys. Paradox databases always to the
+					  'numprimkeys' fields for the primary index.
+					</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
