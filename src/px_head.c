@@ -87,7 +87,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 	}
 	pxh->px_indexfieldnumber = pxhead.indexFieldNumber;
 	pxh->px_writeprotected = pxhead.writeProtected;
-	pxh->px_primarykeyfields = get_short(pxhead.primaryKeyFields);
+	pxh->px_primarykeyfields = get_short(&pxhead.primaryKeyFields);
 
 	if(((pxh->px_filetype == 0) ||
 		  (pxh->px_filetype == 2) ||
@@ -98,7 +98,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, FILE *fp)
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
-		pxh->px_doscodepage = get_short(pxdatahead.dosCodePage);
+		pxh->px_doscodepage = get_short(&pxdatahead.dosCodePage);
 	}
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
