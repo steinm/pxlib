@@ -79,7 +79,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_field(3)</para>
+    <para>PX_get_field(3), PX_get_record2(3)</para>
 
   </refsect1>
   <refsect1>
