@@ -365,6 +365,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write field numbers."));
 		return -1;
 	}
+
 	return 0;
 }
 /* }}} */
@@ -445,7 +446,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 		next = pxh->px_firstblock;
 	}
 	
-//	fprintf(stderr, "Inserting new block after %d and befor %d\n", after, next);
+//	fprintf(stderr, "Inserting new block after %d and before %d\n", after, next);
 	if(next != 0) {
 		if((ret = get_datablock_head(pxdoc, pxs, next, &nextdatablockhead)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block after the new block."));
@@ -453,18 +454,15 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 		}
 	}
 
-	/* Go to the start of the new data block, which should be identical
-	 * to the end of the file. */
-	if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_headersize+pxh->px_fileblocks*pxh->px_maxtablesize*0x400, SEEK_SET)) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block"));
-		return -1;
-	}
-
 	memset(&newdatablockhead, 0, sizeof(TDataBlock));
 	put_short_le(&newdatablockhead.prevBlock, after);
 	put_short_le(&newdatablockhead.nextBlock, next);
-	/* This block is still empty, so set it -recordsize */
+	/* This block is still empty, so set it to -recordsize */
 	put_short_le(&newdatablockhead.addDataSize, -pxh->px_recordsize);
+//	fprintf(stderr, "Hexdump of new datablock: ");
+//	hex_dump(stderr, &newdatablockhead, sizeof(TDataBlock));
+//	fprintf(stderr, "\n");
+	/* Write new datablock at the end of the file */
 	if(put_datablock_head(pxdoc, pxs, pxh->px_fileblocks+1, &newdatablockhead) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write new data block header."));
 		return -1;
@@ -529,7 +527,7 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
 //	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
-//	fprintf(stderr, "Datablock %d hat %d Datensätze\n", datablocknr, n);
+//	fprintf(stderr, "Datablock %d has %d records\n", datablocknr, n);
 
 	/* Update size of data block and write it back */
 //	fprintf(stderr, "Hexdump des neuen datablock headers: ");
