@@ -17,7 +17,8 @@ void px_error(pxdoc_t *p, int type, const char *fmt, ...) {
 
 	if (!p->in_error) {
 		p->in_error = 1; /* avoid recursive errors */
-		(p->errorhandler)(p, type, msg);
+		if(p->errorhandler)
+			(p->errorhandler)(p, type, msg);
 	}
 
 	/* If the error handler returns the error was non-fatal */
