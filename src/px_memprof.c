@@ -58,7 +58,7 @@ PX_mp_realloc(pxdoc_t *p, void *mem, size_t size, const char *caller) {
 		}
 	}
 	if(i == MAXMEM)
-		fprintf(stderr, "Aiii, did not find memory block\n");
+		fprintf(stderr, "Aiii, did not find memory block at 0x%X to enlarge\n", mem);
 	return(a);
 }
 
@@ -70,7 +70,7 @@ PX_mp_free(pxdoc_t *p, void *mem) {
 		i++;
 	}
 	if(i == MAXMEM)
-		fprintf(stderr, "Aiii, did not find memory block to free\n");
+		fprintf(stderr, "Aiii, did not find memory block at 0x%X to free\n", mem);
 	else {
 		memlist[i].ptr = NULL;
 		summem -= memlist[i].size;
@@ -86,7 +86,7 @@ PX_mp_list_unfreed() {
 	i = j = 0;
 	while(i < MAXMEM) {
 		if(memlist[i].ptr) {
-			fprintf(stderr, "%d. Memory at address 0x%X (%d) not freed: %s\n", j, memlist[i].ptr, memlist[i].size, memlist[i].caller);
+			fprintf(stderr, "%d. Memory at address 0x%X (%d) not freed: '%s'\n", j, memlist[i].ptr, memlist[i].size, memlist[i].caller);
 			j++;
 		}
 		i++;
