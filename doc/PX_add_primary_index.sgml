@@ -26,7 +26,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_add_primary_index</refentrytitle>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_ADD_PRIMARY_INDEX</refentrytitle>">
   <!ENTITY funcname    "PX_add_primary_index">
 
   <!ENTITY debian      "<productname>Debian</productname>">

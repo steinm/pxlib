@@ -26,7 +26,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
   <!ENTITY dhemail     "<email>uwe@steinmann.cx</email>">
   <!ENTITY dhusername  "Uwe Steinmann">
-  <!ENTITY dhucpackage "<refentrytitle>PX_get_data_byte</refentrytitle>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_GET_DATA_BYTE</refentrytitle>">
   <!ENTITY funcname    "PX_get_data_byte">
 
   <!ENTITY debian      "<productname>Debian</productname>">
