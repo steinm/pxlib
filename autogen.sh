@@ -8,16 +8,16 @@ set -e
 
 # Refresh GNU autotools toolchain.
 for i in config.guess config.sub missing install-sh mkinstalldirs ; do
-	test -r /usr/share/automake-1.7/${i} && {
+	test -r /usr/share/automake/${i} && {
 		rm -f ${i}
-		cp /usr/share/automake-1.7/${i} .
+		cp /usr/share/automake/${i} .
 	}
 	chmod 755 ${i}
 done
 
 aclocal
 autoheader
-automake --verbose --copy --add-missing
+automake --verbose --copy --force --add-missing
 autoconf
 
 # For the Debian build
