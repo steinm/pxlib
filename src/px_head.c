@@ -262,7 +262,6 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	}
 
 	/* write tablename */
-	fprintf(stderr, "Tablename: %s\n", pxh->px_tablename);
 	if(pxh->px_tablename == NULL) {
 		len = 0;
 		px_error(pxdoc, PX_Warning, _("Tablename is empty."));
@@ -284,7 +283,6 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 	pxf = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		if(pxf->px_fname != NULL) {
-			fprintf(stderr, "Col name %s\n", pxf->px_fname);
 			if(fwrite(pxf->px_fname, strlen(pxf->px_fname)+1, 1, fp) < 1) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write column specification."));
 				return -1;
@@ -335,7 +333,11 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, FILE *fp) {
 
 	return(pxh->px_fileblocks);
 }
+/* }}} */
 
+/* px_add_data_to_block() {{{
+ * stores a record into a data block.
+ */
 int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *data, FILE *fp) {
 	TDataBlock datablockhead;
 	int ret, n;
@@ -351,11 +353,11 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 		return -1;
 	}
 	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize+1;
-	fprintf(stderr, "Hexdump des alten datablock headers: ");
-	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
-	fprintf(stderr, "\n");
-	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
-	fprintf(stderr, "Datablock %d hat %d Datensätze\n", datablocknr, n);
+//	fprintf(stderr, "Hexdump des alten datablock headers: ");
+//	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
+//	fprintf(stderr, "\n");
+//	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
+//	fprintf(stderr, "Datablock %d hat %d Datensätze\n", datablocknr, n);
 
 	/* Go back the beginning of the block */
 	if((ret = fseek(fp, -sizeof(TDataBlock), SEEK_CUR)) < 0) {
@@ -365,9 +367,9 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 
 	/* Update size of data block and write it back */
 	put_short_le(&datablockhead.addDataSize, n*pxh->px_recordsize);
-	fprintf(stderr, "Hexdump des neuen datablock headers: ");
-	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
-	fprintf(stderr, "\n");
+//	fprintf(stderr, "Hexdump des neuen datablock headers: ");
+//	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
+//	fprintf(stderr, "\n");
 	if(fwrite(&datablockhead, sizeof(TDataBlock), 1, fp) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write empty datablock header."));
 		return -1;
