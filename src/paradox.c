@@ -39,6 +39,8 @@
 #include "px_error.h"
 #include "px_misc.h"
 
+#define max(a,b) ((a)>(b) ? (a) : (b))
+
 /* PX_get_majorversion() {{{
  */
 PXLIB_API int PXLIB_CALL
@@ -879,9 +881,12 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 	 * sufficient to just read the first n fields which make up the
 	 * primary index fields, but it doesn't really harm to read the
 	 * whole record.
+	 * Anyway, there could be cases where the data in pxdoc needs less
+	 * memory than a data record for pindexdoc. Thats why we use
+	 * the max function for allocating memory.
 	 */
 	recordsize = pih->px_recordsize;
-	if((data = (char *) pxindex->malloc(pxindex, recordsize, _("Allocate memory for data of index record."))) == NULL) {
+	if((data = (char *) pxindex->malloc(pxindex, max(pxh->px_recordsize, recordsize), _("Allocate memory for data of index record."))) == NULL) {
 		px_error(pxindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
 		return -1;
 	}
@@ -1177,13 +1182,13 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 /* }}} */
 
 /* PX_put_recordn() {{{
- * Store a record into the paradox file. The record can be save at
+ * Store a record into the paradox file. The record can be saved at
  * any position. If the position is beyond the last datablock, then
  * new datablocks will be added until the position lies in a
  * datablock. You may use this function to end a datablock and
  * start a new one. If the position is in the middle of a data block
  * without any records before this position, the position will be
- * recalculated and the record is place after the last record in
+ * recalculated and the record is placed after the last record in
  * that datablock.
  * Returns the next postion or -1 in case of an error.
  */
