@@ -37,6 +37,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_get_fields.sgml \
 						 PX_get_num_fields.sgml \
 						 PX_get_num_records.sgml \
+						 PX_get_recordsize.sgml \
 						 PX_add_primary_index.sgml \
 						 PX_read_primary_index.sgml \
 						 PX_set_targetencoding.sgml \
