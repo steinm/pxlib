@@ -1,4 +1,10 @@
 Version 0.2.2
+	- initial multi language support
+	- added memory profiling
+	- free some more memory in PX_delete()
+	- renamed internal memory management functions from px_malloc, px_realloc,
+	  px_free to _px_malloc, _px_realloc, _px_free
+	- call pxdoc->free instead of px_free
 	- fixed potential buffer overrun
 	- PX_set_[target|input]encoding returns -2 if recoding is not supported
 

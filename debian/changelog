@@ -1,3 +1,10 @@
+pxlib (0.2.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * added german translation
+
+ -- Uwe Steinmann <uwe@steinmann.cx>  Mon, 17 Nov 2003 06:29:57 +0200
+
 pxlib (0.2.1-1) unstable; urgency=low
 
   * New upstream release.
