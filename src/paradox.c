@@ -626,23 +626,32 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 		return -1;
 	}
 
+	if(!(pxdoc->px_stream->mode & pxfFileWrite)) {
+		px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
+		return -1;
+	}
+
 	if(strcmp(name, "numprimkeys") == 0) {
-		if(pxdoc->px_stream->mode & pxfFileWrite) {
-			if(value < 0) {
-				px_error(pxdoc, PX_Warning, _("Number of primary keys must be greater or equal 0."), name);
-				return -1;
-			}
-			pxdoc->px_head->px_primarykeyfields = (int) value;
-			if(value == 0) {
-				pxdoc->px_head->px_filetype = pxfFileTypNonIndexDB;
-			} else {
-				pxdoc->px_head->px_filetype = pxfFileTypIndexDB;
-			}
-			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
-				return -1;
-			}
+		if(value < 0) {
+			px_error(pxdoc, PX_Warning, _("Number of primary keys must be greater or equal 0."), name);
+			return -1;
+		}
+		pxdoc->px_head->px_primarykeyfields = (int) value;
+		if(value == 0) {
+			pxdoc->px_head->px_filetype = pxfFileTypNonIndexDB;
 		} else {
-			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
+			pxdoc->px_head->px_filetype = pxfFileTypIndexDB;
+		}
+		if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
+			return -1;
+		}
+	} else if(strcmp(name, "codepage") == 0) {
+		if(value <= 0) {
+			px_error(pxdoc, PX_Warning, _("codepage must be greater 0."), name);
+			return -1;
+		}
+		pxdoc->px_head->px_doscodepage = (int) value;
+		if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
 			return -1;
 		}
 	} else {
@@ -746,6 +755,7 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 			return -1;
 		}
 	} else if(strcmp(name, "targetencoding") == 0) {
+		int codepage;
 #if PX_USE_RECODE || PX_USE_ICONV
 		if(pxdoc->targetencoding)
 			pxdoc->free(pxdoc, pxdoc->targetencoding);
@@ -759,6 +769,9 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 #else
 		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 #endif
+		if(sscanf(value, "CP%d", &codepage)) {
+			PX_set_value(pxdoc, "codepage", codepage);
+		}
 	} else if(strcmp(name, "inputencoding") == 0) {
 #if PX_USE_RECODE || PX_USE_ICONV
 		if(pxdoc->inputencoding)
@@ -1676,6 +1689,7 @@ PX_get_recordsize(pxdoc_t *pxdoc) {
  */
 PXLIB_API int PXLIB_CALL
 PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
+	int codepage;
 #if PX_USE_RECODE || PX_USE_ICONV
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
@@ -1703,6 +1717,9 @@ PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
 	px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 	return -2;
 #endif
+	if(sscanf(encoding, "CP%d", &codepage)) {
+		PX_set_value(pxdoc, "codepage", codepage);
+	}
 	return 0;
 }
 /* }}} */
