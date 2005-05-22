@@ -1,3 +1,20 @@
+Version 0.4.4
+	- PX_get_data_alpha() may now return strings which are longer than
+	  the database field (e.g. when converting to a multibyte string)
+	- fixed reencoding which failed when the input string passed to
+	  iconv contains zeros
+	- codepage can be set when creating a database
+	- fixed copy and paste error in doc/pxlib.sgml
+	- added new function PX_create_blob_fp()
+	- fixed many compiler warnings and some potential errors
+	- added missing prototypes in paradox.h.in
+	- allow to turn off warnings
+	- PX_set_blob_file() works when reading and writing a file
+	- added missing man page for PX_create_blob_file()
+	- added overall man page for pxlib with many examples
+	- PX_get_value() now returns many fields from the header which
+	  makes accessing the header struct directly mostly superfluous
+
 Version 0.4.3
 	- added PX_timestamp2string() for conversion of paradox timestamps
 	  into a readable representation
