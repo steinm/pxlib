@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #if defined(WIN32) || defined(OS2)
 #include <fcntl.h>
 #endif
@@ -2269,15 +2270,21 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		res = recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
-		size_t ilen = len;
+		size_t ilen;
 		char *iptr, *optr;
-		olen = len + 1;
+		/* Worst case for length of output buffer. If conversion from 1 byte
+		 * to 2 byte chars takes place
+		 */
+		olen = 2*len + 1;
 		/* Do not pxdoc->malloc because the memory is freed with free
 		 * We use free because the memory allocated by recode_buffer_to_buffer()
 		 * is requested with malloc and must be freed with free.
 		 */
 		optr = obuf = (char *) malloc(olen);
 		iptr = data;
+		ilen = 0;
+		while(iptr[ilen] != '\0' && ilen < len)
+			ilen++;
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
 		if(0 > (res = iconv(pxdoc->out_iconvcd, &iptr, &ilen, &optr, &olen))) {
@@ -2285,9 +2292,10 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 			free(obuf);
 			return -1;
 		}
+		*optr = '\0';
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
-		olen = len;
+		olen = optr-obuf;
 #endif
 #endif
 	} else {
