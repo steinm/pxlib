@@ -1090,7 +1090,7 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 	 * we will need level 2 entries.
 	 * There is currently no support for level 3 entries.
 	 */
-	if(pih->px_maxtablesize*0x400-sizeof(TDataBlock) < indexdatalen*pih->px_recordsize) {
+	if(pih->px_maxtablesize*0x400-(int)sizeof(TDataBlock) < indexdatalen*pih->px_recordsize) {
 		pih->px_numindexlevels = 2;
 		recsperblock = (pih->px_maxtablesize*0x400-sizeof(TDataBlock)) / pih->px_recordsize;
 		blocknumber = 2; /* The first block contains the level 2 entries */
@@ -1245,7 +1245,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 			datasize = blocksize; //get_short_le((char *) &datablock.addDataSize);
 		else
 			datasize = pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize;
-		if(blocksize > pxh->px_maxtablesize*0x400-sizeof(TDataBlock)-pxh->px_recordsize) {
+		if(blocksize > pxh->px_maxtablesize*0x400-(int)sizeof(TDataBlock)-pxh->px_recordsize) {
 			/* setting blocksize to -1 means that this block contains no valid
 			 * records. All records are deleted. The -1 is later used to set
 			 * 'deleted' on the proper value.
@@ -1263,7 +1263,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 		 * them, because the data is still there, but considered to be
 		 * deleted.
 		 */
-		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))) {
+		if ((datasize+pxh->px_recordsize) > (pxh->px_maxtablesize*0x400-(int)sizeof(TDataBlock))) {
 //			printf("Size of data block %d as set in its header is to large: %d (%3.2f records)\n", get_short_le(&datablock.prevBlock), datasize, (float) datasize/pxh->px_recordsize + 1);
 			/* Set the number of the next block */
 			blocknumber = get_short_le((char *) &datablock.nextBlock);
@@ -2175,8 +2175,8 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 				px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
 				return NULL;
 			}
-			if(size != get_long_le(&head[0])) {
-				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
+			if(size != get_long_le((const char *) &head[0])) {
+				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le((const char *)&head[0]));
 				return(NULL);
 			}
 			/* We may check for identical modificatio number as well, if it
@@ -2284,7 +2284,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		optr = obuf = (char *) malloc(olen);
 		iptr = data;
 		ilen = 0;
-		while(iptr[ilen] != '\0' && ilen < len)
+		while(iptr[ilen] != '\0' && ilen < (size_t) len)
 			ilen++;
 //		printf("data(%d) = '%s'\n", ilen, data);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
@@ -2727,7 +2727,7 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 		obuf = value;
 	}
 
-	memcpy(data, obuf, olen < len ? olen : len);
+	memcpy(data, obuf, olen < (size_t) len ? olen : len);
 
 	if(pxdoc->targetencoding != NULL) {
 		free(obuf);

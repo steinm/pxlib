@@ -8,6 +8,7 @@
 #include "px_memory.h"
 #include "px_io.h"
 #include "px_error.h"
+#include "px_misc.h"
 
 /* TMPBUFFSIZE must be larger than 261 because the tablename must fit into
  * the buffer. It is also the maximum length of a field name. Field names
@@ -57,24 +58,24 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 		return NULL;
 	}
 
-	pxh->px_recordsize = get_short_le(&pxhead.recordSize);
+	pxh->px_recordsize = get_short_le((const char *)&pxhead.recordSize);
 	if(pxh->px_recordsize == 0) {
 		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero record size."));
 		return NULL;
 	}
-	pxh->px_headersize = get_short_le(&pxhead.headerSize);
+	pxh->px_headersize = get_short_le((const char *)&pxhead.headerSize);
 	if(pxh->px_headersize == 0) {
 		pxdoc->free(pxdoc, pxh);
 		px_error(pxdoc, PX_RuntimeError, _("Paradox file has zero header size."));
 		return NULL;
 	}
 	pxh->px_filetype = pxhead.fileType;
-	pxh->px_numrecords = get_long_le(&pxhead.numRecords);
-	pxh->px_numfields = get_short_le(&pxhead.numFields);
-	pxh->px_fileblocks = get_short_le(&pxhead.fileBlocks);
-	pxh->px_firstblock = get_short_le(&pxhead.firstBlock);
-	pxh->px_lastblock = get_short_le(&pxhead.lastBlock);
+	pxh->px_numrecords = get_long_le((const char *)&pxhead.numRecords);
+	pxh->px_numfields = get_short_le((const char *)&pxhead.numFields);
+	pxh->px_fileblocks = get_short_le((const char *)&pxhead.fileBlocks);
+	pxh->px_firstblock = get_short_le((const char *)&pxhead.firstBlock);
+	pxh->px_lastblock = get_short_le((const char *)&pxhead.lastBlock);
 	switch(pxhead.fileVersionID) {
 		case 3:
 			pxh->px_fileversion = 30;
@@ -106,12 +107,12 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 			tablenamelen = 79;
 	}
 	pxh->px_indexfieldnumber = pxhead.indexFieldNumber;
-	pxh->px_indexroot = get_short_le(&pxhead.indexRoot);
+	pxh->px_indexroot = get_short_le((const char *)&pxhead.indexRoot);
 	pxh->px_numindexlevels = pxhead.numIndexLevels;
 	pxh->px_writeprotected = pxhead.writeProtected;
 	pxh->px_modifiedflags1 = pxhead.modifiedFlags1;
 	pxh->px_modifiedflags2 = pxhead.modifiedFlags2;
-	pxh->px_primarykeyfields = get_short_le(&pxhead.primaryKeyFields);
+	pxh->px_primarykeyfields = get_short_le((const char *)&pxhead.primaryKeyFields);
 
 	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
@@ -122,14 +123,14 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
-		pxh->px_doscodepage = get_short_le(&pxdatahead.dosCodePage);
+		pxh->px_doscodepage = get_short_le((const char *)&pxdatahead.dosCodePage);
 	}
-	pxh->px_fileupdatetime = get_long_le(&pxdatahead.fileUpdateTime);
+	pxh->px_fileupdatetime = get_long_le((const char *)&pxdatahead.fileUpdateTime);
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
 	pxh->px_sortorder = pxhead.sortOrder;
 	pxh->px_refintegrity = pxhead.refIntegrity;
-	pxh->px_autoinc = get_long_le(&pxhead.autoInc);
+	pxh->px_autoinc = get_long_le((const char *)&pxhead.autoInc);
 
 	/* The theoretical number of records is calculated from the number
 	 * of data blocks and the number of records that fit into a data
@@ -239,56 +240,56 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		        (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
 		        (pxh->px_filetype == pxfFileTypIncSecIndex));
 
-	put_short_le(&pxhead.recordSize, pxh->px_recordsize);
-	put_short_le(&pxhead.headerSize, pxh->px_headersize);
-	put_short_le(&pxhead.fileBlocks, pxh->px_fileblocks);
+	put_short_le((char *)&pxhead.recordSize, pxh->px_recordsize);
+	put_short_le((char *)&pxhead.headerSize, pxh->px_headersize);
+	put_short_le((char *)&pxhead.fileBlocks, pxh->px_fileblocks);
 	/* nextBlock is the number of the next block to use. It is always
 	 * identical to fileBlocks unless, there are empty blocks in the
 	 * file, which will not happen. */
-	put_short_le(&pxhead.nextBlock, pxh->px_fileblocks);
+	put_short_le((char *)&pxhead.nextBlock, pxh->px_fileblocks);
 	/* firstBlock should be zero unless there is at least one data
 	 * block in the file. */
 	if(pxh->px_fileblocks > 0)
-		put_short_le(&pxhead.firstBlock, 1);
+		put_short_le((char *)&pxhead.firstBlock, 1);
 	else
-		put_short_le(&pxhead.firstBlock, 0);
+		put_short_le((char *)&pxhead.firstBlock, 0);
 	/* The last block is similar to nextBlock. If all blocks are filled
 	 * this is identical to fileBlocks. */
-	put_short_le(&pxhead.lastBlock, pxh->px_fileblocks);
-	put_short_le(&pxhead.maxBlocks, pxh->px_fileblocks);
+	put_short_le((char *)&pxhead.lastBlock, pxh->px_fileblocks);
+	put_short_le((char *)&pxhead.maxBlocks, pxh->px_fileblocks);
 	pxhead.fileType = pxh->px_filetype;
-	put_long_le(&pxhead.autoInc, pxh->px_autoinc);
+	put_long_le((char *)&pxhead.autoInc, pxh->px_autoinc);
 	pxhead.maxTableSize = pxh->px_maxtablesize;
-	put_long_le(&pxhead.numRecords, pxh->px_numrecords);
+	put_long_le((char *)&pxhead.numRecords, pxh->px_numrecords);
 	pxhead.writeProtected = pxh->px_writeprotected;
-	put_short_le(&pxhead.numFields, pxh->px_numfields);
+	put_short_le((char *)&pxhead.numFields, pxh->px_numfields);
 	pxhead.indexFieldNumber = pxh->px_indexfieldnumber;
-	put_short_le(&pxhead.indexRoot, pxh->px_indexroot);
+	put_short_le((char *)&pxhead.indexRoot, pxh->px_indexroot);
 	pxhead.numIndexLevels = pxh->px_numindexlevels;
 	switch(pxh->px_filetype) {
 		case pxfFileTypIndexDB:
 			/* The field unknown12x13 is probably the number of changes.
 			 * In several files it was just 12 in .DB and 17 in .PX files. */
-			put_short_le(&pxhead.unknown12x13, 12);
-			put_short_le(&pxhead.primaryKeyFields, pxh->px_primarykeyfields);
-			put_long_le(&pxhead.primaryIndexWorkspace, basehead-100);  /* just to set a value */
-			put_long_le(&pxhead.unknownPtr1A, basehead-500);  /* just to set a value */
+			put_short_le((char *)&pxhead.unknown12x13, 12);
+			put_short_le((char *)&pxhead.primaryKeyFields, pxh->px_primarykeyfields);
+			put_long_le((char *)&pxhead.primaryIndexWorkspace, (int) (basehead-100));  /* just to set a value */
+			put_long_le((char *)&pxhead.unknownPtr1A, (int) (basehead-500));  /* just to set a value */
 			break;
 		case pxfFileTypPrimIndex:
-			put_short_le(&pxhead.unknown12x13, 17);
+			put_short_le((char *)&pxhead.unknown12x13, 17);
 			pxhead.unknown2Bx2C[1] = 102;
 			break;
 		case pxfFileTypNonIncSecIndex:
 		case pxfFileTypIncSecIndex:
 		case pxfFileTypNonIncSecIndexG:
 		case pxfFileTypIncSecIndexG:
-			put_short_le(&pxhead.primaryKeyFields, 2);
+			put_short_le((char *)&pxhead.primaryKeyFields, 2);
 			break;
 	}
 	switch(pxh->px_filetype) {
 		case pxfFileTypIndexDB:
 		case pxfFileTypNonIndexDB:
-			put_long_le(&pxhead.encryption1, 0xFF00FF00);
+			put_long_le((char *)&pxhead.encryption1, 0xFF00FF00);
 			pxhead.unknown3Ex3F[0] = 0x1f; // this seems to be a fixed value
 			pxhead.unknown3Ex3F[1] = 0x0f; // this seems to be a fixed value
 			pxhead.unknown56x57[0] = 0x20;
@@ -304,8 +305,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		dataheadoffset = 0x58;
 	}
 	/* All the pointers, though we probably don't need them for a valid file */
-	put_long_le(&pxhead.fldInfoPtr, basehead+dataheadoffset);
-	put_long_le(&pxhead.tableNamePtrPtr, basehead+dataheadoffset+pxh->px_numfields*2);
+	put_long_le((char *)&pxhead.fldInfoPtr, (int) (basehead+dataheadoffset));
+	put_long_le((char *)&pxhead.tableNamePtrPtr, (int) (basehead+dataheadoffset+pxh->px_numfields*2));
 	switch(pxh->px_fileversion) {
 		case 70:
 			pxhead.fileVersionID = 0x0C;
@@ -327,10 +328,10 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	/* +9 is for sortOrderID and trailing 0 */
 	switch(pxh->px_filetype) {
 		case pxfFileTypPrimIndex:
-			put_short_le(&pxhead.realHeaderSize, dataheadoffset+pxh->px_numfields*2+4+tablenamelen);
+			put_short_le((char *)&pxhead.realHeaderSize, dataheadoffset+pxh->px_numfields*2+4+tablenamelen);
 			break;
 		default:
-			put_short_le(&pxhead.realHeaderSize, dataheadoffset+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+9);
+			put_short_le((char *)&pxhead.realHeaderSize, dataheadoffset+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+9);
 	}
 	/* The datahead is only in .DB and .Xnn files. If it exists the
 	 * common file header will continue at 0x78
@@ -338,12 +339,12 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	if(dataheadoffset == 0x78) {
 		switch(pxh->px_fileversion) {
 			case 70:
-				put_short_le(&pxdatahead.fileVerID3, 0x010C);
-				put_short_le(&pxdatahead.fileVerID4, 0x010C);
+				put_short_le((char *)&pxdatahead.fileVerID3, 0x010C);
+				put_short_le((char *)&pxdatahead.fileVerID4, 0x010C);
 				break;
 			case 50:
-				put_short_le(&pxdatahead.fileVerID3, 0x010B);
-				put_short_le(&pxdatahead.fileVerID4, 0x010B);
+				put_short_le((char *)&pxdatahead.fileVerID3, 0x010B);
+				put_short_le((char *)&pxdatahead.fileVerID4, 0x010B);
 				break;
 		}
 
@@ -354,15 +355,15 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		 * Update: The error has disappeared. Maybe this has been fixed
 		 * when the header size was calculated properly.
 		 */
-		put_long_le(&pxdatahead.encryption2, 0);
-		put_long_le(&pxdatahead.fileUpdateTime, 0x12345678);
+		put_long_le((char *)&pxdatahead.encryption2, 0);
+		put_long_le((char *)&pxdatahead.fileUpdateTime, 0x12345678);
 		dummy = (long) time(NULL);
-		put_long_le(&pxdatahead.fileUpdateTime, dummy);
-		put_short_le(&pxdatahead.hiFieldID, pxh->px_numfields+1);
-		put_short_le(&pxdatahead.hiFieldIDinfo, 0x20+pxh->px_numfields*(2+4)+4+tablenamelen+sumfieldlen);
+		put_long_le((char *)&pxdatahead.fileUpdateTime, dummy);
+		put_short_le((char *)&pxdatahead.hiFieldID, pxh->px_numfields+1);
+		put_short_le((char *)&pxdatahead.hiFieldIDinfo, 0x20+pxh->px_numfields*(2+4)+4+tablenamelen+sumfieldlen);
 		/* +8 is for sortOrderID */
-		put_short_le(&pxdatahead.unknown6Cx6F[2], 0x18+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+8);
-		put_short_le(&pxdatahead.dosCodePage, pxh->px_doscodepage);
+		put_short_le((char *)&pxdatahead.unknown6Cx6F[2], 0x18+pxh->px_numfields*(2+4+2)+4+tablenamelen+sumfieldlen+8);
+		put_short_le((char *)&pxdatahead.dosCodePage, pxh->px_doscodepage);
 		switch(pxh->px_filetype) {
 			case pxfFileTypIndexDB:
 			case pxfFileTypNonIndexDB:
@@ -410,7 +411,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	 * with numfields fields specifications (each 2 Bytes), followed
 	 * by this pointer (tableNamePtr) and numfield pointers to the
 	 * field names. */
-	put_long_le(&ptr, basehead+dataheadoffset+pxh->px_numfields*(2+4)+4);
+	put_long_le((char *)&ptr, (int) (basehead+dataheadoffset+pxh->px_numfields*(2+4)+4));
 	if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write pointer to tablename."));
 		return -1;
@@ -424,7 +425,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		pxf = pxh->px_fields;
 		offset = 0;
 		for(i=0; i<pxh->px_numfields; i++, pxf++) {
-			put_long_le(&ptr, base+offset);
+			put_long_le((char *)&ptr, base+offset);
 			offset += strlen(pxf->px_fname)+1;
 			if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write pointers to field names."));
@@ -472,7 +473,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 
 		/* write fieldNumbers */
 		for(i=0; i<pxh->px_numfields; i++) {
-			put_short_le(&tmp, i+1);
+			put_short_le((char *)&tmp, i+1);
 			if(pxdoc->write(pxdoc, pxs, 2, &tmp) < 1) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write field number %d."), i);
 				return -1;
@@ -574,7 +575,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 			return -1;
 		}
 		/* Goto the block which will be after the new block and read its header. */
-		next = get_short_le((char *) &prevdatablockhead.nextBlock);
+		next = get_short_le((const char *) &prevdatablockhead.nextBlock);
 	} else {
 		next = pxh->px_firstblock;
 	}
@@ -588,10 +589,10 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 	}
 
 	memset(&newdatablockhead, 0, sizeof(TDataBlock));
-	put_short_le(&newdatablockhead.prevBlock, after);
-	put_short_le(&newdatablockhead.nextBlock, next);
+	put_short_le((char *)&newdatablockhead.prevBlock, after);
+	put_short_le((char *)&newdatablockhead.nextBlock, next);
 	/* This block is still empty, so set it to -recordsize */
-	put_short_le(&newdatablockhead.addDataSize, -pxh->px_recordsize);
+	put_short_le((char *)&newdatablockhead.addDataSize, -pxh->px_recordsize);
 //	fprintf(stderr, "Hexdump of new datablock: ");
 //	hex_dump(stderr, &newdatablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
@@ -602,7 +603,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 	}
 
 	/* write an empty block. File pointer is still at right position. */
-	for(i=0; i<pxh->px_maxtablesize*0x400-sizeof(TDataBlock); i++) {
+	for(i=0; i<pxh->px_maxtablesize*0x400-(int)sizeof(TDataBlock); i++) {
 		if(pxdoc->write(pxdoc, pxs, 1, &nullint) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write empty data block."));
 			return -1;
@@ -611,7 +612,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 
 	/* Update the block before the new one */
 	if(after != 0) {
-		put_short_le(&prevdatablockhead.nextBlock, pxh->px_fileblocks+1);
+		put_short_le((char *)&prevdatablockhead.nextBlock, pxh->px_fileblocks+1);
 		if(put_datablock_head(pxdoc, pxs, after, &prevdatablockhead) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not update data block header before new block."));
 			return -1;
@@ -620,7 +621,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 
 	/* Update the block after the new one */
 	if(next != 0) {
-		put_short_le(&nextdatablockhead.prevBlock, pxh->px_fileblocks+1);
+		put_short_le((char *)&nextdatablockhead.prevBlock, pxh->px_fileblocks+1);
 		if(put_datablock_head(pxdoc, pxs, after, &nextdatablockhead) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not update datablock header after new block."));
 			return -1;
@@ -666,7 +667,7 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 //	fprintf(stderr, "Hexdump des neuen datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
-	put_short_le(&datablockhead.addDataSize, n*pxh->px_recordsize);
+	put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
 	if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
 		return -1;
@@ -715,7 +716,7 @@ mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
 		return NULL;
 	}
 
-	mbh->modcount = get_short_le(&mbhead.modcount);
+	mbh->modcount = get_short_le((const char *)&mbhead.modcount);
 	return(mbh);
 }
 /* }}} */
@@ -740,19 +741,19 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 	}
 
 	memset(&mbhead, 0, sizeof(TMbHeader));
-	put_short_le(&mbhead.blocksize, 1);
-	put_short_le(&mbhead.modcount, 1);
+	put_short_le((char *)&mbhead.blocksize, 1);
+	put_short_le((char *)&mbhead.modcount, 1);
 	mbhead.unknown05 = 0x82;
 	mbhead.unknown06 = 0x73;
 	mbhead.unknown07 = 0x02;
 	mbhead.unknown08 = 0x0;
 	mbhead.unknown09 = 0x29;
 	mbhead.unknown0A = 0x0;
-	put_short_le(&mbhead.basesize, 0x1000);
-	put_short_le(&mbhead.subblocksize, 0x1000);
+	put_short_le((char *)&mbhead.basesize, 0x1000);
+	put_short_le((char *)&mbhead.subblocksize, 0x1000);
 	mbhead.subchunksize = 0x10;
-	put_short_le(&mbhead.suballoc, 0x0040);
-	put_short_le(&mbhead.subthresh, 0x0800);
+	put_short_le((char *)&mbhead.suballoc, 0x0040);
+	put_short_le((char *)&mbhead.subthresh, 0x0800);
 	if(pxblob->write(pxdoc, pxs, sizeof(TMbHeader), &mbhead) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write header of paradox file."));
 		return -1;
