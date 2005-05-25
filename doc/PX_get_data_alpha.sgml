@@ -66,7 +66,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Converts a data field as it stored in the database file into
+    <para>Converts a data field as it is stored in the database file into
 		  a string for the given encoding. You must set the target encoding
 			before in order to recode the string. If you do not set the encoding
 			the data will be returned as is. You should use this function
@@ -82,13 +82,14 @@ manpage.1: manpage.sgml
   </refsect1>
   <refsect1>
     <title>RETURN VALUE</title>
-    <para>Returns 0 if the value is NULL, -1 in case of an error and 1
-		  otherwise.</para>
+    <para>Returns 0 if the field data starts with a null byte,
+		  -1 in case of an error and 1 otherwise.</para>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_data_byte(3), PX_get_data_long(3), PX_get_data_short(3), PX_get_data_double(3)</para>
+    <para>PX_get_data_byte(3), PX_get_data_long(3), PX_get_data_short(3),
+		  PX_get_data_double(3), PX_get_data_bcd(3), PX_get_data_blob(3)</para>
 
   </refsect1>
   <refsect1>
