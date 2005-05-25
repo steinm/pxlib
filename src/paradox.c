@@ -344,6 +344,7 @@ PX_open_stream(pxdoc_t *pxdoc, void *stream) {
 	return 0;
 }
 /* }}} */
+
 #if PX_HAVE_GSF
 /* PX_open_gsf() {{{
  * Read from a Paradox DB file, which has already been opened with gsf.
