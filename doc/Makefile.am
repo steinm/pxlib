@@ -12,7 +12,7 @@ pxlib.3: pxlib.sgml
 distclean: clean
 
 clean:
-	rm -f ${man_MANS}
+	rm -f ${man_MANS} ${man_HTMLS}
 
 SGML_FILES = PX_get_majorversion.sgml \
              PX_get_minorversion.sgml \
@@ -75,7 +75,8 @@ SGML_FILES = PX_get_majorversion.sgml \
 
 EXTRA_DIST = ${SGML_FILES} pxformat.txt paradox4.txt pxlib.sgml
 
-man_MANS = $(SGML_FILES:.sgml=.3) pxlib.3 pxlib.html
+man_MANS = $(SGML_FILES:.sgml=.3) pxlib.3
+man_HTMLS = $(SGML_FILES:.sgml=.html) pxlib.html
 
 html: $(SGML_FILES:.sgml=.html) pxlib.html
 
