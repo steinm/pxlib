@@ -1,11 +1,6 @@
 #ifndef __PX_CRYPT_H
 #define __PX_CRYPT_H 1
 
-int px_crypt_db_fread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer);
-int px_crypt_mb_fread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer);
-long px_crypt_db_fwrite(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer);
-long px_crypt_mb_fwrite(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer);
-
 static void px_encrypt_chunk(unsigned char src[256], unsigned char dst[256],
                              unsigned char a, unsigned char b,
                              unsigned char c, unsigned char d);
