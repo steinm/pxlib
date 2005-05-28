@@ -132,6 +132,11 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	pxh->px_refintegrity = pxhead.refIntegrity;
 	pxh->px_autoinc = get_long_le((const char *)&pxhead.autoInc);
 
+	pxh->px_encryption = get_long_le(&pxhead.encryption1);
+	if (pxh->px_encryption == 0xFF00FF00) {
+		pxh->px_encryption = get_long_le(&pxdatahead.encryption2);
+	}
+
 	/* The theoretical number of records is calculated from the number
 	 * of data blocks and the number of records that fit into a data
 	 * block. The 'TDataBlock' is decreasing the available space of the data

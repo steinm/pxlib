@@ -119,6 +119,7 @@ struct px_head {
 	int px_autoinc;
 	int px_fileupdatetime;
 	char px_refintegrity;
+	unsigned long px_encryption;
 	struct px_field *px_fields;
 };
 
