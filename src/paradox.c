@@ -42,6 +42,7 @@
 #include "px_error.h"
 #include "px_misc.h"
 #include "px_encode.h"
+#include "px_crypt.h"
 
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
