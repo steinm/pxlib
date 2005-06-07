@@ -713,9 +713,9 @@ mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
 		return NULL;
 	}
-	if(pxblob->seek(pxdoc, pxs, 0, SEEK_SET) < 0)
+	if(pxblob->seek(pxblob, pxs, 0, SEEK_SET) < 0)
 		return NULL;
-	if((ret = pxblob->read(pxdoc, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
+	if((ret = pxblob->read(pxblob, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, mbh);
 		return NULL;
@@ -740,7 +740,7 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 		return(-1);
 	}
 
-	if(pxblob->seek(pxdoc, pxs, 0, SEEK_SET) < 0) {
+	if(pxblob->seek(pxblob, pxs, 0, SEEK_SET) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining paradox file."));
 		return -1;
 	}
@@ -759,14 +759,14 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 	mbhead.subchunksize = 0x10;
 	put_short_le((char *)&mbhead.suballoc, 0x0040);
 	put_short_le((char *)&mbhead.subthresh, 0x0800);
-	if(pxblob->write(pxdoc, pxs, sizeof(TMbHeader), &mbhead) < 1) {
+	if(pxblob->write(pxblob, pxs, sizeof(TMbHeader), &mbhead) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write header of paradox file."));
 		return -1;
 	}
 
 	/* write zeros to fill space of first block */
 	for(i=0; i<4096-sizeof(TMbHeader); i++) {
-		if(pxblob->write(pxdoc, pxs, 1, &nullint) < 1) {
+		if(pxblob->write(pxblob, pxs, 1, &nullint) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write remaining blob file header."));
 			return -1;
 		}
