@@ -144,9 +144,9 @@ static void px_encrypt_chunk(unsigned char src[256], unsigned char dst[256],
 
 /* px_encrypt_db_block(src, dest, encryption, blocksize, blockno) {{{
  */
-static void px_encrypt_db_block(unsigned char *src, unsigned char *dest,
-                                unsigned long encryption, unsigned long blocksize,
-                                unsigned long blockno)
+void px_encrypt_db_block(unsigned char *src, unsigned char *dest,
+                         unsigned long encryption, unsigned long blocksize,
+                         unsigned long blockno)
 {
 	unsigned int chunk;
 	unsigned char a,b;
@@ -163,8 +163,8 @@ static void px_encrypt_db_block(unsigned char *src, unsigned char *dest,
 
 /* px_encrypt_mb_block(src, dest, encryption, blocksize) {{{
  */
-static void px_encrypt_mb_block(unsigned char *src, unsigned char *dest,
-                                unsigned long encryption, unsigned long blocksize)
+void px_encrypt_mb_block(unsigned char *src, unsigned char *dest,
+                         unsigned long encryption, unsigned long blocksize)
 {
 	unsigned int chunk;
 	unsigned char a,b;
@@ -202,9 +202,9 @@ static void px_decrypt_chunk(unsigned char src[256], unsigned char dst[256],
 
 /* px_decrypt_db_block(src, dest, encryption, blocksize, blockno) {{{
  */
-static void px_decrypt_db_block(unsigned char *src, unsigned char *dest,
-                                unsigned long encryption, unsigned long blocksize,
-                                unsigned long blockno)
+void px_decrypt_db_block(unsigned char *src, unsigned char *dest,
+                         unsigned long encryption, unsigned long blocksize,
+                         unsigned long blockno)
 {
 	unsigned int chunk;
 	unsigned char a,b;
@@ -221,8 +221,8 @@ static void px_decrypt_db_block(unsigned char *src, unsigned char *dest,
 
 /* px_decrypt_mb_block(src, dest, encryption, blocksize) {{{
  */
-static void px_decrypt_mb_block(unsigned char *src, unsigned char *dest,
-                                unsigned long encryption, unsigned long blocksize)
+void px_decrypt_mb_block(unsigned char *src, unsigned char *dest,
+                         unsigned long encryption, unsigned long blocksize)
 {
 	unsigned int chunk;
 	unsigned char a,b;
