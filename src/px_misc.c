@@ -292,8 +292,12 @@ void hex_dump(FILE *outfp, char *p, int len) {
 	if(NULL == p)
 		fprintf(outfp, "NULL");
 
-	for(i=0; i<len; i++)
+	for(i=0; i<len; i++) {
+		if(i%16 == 0)
+			fprintf(outfp, "\n%08X: ", &p[i]);
 		fprintf(outfp, "%02X ", p[i]);
+	}
+	fprintf(outfp, "\n");
 }
 
 /*
