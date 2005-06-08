@@ -749,6 +749,16 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
 			return -1;
 		}
+	} else if(strcmp(name, "password") == 0) {
+		pxdoc->px_head->px_encryption = px_passwd_checksum(value);
+		if(pxdoc->px_stream->mode & pxfFileWrite) {
+			if(put_px_head(pxdoc, pxdoc->px_head, pxdoc->px_stream) < 0) {
+				return -1;
+			}
+		} else {
+			px_error(pxdoc, PX_Warning, _("File is not writable. Setting '%s' has no effect."), name);
+			return -1;
+		}
 	} else if(strcmp(name, "targetencoding") == 0) {
 		int codepage;
 #if PX_USE_RECODE || PX_USE_ICONV
