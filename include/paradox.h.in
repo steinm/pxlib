@@ -119,8 +119,8 @@ struct px_head {
 	int px_autoinc;
 	int px_fileupdatetime;
 	char px_refintegrity;
-	unsigned long px_encryption;
 	struct px_field *px_fields;
+	unsigned long px_encryption;
 };
 
 typedef struct px_doc pxdoc_t;
@@ -144,10 +144,10 @@ struct px_stream {
 		GsfOutput *gsfout;
 #endif
 	} s;
-	char * (*read)(pxdoc_t *p, void *stream, size_t numbytes, void *buffer);
-	size_t (*seek)(pxdoc_t *p, void *stream, size_t offset, int whence);
-	size_t (*tell)(pxdoc_t *p, void *stream);
-	size_t (*write)(pxdoc_t *p, void *stream, const char *buffer, size_t numbytes);
+	size_t (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
+	long (*tell)(pxdoc_t *p, pxstream_t *stream);
+	size_t (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 };
 
 struct px_doc {
@@ -192,10 +192,10 @@ struct px_doc {
 	void  (*free)(pxdoc_t *p, void *mem);
 
 	/* input stream functions */
-	int (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	size_t (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
 	long (*tell)(pxdoc_t *p, pxstream_t *stream);
-	long (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	size_t (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 
 	char *targetencoding;
 	char *inputencoding;
@@ -209,6 +209,10 @@ struct px_doc {
 	iconv_t in_iconvcd;   /* Encoding of read data */
 #endif
 #endif
+
+	long curblocknr;      /* Number of current block in cache (0-n) */
+	int curblockdirty;    /* Set to px_true if the block needs to be written */
+	char *curblock;       /* Data of block in read cache */
 };
 
 struct px_blob {
@@ -222,10 +226,10 @@ struct px_blob {
 	int subblockfree;
 	int subblockblobcount;
 	/* input stream functions */
-	int (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
-	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
-	long (*tell)(pxdoc_t *p, pxstream_t *stream);
-	long (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	size_t (*read)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	int (*seek)(pxblob_t *p, pxstream_t *stream, long offset, int whence);
+	long (*tell)(pxblob_t *p, pxstream_t *stream);
+	size_t (*write)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 };
 
 struct mb_head {
