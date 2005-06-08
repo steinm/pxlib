@@ -360,7 +360,10 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		 * Update: The error has disappeared. Maybe this has been fixed
 		 * when the header size was calculated properly.
 		 */
-		put_long_le((char *)&pxdatahead.encryption2, 0);
+		if(pxh->px_encryption)
+			put_long_le((char *)&pxdatahead.encryption2, pxh->px_encryption);
+		else
+			put_long_le((char *)&pxdatahead.encryption2, 0);
 		put_long_le((char *)&pxdatahead.fileUpdateTime, 0x12345678);
 		dummy = (long) time(NULL);
 		put_long_le((char *)&pxdatahead.fileUpdateTime, dummy);
