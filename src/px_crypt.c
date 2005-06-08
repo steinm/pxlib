@@ -237,6 +237,75 @@ void px_decrypt_mb_block(unsigned char *src, unsigned char *dest,
 }
 /* }}} */
 
+
+/* px_encrypt_chunk2() {{{
+ */
+static void px_encrypt_chunk2(unsigned char src[256], unsigned char dst[256],
+                       int lenpassw) {
+	unsigned char tmp[256];
+	register int i, x, y;
+	memcpy(tmp, src, 256);
+	for(i=lenpassw; i<256; i++) {
+		x = tmp[i-lenpassw];
+		y = encryption_table_a[x] ^ i;
+		tmp[i] = y;
+	}
+	memcpy(dst, tmp, 256);
+}
+/* }}} */
+
+/* makeLongFromBuff() {{{
+ */
+static long makeLongFromBuff(long partial, unsigned char buff[256]) {
+	long i, x, y, z, result;
+	i = 0;
+	y = 0;
+	z = 0;
+	while(i <= 255) {
+		x = buff[i];
+		y = y ^ x;
+		i++;
+		x = buff[i];
+		z = z ^ x;
+		i++;
+	}
+	result = (z << 8) | y;
+	if(result == 0) result = 1;
+	result = (result << 16) | partial;
+	return(result);
+}
+/* }}} */
+
+/* px_passwd_checksum() {{{
+ *
+ * Calculates the checksum as it is stored in the header field encryption
+ * or encryption2 of the db file.
+ */
+long px_passwd_checksum(const char *aPsw) {
+	unsigned char buff[256];
+	long i, len, count, partial, x, y, result;
+
+	if(aPsw == NULL || aPsw[0] == '\0')
+		return 0;
+	len = strlen(aPsw);
+	count = 256;
+	while(count >= len) {
+		memcpy(&buff[256-count], aPsw, len);
+		count -= len;
+	}
+	if(count > 0)
+		memcpy(&buff[256-count], aPsw, count);
+	px_encrypt_chunk(buff, buff, buff[0], buff[1], buff[2], buff[3]);
+	x = buff[0];
+	y = buff[1];
+	partial = (y << 8) + x;
+	memcpy(buff, aPsw, len);
+	px_encrypt_chunk2(buff, buff, len);
+	px_encrypt_chunk(buff, buff, buff[0], buff[20], buff[40], buff[255]);
+	return(makeLongFromBuff(partial, buff));
+}
+/* }}} */
+
 /*
  * Local variables:
  * tab-width: 4
