@@ -79,6 +79,8 @@ manpage.1: manpage.sgml
 
     <para>Programs which want to use pxlib will have to include the
 		  header file <literal>paradox.h</literal> and link against libpx.
+			If the libgsf file access is to be used <literal>paradox-gsf.h</literal>
+			has to be included instead of <literal>paradox.h</literal>.
 			Before reading or writing a
 			database file the library should be initialized with
 			<function>PX_boot(3)</function>. It will set the locale and selects
@@ -126,6 +128,12 @@ struct px_head {
   struct px_field *px_fields;
 };
 	  </programlisting>
+		<para>The structure is defined in <literal>paradox.h</literal> and can be
+			directly
+		  accessed, thought it is not encouraged at all, because the structure will
+			disappear in the future. Most header values can already be read with
+			<function>PX_get_value(3)</function> or
+			<function>PX_get_parameter(3)</function>.</para>
 		<para>The following example will do the basic
 			preparation without creating nor opening a document on the disk.</para>
 	  <programlisting>
@@ -183,6 +191,8 @@ main(int argc, char *argv[]) {
 		<para>The database has to be closed with <function>PX_close(3)</function>.
 			<function>PX_close(3)</function> will only close the file if it
 			was opened by <function>PX_open_file(3)</function>.
+			<function>PX_close(3)</function>
+			is crucial because it also flushes unwritten blocks to disk.
 			</para>
 		<para>There are more sophisticated functions to open a Paradox database.
 		  They are used when error handling and memory management
@@ -265,6 +275,8 @@ struct px_field {
 			when `recordsize' is passed as the value name. The record will read into
 			that piece of memory straight from the database file without
 			modifications.</para>
+		<para>Paradox files can be encrypted. pxlib will automatically decrypt
+		  a file while reading without the need to supply a password.</para>
 		<para>
 			Once the record data has been read it can be accessed with a number of
 			different functions depending on the field type. The following
@@ -802,6 +814,25 @@ main(int argc, char *argv[]) {
 			pointer to that widget can be passed as
 			<parameter>errorhandler_user_data</parameter> and pxlib will pass it
 			forward to the error handler.</para>
+
+  </refsect1>
+  <refsect1>
+    <title>ENCRYPTION</title>
+
+    <para>Paradox supports a very weak encryption of the data blocks. The
+		  headers are not encrypted. Encryption is accomplished by three
+			static tables with 256 bytes each and a long integer generated
+			from a password. The integer is called the checksum of the password.
+			The checksum is stored in the header of the .db file which makes
+			it feasable to decrypt a file even without knowing the password.
+			pxlib reads encrypted files silently without asking for additional
+			information. Writing an encrypted file requires to supply a password
+			for calculating the checksum. The password can be set with
+			<function>PX_set_paramter(3)</function>. Once it is set, encryption
+			is automatically turned on. The password must be set before writing
+			any records. The best place to do this, is right after calling
+			<function>PX_create_file(3)</function> or
+			<function>PX_create_fp(3)</function>.</para>
 
   </refsect1>
   <refsect1>
