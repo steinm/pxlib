@@ -104,7 +104,7 @@ size_t px_read(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 			return(0);
 		}
 		if(p->curblock == NULL) {
-			fprintf(stderr, "Allocate memory for cache block.\n");
+//			fprintf(stderr, "Allocate memory for cache block.\n");
 			p->curblock = p->malloc(p, blocksize, _("Allocate memory for block cache."));
 			if(p->curblock == NULL) {
 				return(0);
@@ -112,12 +112,12 @@ size_t px_read(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 			
 		}
 		if(p->curblocknr != blocknr) {
-			fprintf(stderr, "Read block %d into cache.\n", blocknr);
+//			fprintf(stderr, "Read block %d into cache.\n", blocknr);
 			pxs->seek(p, pxs, pxh->px_headersize + ((blocknr-1)*blocksize), SEEK_SET);
 			pxs->read(p, pxs, blocksize, p->curblock);
 			p->curblocknr = blocknr;
 			if(pxh->px_encryption != 0) {
-				fprintf(stderr, "Decrypting block %d\n", blocknr);
+//				fprintf(stderr, "Decrypting block %d\n", blocknr);
 				px_decrypt_db_block(p->curblock, p->curblock, pxh->px_encryption, blocksize, blocknr);
 			}
 		} else {
@@ -168,7 +168,7 @@ size_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 			return(0);
 		}
 		if(p->curblock == NULL) {
-			fprintf(stderr, "Allocate memory for cache block.\n");
+//			fprintf(stderr, "Allocate memory for cache block.\n");
 			p->curblock = p->malloc(p, blocksize, _("Allocate memory for block cache."));
 			if(p->curblock == NULL) {
 				return(0);
@@ -179,18 +179,18 @@ size_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		 * modifies a block.
 		 */
 		if(p->curblocknr != blocknr && p->curblocknr != 0) {
-			fprintf(stderr, "Write block %d from cache into file.\n", p->curblocknr);
+//			fprintf(stderr, "Write block %d from cache into file.\n", p->curblocknr);
 			pxs->seek(p, pxs, pxh->px_headersize + ((p->curblocknr-1)*blocksize), SEEK_SET);
 			if(pxh->px_encryption != 0) {
-				fprintf(stderr, "Encrypting block %d\n", p->curblocknr);
+//				fprintf(stderr, "Encrypting block %d\n", p->curblocknr);
 				px_encrypt_db_block(p->curblock, p->curblock, pxh->px_encryption, blocksize, p->curblocknr);
 			}
 			pxs->write(p, pxs, blocksize, p->curblock);
-			p->curblocknr = blocknr;
 			memset(p->curblock, 0, blocksize);
 		} else {
 //			fprintf(stderr, "block %d already in cache.\n", blocknr);
 		}
+		p->curblocknr = blocknr;
 		p->curblockdirty = px_true;
 		memcpy(p->curblock+blockpos, buffer, len);
 		pxs->seek(p, pxs, curpos+len, SEEK_SET);
@@ -214,10 +214,10 @@ int px_flush(pxdoc_t *p, pxstream_t *dummy) {
 	if(pxh != NULL) {
 		blocksize = pxh->px_maxtablesize * 0x400;
 		if(p->curblockdirty) {
-			fprintf(stderr, "Write block %d from cache into file.\n", p->curblocknr);
+//			fprintf(stderr, "Write block %d from cache into file.\n", p->curblocknr);
 			pxs->seek(p, pxs, pxh->px_headersize + ((p->curblocknr-1)*blocksize), SEEK_SET);
 			if(pxh->px_encryption != 0) {
-				fprintf(stderr, "Encrypting block %d\n", p->curblocknr);
+//				fprintf(stderr, "Encrypting block %d\n", p->curblocknr);
 				px_encrypt_db_block(p->curblock, p->curblock, pxh->px_encryption, blocksize, p->curblocknr);
 			}
 			pxs->write(p, pxs, blocksize, p->curblock);
