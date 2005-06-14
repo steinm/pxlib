@@ -3104,7 +3104,7 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 
 		}
 	}
-	if(NULL == (str = pxdoc->malloc(pxdoc, size, _("Allocate memory for timestamp string.")))) {
+	if(NULL == (str = pxdoc->malloc(pxdoc, size+1, _("Allocate memory for timestamp string.")))) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for timestamp string."));
 		return NULL;
 	}
