@@ -29,6 +29,8 @@ configure-stamp:
 	# Add here commands to configure the package.
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info --with-gsf=/usr
 	touch configure-stamp
+	# generate POT file for translators
+	cd po; /usr/bin/intltool-update -p --verbose
 
 build: build-stamp
 
@@ -43,6 +45,7 @@ build-stamp:  configure-stamp
 clean:
 	dh_testdir
 	dh_testroot
+	rm -f po/pxlib.pot
 	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
@@ -96,7 +99,7 @@ binary-arch: build install
 	dh_fixperms
 #	dh_perl
 #	d_python
-	dh_makeshlibs -V 'pxlib1 (>= 0.4.3)'
+	dh_makeshlibs -V 'pxlib1 (>= 0.5.0)'
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
