@@ -390,7 +390,7 @@ msgstr "Versuch BLOB-Daten von einem 'free'-Block zu lesen."
 #: ../src/paradox.c:2173 ../src/paradox.c:2592
 msgid "Offset points to a single blob block but index field is not 0xff."
 msgstr ""
-"Offset zeigt auf auf einen 'single blob' Block, aber Index hat nicht den "
+"Offset zeigt auf einen 'single blob' Block, aber Index hat nicht den "
 "Wert 0xff."
 
 #: ../src/paradox.c:2178 ../src/paradox.c:2598
