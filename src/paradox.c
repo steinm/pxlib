@@ -503,6 +503,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	if(type == pxfFileTypPrimIndex)
 		pxh->px_autoinc = 1;
 	pxh->px_sortorder = 0x62;
+	pxh->px_encryption = 0;
 
 	/* Calculate record size and get an idea on how big the header might
 	 * get due to the fieldnames, which is the major none fixed size. */
