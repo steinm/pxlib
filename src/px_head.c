@@ -1,5 +1,6 @@
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
@@ -33,6 +34,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
 		return NULL;
 	}
+	memset(pxh, 0, sizeof(pxhead_t));
 	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0)
 		return NULL;
 	if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxHeader), &pxhead)) < 0) {
