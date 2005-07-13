@@ -212,7 +212,7 @@ struct px_doc {
 
 	long curblocknr;      /* Number of current block in cache (0-n) */
 	int curblockdirty;    /* Set to px_true if the block needs to be written */
-	char *curblock;       /* Data of block in read cache */
+	unsigned char *curblock;       /* Data of block in read cache */
 };
 
 struct px_blob {
