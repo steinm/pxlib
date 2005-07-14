@@ -1,3 +1,6 @@
+Version 0.5.0
+	- support for encrypted databases and blob files
+
 Version 0.4.4
 	- PX_get_data_alpha() may now return strings which are longer than
 	  the database field (e.g. when converting to a multibyte string)

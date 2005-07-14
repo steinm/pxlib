@@ -1,3 +1,11 @@
+pxlib (0.5.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * created POT file for translator (Closes: #313531)
+  * fixed bug in de.po (Closes: #313932)
+
+ -- Uwe Steinmann <steinm@debian.org>  Thu, 14 Jul 2005 10:09:23 +0200
+
 pxlib (0.4.4-2) unstable; urgency=low
 
   * Fixed wrong build dependency.
