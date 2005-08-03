@@ -2951,7 +2951,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			pxblob->used_datablocks += used_blocks;
 		} else { /* Block of type 3 */
 			TMbBlockHeader3Table mbbhtab;
-			fprintf(stderr, "Blob goes into type 3 block\n");
+//			fprintf(stderr, "Blob goes into type 3 block\n");
 			/* Do we have subblock already? Does the block has enough space? */
 			if(pxblob->subblockoffset == 0 || ((pxblob->subblockfree*16) < valuelen)) {
 				TMbBlockHeader3 mbbh;
