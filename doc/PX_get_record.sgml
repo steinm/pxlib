@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2003-2005</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
