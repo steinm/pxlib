@@ -351,7 +351,13 @@ size_t px_mb_write(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 	}
 
 	blockoffset = (pos >> 12) << 12;
-	blockslen = (((len - 1) >> 12) + 1) << 12;
+	/* Make sure all blocks covered by the blob are read. Keep
+	 * in mind that even a block with 4096-3 bytes covers two
+	 * blocks, because the first block starts with a header and
+	 * the blob data actually ends in the second block at offset
+	 * headersize-3. This is only true for type 2 blocks.
+	 */
+	blockslen = (((len + (pos - blockoffset)) >> 12) + 1) << 12;
 
 	assert(blockslen >= len);
 	assert(blockoffset <= (unsigned long)pos);
