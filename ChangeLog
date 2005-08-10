@@ -1,3 +1,8 @@
+Version 0.5.1
+	- fixes bug when reading blobs of a certain size from an encrypted
+	  .mb file.
+	- reading and writing encrypted blob files is more efficient.
+
 Version 0.5.0
 	- support for encrypted databases and blob files
 
