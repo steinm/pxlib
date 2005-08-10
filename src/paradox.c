@@ -3120,7 +3120,7 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 					strcat(str, ch);
 				}
 			case 'Y':		/* year, numeric, 4 digits */
-				sprintf(tmp_buff, "%d", ta.tm_year);  /* SAFE */
+				sprintf(tmp_buff, "%04d", ta.tm_year);  /* SAFE */
 				strcat(str, tmp_buff);
 				break;
 			case 'z':		/* day (of the year) */
