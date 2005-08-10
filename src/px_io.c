@@ -255,6 +255,7 @@ int px_flush(pxdoc_t *p, pxstream_t *dummy) {
  * It calls the read function from px_stream_t to actually get the
  * file data.
  */
+#define BLOCKSIZEEXP 8 /* Each encrypted block has 2^BLOCKSIZEEXP bytes */
 size_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 	pxdoc_t *pxdoc;
 	pxhead_t *pxh;
@@ -276,8 +277,23 @@ size_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		return pos;
 	}
 
-	blockoffset = (pos >> 12) << 12;
-	blockslen = (((len - 1) >> 12) + 1) << 12;
+	/* pos can be in the middle of a 2^BLOCKSIZEEXP bytes block.
+	 * Make sure we start reading at the beginning of the block.
+	 */
+	blockoffset = (pos >> BLOCKSIZEEXP) << BLOCKSIZEEXP;
+	/* We need to read at least chunk from the blockoffset till the
+	 * desired postion and the data itself which has len bytes.
+	 * e.g. if we want to read 20 bytes starting at position 300 in the
+	 * file, we will need to read 44+20 bytes starting at position 256. 
+	 */
+	blockslen = len + pos - blockoffset;
+	/* Check if the end of the data is within a 2^BLOCKSIZEEXP bytes block.
+	 * If that is the case, we will need to read the remainder of the
+	 * 2^BLOCKSIZEEXP bytes block as well. In the above example, we
+	 * will have to read 256 bytes instead of just 64.
+	 */
+	if(blockslen & 0xff)
+		blockslen = ((blockslen >> BLOCKSIZEEXP) + 1) << BLOCKSIZEEXP;
 
 	assert(blockslen >= len);
 	assert(blockoffset <= (unsigned long)pos);
@@ -294,7 +310,7 @@ size_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 	}
 
 	ret = pxs->read(pxdoc, pxs, blockslen, tmpbuf);
-	if (ret < 0) {
+	if (ret <= 0) {
 		free(tmpbuf);
 		return ret;
 	}
@@ -350,14 +366,20 @@ size_t px_mb_write(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		return pos;
 	}
 
-	blockoffset = (pos >> 12) << 12;
-	/* Make sure all blocks covered by the blob are read. Keep
-	 * in mind that even a block with 4096-3 bytes covers two
-	 * blocks, because the first block starts with a header and
-	 * the blob data actually ends in the second block at offset
-	 * headersize-3. This is only true for type 2 blocks.
+	blockoffset = (pos >> BLOCKSIZEEXP) << BLOCKSIZEEXP;
+	/* We need to read at least chunk from the blockoffset till the
+	 * desired postion and the data itself which has len bytes.
+	 * e.g. if we want to read 20 bytes starting at position 300 in the
+	 * file, we will need to read 44+20 bytes starting at position 256. 
 	 */
-	blockslen = (((len + (pos - blockoffset)) >> 12) + 1) << 12;
+	blockslen = len + pos - blockoffset;
+	/* Check if the end of the data is within a 2^BLOCKSIZEEXP bytes block.
+	 * If that is the case, we will need to read the remainder of the
+	 * 2^BLOCKSIZEEXP bytes block as well. In the above example, we
+	 * will have to read 256 bytes instead of just 64.
+	 */
+	if(blockslen & 0xff)
+		blockslen = ((blockslen >> BLOCKSIZEEXP) + 1) << BLOCKSIZEEXP;
 
 	assert(blockslen >= len);
 	assert(blockoffset <= (unsigned long)pos);
@@ -407,7 +429,7 @@ end:
 /* px_fread() {{{
  */
 size_t px_fread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
-	return(fread(buffer, len, 1, stream->s.fp));
+	return(fread(buffer, 1, len, stream->s.fp));
 }
 /* }}} */
 
@@ -428,7 +450,7 @@ long px_ftell(pxdoc_t *p, pxstream_t *stream) {
 /* px_fwrite() {{{
  */
 size_t px_fwrite(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
-	return(fwrite(buffer, len, 1, stream->s.fp));
+	return(fwrite(buffer, 1, len, stream->s.fp));
 }
 /* }}} */
 
