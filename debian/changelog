@@ -2,7 +2,7 @@ pxlib (0.5.1-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Uwe Steinmann <steinm@debian.org>  Thu, 14 Jul 2005 10:09:23 +0200
+ -- Uwe Steinmann <steinm@debian.org>  Thu, 11 Aug 2005 08:49:44 +0200
 
 pxlib (0.5.0-1) unstable; urgency=low
 
@@ -192,7 +192,7 @@ pxlib (0.0.6-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Uwe Steinmann <uwe@steinmann.cx>  Fre, 18 Jul 2003 13:17:29 +0200
+ -- Uwe Steinmann <uwe@steinmann.cx>  Fri, 18 Jul 2003 13:17:29 +0200
 
 pxlib (0.0.5-1) unstable; urgency=low
 
