@@ -1,4 +1,5 @@
 Version 0.5.1
+	- fixed bug when reading header of blob (Thanks to Giovanni Giacobbi)
 	- fixes bug when reading blobs of a certain size from an encrypted
 	  .mb file.
 	- reading and writing encrypted blob files is more efficient.
