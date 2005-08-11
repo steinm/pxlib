@@ -2510,7 +2510,7 @@ static int
 _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod, int *blobsize, char **value) {
 	int ret;
 	char *blobdata = NULL;
-	char head[20];
+	unsigned char head[20];
 	pxblob_t *pxblob = pxdoc->px_blob;
 	size_t size, offset, mod_nr, index;
 	int leader = len - 10;
