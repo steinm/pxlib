@@ -2,3 +2,4 @@ src/paradox.c
 src/px_head.c
 src/px_memprof.c
 src/px_memory.c
+src/px_io.c
