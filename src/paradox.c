@@ -1,5 +1,5 @@
 /*
- *    (c) Copyright 2003  Uwe Steinmann.
+ *    (c) Copyright 2003-2005  Uwe Steinmann.
  *    All rights reserved.
  *
  *    This library is free software; you can redistribute it and/or
@@ -271,6 +271,10 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	 * Nevertheless the internal index entry has a field level, which
 	 * is currently always set to 1.
 	 */
+	/* free an existing index before creating a new one */
+	if(pxdoc->px_indexdata) {
+		pxdoc->free(pxdoc, pxdoc->px_indexdata);
+	}
 	/* Allocate memory for internal list of index entries */
 	if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
@@ -305,7 +309,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 
 
 /* PX_open_stream() {{{
- * Read from a Paradox DB file, which has an already open.
+ * Read from a Paradox DB file, which has an already open stream.
  */
 PXLIB_API int PXLIB_CALL
 PX_open_stream(pxdoc_t *pxdoc, void *stream) {
@@ -421,6 +425,7 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to get header."));
 		return -1;
 	}
+	pxdoc->last_position = pxdoc->px_head->px_numrecords-1;
 
 	/* Build primary index. This index misses all index blocks with a level
 	 * greater than 1. Since they are not used currently this is of no harm.
@@ -449,7 +454,7 @@ PX_open_file(pxdoc_t *pxdoc, const char *filename) {
 		return -1;
 	}
 
-	if((fp = fopen(filename, "r")) == NULL) {
+	if((fp = fopen(filename, "r+")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database."));
 		return -1;
 	}
@@ -1078,10 +1083,11 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 		return -1;
 	}
 
-	if(NULL == pxdoc->px_indexdata)
+	if(NULL == pxdoc->px_indexdata) {
 		if(build_primary_index(pxdoc) < 0) {
 			return -1;
 		}
+	}
 	indexdata = pxdoc->px_indexdata;
 	indexdatalen = pxdoc->px_indexdatalen;
 
@@ -1392,6 +1398,8 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 	pxhead_t *pxh;
 	int recsperdatablock, datablocknr, recdatablocknr;
 	int itmp;
+	int update; /* Will be set by px_add_data_to_block() if an existing
+				   record is updated */
 
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
@@ -1443,7 +1451,7 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 	}
 
 	/* write data */
-	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, data, pxdoc->px_stream);
+	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, recdatablocknr, data, pxdoc->px_stream, &update);
 
 	/* The record number within the data block must be the same
 	 * as the calculated one.
@@ -1457,9 +1465,15 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 		px_error(pxdoc, PX_Warning, _("Position of record has been recalculated. Requested position was %d, new position is %d."), recpos, (datablocknr-1) * recsperdatablock + itmp);
 	}
 
-	/* Update header */
-	pxh->px_numrecords++;
-	pxdoc->last_position = (datablocknr-1) * recsperdatablock + itmp;
+	/* Update header:
+	 * Modify the last_postion only if a record was added at the end.
+	 * increment the record count only if a record was added not updated */
+	if(recpos >= pxh->px_numrecords) {
+		pxdoc->last_position = (datablocknr-1) * recsperdatablock + itmp;
+	}
+	if(update == 0) {
+		pxh->px_numrecords++;
+	}
 
 	put_px_head(pxdoc, pxh, pxdoc->px_stream);
 	return(pxdoc->last_position+1);
@@ -1988,6 +2002,8 @@ PX_close_blob(pxblob_t *pxblob) {
 PXLIB_API void PXLIB_CALL
 PX_delete_blob(pxblob_t *pxblob) {
 	PX_close_blob(pxblob);
+	if(pxblob->blockcache.data)
+		pxblob->pxdoc->free(pxblob->pxdoc, pxblob->blockcache.data);
 	pxblob->pxdoc->free(pxblob->pxdoc, pxblob);
 }
 /* }}} */
