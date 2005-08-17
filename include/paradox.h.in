@@ -283,6 +283,9 @@ PX_has_gsf_support(void);
 PXLIB_API int PXLIB_CALL
 PX_is_bigendian(void);
 
+PXLIB_API char * PXLIB_CALL
+PX_get_builddate(void);
+
 PXLIB_API void PXLIB_CALL
 PX_boot(void);
 
@@ -340,6 +343,9 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos);
 
 PXLIB_API int PXLIB_CALL
 PX_put_record(pxdoc_t *pxdoc, char *data);
+
+PXLIB_API int PXLIB_CALL
+PX_delete_record(pxdoc_t *pxdoc, int recno);
 
 PXLIB_API void PXLIB_CALL
 PX_close(pxdoc_t *pxdoc);

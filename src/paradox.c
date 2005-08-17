@@ -108,6 +108,14 @@ PX_is_bigendian(void) {
 }
 /* }}} */
 
+/* PX_get_builddate() {{{
+ */
+PXLIB_API char * PXLIB_CALL
+PX_get_builddate(void) {
+	return(PXLIB_BUILD_DATE);
+}
+/* }}} */
+
 /* PX_boot() {{{
  * Make some initial preparations for the whole library, e.g. set text domain.
  */
@@ -1488,6 +1496,60 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 PXLIB_API int PXLIB_CALL
 PX_put_record(pxdoc_t *pxdoc, char *data) {
 	return(PX_put_recordn(pxdoc, data, pxdoc->last_position+1));
+}
+/* }}} */
+
+/* PX_delete_record() {{{
+ * Deletes a record into the paradox file.
+ */
+PXLIB_API int PXLIB_CALL
+PX_delete_record(pxdoc_t *pxdoc, int recno) {
+	pxhead_t *pxh;
+	pxdatablockinfo_t tmppxdbinfo;
+	int found;
+	int deleted = 0;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
+		return -1;
+	}
+	pxh = pxdoc->px_head;
+
+	if((recno < 0) ||
+	   (pxdoc->px_pindex && (recno >= pxh->px_numrecords))) {
+		px_error(pxdoc, PX_RuntimeError, _("Record number out of range."));
+		return -1;
+	}
+
+	if(pxdoc->px_indexdata)
+		found = px_get_record_pos_with_index(pxdoc, recno, &deleted, &tmppxdbinfo);
+	else
+		found = px_get_record_pos(pxdoc, recno, &deleted, &tmppxdbinfo);
+
+	if(found) {
+		int datablocknr;
+		int ret;
+
+		/* We need to calculate the physical block number. tmppxdbinfo.number
+		 * contains the logical number of the block as stored in the header of
+		 * each block.
+		 */
+		datablocknr = ((tmppxdbinfo.blockpos - pxh->px_headersize) / (pxh->px_maxtablesize*0x400)) + 1;
+		ret = px_delete_data_from_block(pxdoc, pxh, datablocknr, tmppxdbinfo.recno, pxdoc->px_stream);
+		if(ret >= 0) {
+			pxh->px_numrecords--;
+			put_px_head(pxdoc, pxh, pxdoc->px_stream);
+		}
+		return(ret);
+	} else {
+		px_error(pxdoc, PX_RuntimeError, _("Could not find record for deletion."));
+		return -1;
+	}
 }
 /* }}} */
 
