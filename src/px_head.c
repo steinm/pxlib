@@ -655,10 +655,24 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 /* px_add_data_to_block() {{{
  * stores a record into a data block. datablocknr is the logical number
  * of the block (the first block has number 1).
+ * recnr is the number of the record within the block. The first record
+ * in a block has number 0.
+ * update is set to 1 if an existing record is updated otherwise it will
+ * be set to 0.
  */
-int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *data, pxstream_t *pxs) {
+int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, char *data, pxstream_t *pxs, int *update) {
 	TDataBlock datablockhead;
 	int ret, n;
+
+	int recsperdatablock = (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
+	if(recnr < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is less than 0."));
+		return -1;
+	}
+	if(recnr >= recsperdatablock) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is greater than or equal the maximum number of records per block."));
+		return -1;
+	}
 
 	/* Get header of the data block */
 	if((ret = get_datablock_head(pxdoc, pxs, datablocknr, &datablockhead)) < 0) {
@@ -666,7 +680,7 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 		return -1;
 	}
 
-	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize+1;
+	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize;
 //	fprintf(stderr, "Hexdump des alten datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
@@ -677,10 +691,22 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, char *d
 //	fprintf(stderr, "Hexdump des neuen datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
-	put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
-	if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
-		return -1;
+
+	/* Check if record number within the block is larger then the current
+	 * number of records-1 in the block. If yes, we need to increment the
+	 * number of records, otherwise we simply overwrite an existing record.
+	 */
+	if(recnr > n) {
+		n++;
+		put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
+		if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
+			return -1;
+		}
+		*update = 0;
+	} else {
+		n = recnr;
+		*update = 1;
 	}
 
 	/* Goto start of record data */
