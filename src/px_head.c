@@ -653,7 +653,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 /* }}} */
 
 /* px_add_data_to_block() {{{
- * stores a record into a data block. datablocknr is the logical number
+ * stores a record into a data block. datablocknr is the physical number
  * of the block (the first block has number 1).
  * recnr is the number of the record within the block. The first record
  * in a block has number 0.
@@ -721,6 +721,113 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 		return -1;
 	}
 	
+	return n;
+}
+/* }}} */
+
+/* px_delete_data_from_block() {{{
+ * deletes a record from a data block. datablocknr is the physical number
+ * of the block (the first block has number 1).
+ * recnr is the number of the record within the block. The first record
+ * in a block has number 0.
+ */
+int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, pxstream_t *pxs) {
+	TDataBlock datablockhead;
+	int ret, n, i;
+	char *data;
+
+	int recsperdatablock = (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
+	if(recnr < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is less than 0."));
+		return -1;
+	}
+	if(recnr >= recsperdatablock) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is greater than or equal the maximum number of records per block."));
+		return -1;
+	}
+
+	/* Get header of the data block */
+	if((ret = get_datablock_head(pxdoc, pxs, datablocknr, &datablockhead)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
+		return -1;
+	}
+
+	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize;
+
+	/* Check if record number within the block is less or equal the current
+	 * number of records-1 in the block. If yes, we need to decrement the
+	 * number of records and pack the data block, otherwise we though an error.
+	 */
+	if(recnr <= n) {
+		n--;
+	} else {
+		px_error(pxdoc, PX_RuntimeError, _("The record number of the record to be deleted is beyond the number of records in the data block: %d:%d < %d."), datablocknr, recnr, n);
+		return -1;
+	}
+	fprintf(stdout, "datablocknr:%d recnr:%d n:%d\n", datablocknr, recnr, n);
+
+	/* Write header of data block */
+	put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
+	if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
+		return -1;
+	}
+
+	/* Update the primary index */
+	if(pxdoc->px_indexdata) {
+		int i;
+		pxpindex_t *pindex = pxdoc->px_indexdata;
+		pindex[datablocknr-1].numrecords = n+1;
+		for(i=0; i<pxdoc->px_indexdatalen; i++) {
+			fprintf(stdout, "%i: blocknummer=%d, num records=%d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
+		}
+	}
+
+	/* If the last record in the block was deleted, than there is no need
+	 * to repack the block
+	 */
+	if(recnr == n+1) {
+		return n;
+	}
+
+	/* Jump to start of delete record */
+	if((ret = pxdoc->seek(pxdoc, pxs, recnr*pxh->px_recordsize, SEEK_CUR)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of delete record."));
+		return -1;
+	}
+
+	if((data = (char *) pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for temporary record."))) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary record."));
+		return -1;
+	}
+
+	for(i=recnr; i<=n; i++) {
+		/* Goto start of next record */
+		if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_recordsize, SEEK_CUR)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of next record."));
+			return -1;
+		}
+
+		/* Read data of next record */
+		if((ret = pxdoc->read(pxdoc, pxs, pxh->px_recordsize, data)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read next record."));
+			pxdoc->free(pxdoc, pxh);
+			return -1;
+		}
+
+		/* Go back to deleted record */
+		if((ret = pxdoc->seek(pxdoc, pxs, -2*pxh->px_recordsize, SEEK_CUR)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of previous record."));
+			return -1;
+		}
+
+		/* Write the record data */
+		if(pxdoc->write(pxdoc, pxs, pxh->px_recordsize, data) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write temporary record."));
+			return -1;
+		}
+	}
+
 	return n;
 }
 /* }}} */
