@@ -215,6 +215,13 @@ struct px_doc {
 	unsigned char *curblock;       /* Data of block in read cache */
 };
 
+struct px_blockcache {
+	long start;
+	size_t size;
+	unsigned char *data;
+};
+typedef struct px_blockcache pxblockcache_t;
+
 struct px_blob {
 	char *mb_name;
 	pxdoc_t *pxdoc;
@@ -230,6 +237,7 @@ struct px_blob {
 	int (*seek)(pxblob_t *p, pxstream_t *stream, long offset, int whence);
 	long (*tell)(pxblob_t *p, pxstream_t *stream);
 	size_t (*write)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	pxblockcache_t blockcache;
 };
 
 struct mb_head {

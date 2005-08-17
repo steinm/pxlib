@@ -174,7 +174,7 @@ size_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		blockpos = (curpos - pxh->px_headersize) % blocksize; 
 //		fprintf(stderr, "writing to block %d:%d\n", blocknr, blockpos);
 		if(blockpos+len > blocksize) {
-			px_error(p, PX_RuntimeError, _("Trying to write data to file exceeds block boundry."));
+			px_error(p, PX_RuntimeError, _("Trying to write data to file exceeds block boundry: %d + %d > %d."), blockpos, len, blocksize);
 			return(0);
 		}
 		if(p->curblock == NULL) {
@@ -304,19 +304,37 @@ size_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		return ret;
 	}
 
-	tmpbuf = (unsigned char *) malloc(blockslen);
-	if (tmpbuf == NULL) {
+	if(NULL == p->blockcache.data) {
+		p->blockcache.data = (unsigned char *) malloc(blockslen);
+	} else {
+		if(blockoffset == p->blockcache.start && blockslen <= p->blockcache.size) {
+//			fprintf(stderr, "Reading block at position 0x%X from cache.\n", blockoffset);
+			memcpy(buffer, p->blockcache.data + (pos - blockoffset), len);
+			ret = pxs->seek(pxdoc, pxs, pos + len, SEEK_SET);
+			if (ret < 0) {
+				return ret;
+			}
+			return len;
+		}
+		p->blockcache.data = (unsigned char *) realloc(p->blockcache.data, blockslen);
+	}
+	if (p->blockcache.data == NULL) {
 		return -ENOMEM;
 	}
+//	fprintf(stderr, "Reading block at position 0x%X from file.\n", blockoffset);
+	tmpbuf = p->blockcache.data;
 
 	ret = pxs->read(pxdoc, pxs, blockslen, tmpbuf);
 	if (ret <= 0) {
 		free(tmpbuf);
+		p->blockcache.data = NULL;
 		return ret;
 	}
 	px_decrypt_mb_block(tmpbuf, tmpbuf, pxh->px_encryption, blockslen);
 	memcpy(buffer, tmpbuf + (pos - blockoffset), len);
-	free(tmpbuf);
+	p->blockcache.start = blockoffset;
+	p->blockcache.size = blockslen;
+//	free(tmpbuf);
 
 	ret = pxs->seek(pxdoc, pxs, pos + len, SEEK_SET);
 	if (ret < 0) {
