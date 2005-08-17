@@ -1,3 +1,7 @@
+Version 0.5.2
+	- use a cache for reading encrypted blobs
+	- make databases open with PX_open writable
+
 Version 0.5.1
 	- fixed bug when reading header of blob (Thanks to Giovanni Giacobbi)
 	- fixes bug when reading blobs of a certain size from an encrypted

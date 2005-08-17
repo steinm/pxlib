@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(pxlib, 0.5.1, http://sourceforge.net/pxlib)
+AC_INIT(pxlib, 0.5.2, http://sourceforge.net/pxlib)
 AC_CONFIG_SRCDIR(src/paradox.c)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
@@ -10,7 +10,7 @@ AC_PROG_INTLTOOL
 dnl the following sets the soname version
 PXLIB_MAJOR_VERSION=0
 PXLIB_MINOR_VERSION=5
-PXLIB_MICRO_VERSION=1
+PXLIB_MICRO_VERSION=2
 PXLIB_VERSION=$PXLIB_MAJOR_VERSION.$PXLIB_MINOR_VERSION.$PXLIB_MICRO_VERSION
 PXLIB_VERSION_INFO=`expr $PXLIB_MAJOR_VERSION + $PXLIB_MINOR_VERSION`:$PXLIB_MICRO_VERSION:$PXLIB_MINOR_VERSION
 
@@ -22,13 +22,17 @@ AC_SUBST(PXLIB_VERSION_INFO)
 
 dnl VERSION=${PXLIB_VERSION}
 
+PXLIB_BUILD_DATE=`date '+%Y-%m-%d'`
+AC_DEFINE_UNQUOTED(PXLIB_BUILD_DATE,"$PXLIB_BUILD_DATE",[pxlib build date])
+AC_SUBST(PXLIB_BUILD_DATE)
+
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_CPP
 
 dnl Add the languages which your application supports here.
-ALL_LINGUAS="de es"
+ALL_LINGUAS="de es fr"
 AM_GLIB_GNU_GETTEXT
 GETTEXT_PACKAGE=pxlib
 AC_SUBST(GETTEXT_PACKAGE)
