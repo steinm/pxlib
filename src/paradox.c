@@ -1321,13 +1321,15 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
  * Searches for a free slot for a record by using the primary index.
  * Blocks are search for a free slot from the beginning to the end
  * of the file
- * Returns 1 if a free slot could be found, 0 if none could be found
- * and -1 in case of an error. In the second
+ * Returns the record number if a free slot could be found, 0 if
+ * none could be found * and -1 in case of an error. In the second
  * case the calling function has to create a new data block.
+ * The record starts at 1 because 0 is ambigous.
  */
 int
 px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 	int j, recsperdatablock;
+	int reccount=0;
 	pxhead_t *pxh; //, *pxih;
 	pxpindex_t *pindex_data;
 
@@ -1350,7 +1352,7 @@ px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 				TDataBlock datablock;
 
 				pxdbinfo->number = pindex_data[j].blocknumber;
-				pxdbinfo->recno = pindex_data[j].numrecords-1;
+				pxdbinfo->recno = pindex_data[j].numrecords;
 				pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
 				pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + pxdbinfo->recno*pxh->px_recordsize;
 
@@ -1376,7 +1378,9 @@ px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 					px_error(pxdoc, PX_RuntimeError, _("Number of records of block stored in index is unequal to number of records stored in block header."));
 					return -1;
 				}
-				return 1;
+				return reccount+pindex_data[j].numrecords+1;
+			} else {
+				reccount += recsperdatablock;
 			}
 		}
 	}
@@ -1440,6 +1444,26 @@ px_find_slot(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 		blockcount++;
 	}
 	return(found);
+}
+/* }}} */
+
+/* px_find_slot() {{{
+ * Reads all data blocks until a block with a free slot is found.
+ * This function doesn't use a primary index and is therefore far
+ * from being efficient for large files.
+ * Returns 1 if free slot could be found, otherwise 0, and -1
+ * in case of error.
+ */
+int
+px_list_index(pxdoc_t *pxdoc) {
+	pxpindex_t *pindex;
+	int i;
+	pindex = pxdoc->px_indexdata;
+	fprintf(stdout, "    | blocknr | numrecs \n");
+	fprintf(stdout, "------------------------\n");
+	for(i=0; i<pxdoc->px_indexdatalen; i++) {
+		fprintf(stdout, "%3d | %7d | %7d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
+	}
 }
 /* }}} */
 
@@ -1513,8 +1537,11 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 			return NULL;
 		}
 		return data;
-	} else
+	} else {
+		px_error(pxdoc, PX_RuntimeError, _("Could not find record in database."));
+		px_list_index(pxdoc);
 		return NULL;
+	}
 }
 /* }}} */
 
@@ -1632,14 +1659,14 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
  * free position found in the database. This doesn't have to be in
  * the last block. If records has been deleted before, this function
  * will try to reuse the space first.
- * Returns the record number or -1 in case of an error.
+ * Returns the record number starting from 0 or -1 in case of an error.
  */
 PXLIB_API int PXLIB_CALL
 PX_insert_record(pxdoc_t *pxdoc, char *data) {
 	pxhead_t *pxh;
 	pxdatablockinfo_t tmppxdbinfo;
 	int recsperdatablock, datablocknr, recdatablocknr;
-	int itmp, found, recno;
+	int itmp, found, recno, newrecpos;
 	int update; /* Will be set by px_add_data_to_block() if an existing
 				   record is updated */
 
@@ -1691,9 +1718,14 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
 		pindex[pxh->px_fileblocks-1].numrecords = 1;
 		pindex[pxh->px_fileblocks-1].myblocknumber = 0;
 		pindex[pxh->px_fileblocks-1].level = 1;
+		newrecpos = pxh->px_numrecords;
 	} else {
+		pxpindex_t *pindex;
+		pindex = pxdoc->px_indexdata;
 		datablocknr = tmppxdbinfo.number;
+		pindex[datablocknr-1].numrecords++;
 		recno = tmppxdbinfo.recno;
+		newrecpos = found-1;
 	}
 	/* The datablock number return by px_put_datablock() should be
 	 * the same as the calculated datablocknr after all datablocks
@@ -1702,6 +1734,10 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
 
 	/* write data */
 	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, recno, data, pxdoc->px_stream, &update);
+	if(update == 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Request for inserting a new record turned out to be an update of an exiting record. This should not happen."));
+		return -1;
+	}
 
 	/* The record number within the data block must be the same
 	 * as the calculated one.
@@ -1711,13 +1747,9 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
 		return -1;
 	}
 	
-	if(itmp != recdatablocknr) {
-		px_error(pxdoc, PX_Warning, _("Position of record has been recalculated. Requested position was %d, new position is %d."), recno, itmp);
-	}
-
 	pxh->px_numrecords++;
 	put_px_head(pxdoc, pxh, pxdoc->px_stream);
-	return(pxh->px_numrecords);
+	return(newrecpos);
 }
 /* }}} */
 
@@ -1827,9 +1859,6 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 				int i;
 				pxpindex_t *pindex = pxdoc->px_indexdata;
 				pindex[datablocknr-1].numrecords = ret+1;
-				for(i=0; i<pxdoc->px_indexdatalen; i++) {
-					fprintf(stdout, "%i: blocknummer=%d, num records=%d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
-				}
 			}
 
 		}
