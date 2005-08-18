@@ -1,6 +1,8 @@
-Version 0.5.2
+Version 0.6.0
 	- use a cache for reading encrypted blobs
-	- make databases open with PX_open writable
+	- make databases opened with PX_open_file() writable
+	- added new functions PX_delete_record(), PX_update_record(),
+	  PX_insert_record() allowing to modify an existing database
 
 Version 0.5.1
 	- fixed bug when reading header of blob (Thanks to Giovanni Giacobbi)
