@@ -345,6 +345,12 @@ PXLIB_API int PXLIB_CALL
 PX_put_record(pxdoc_t *pxdoc, char *data);
 
 PXLIB_API int PXLIB_CALL
+PX_insert_record(pxdoc_t *pxdoc, char *data);
+
+PXLIB_API int PXLIB_CALL
+PX_update_record(pxdoc_t *pxdoc, char *data, int recno);
+
+PXLIB_API int PXLIB_CALL
 PX_delete_record(pxdoc_t *pxdoc, int recno);
 
 PXLIB_API void PXLIB_CALL
