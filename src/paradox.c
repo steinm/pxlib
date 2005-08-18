@@ -1174,8 +1174,10 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 //	pindex_data = pindexdoc->px_data;
 	pindex_data = pxdoc->px_indexdata;
 
-	if(!pindex_data)
+	if(!pindex_data) {
+		px_error(pxdoc, PX_RuntimeError, _("Cannot search for free slot in block without an index."));
 		return 0;
+	}
 
 	numrecords = 0 ;
 	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))/pxh->px_recordsize;
@@ -1308,6 +1310,132 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
 				blocknumber = get_short_le((char *) &datablock.nextBlock);
 			}
 			recno -= (datasize/pxh->px_recordsize+1);
+		}
+		blockcount++;
+	}
+	return(found);
+}
+/* }}} */
+
+/* px_find_slot_with_index() {{{
+ * Searches for a free slot for a record by using the primary index.
+ * Blocks are search for a free slot from the beginning to the end
+ * of the file
+ * Returns 1 if a free slot could be found, 0 if none could be found
+ * and -1 in case of an error. In the second
+ * case the calling function has to create a new data block.
+ */
+int
+px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
+	int j, recsperdatablock;
+	pxhead_t *pxh; //, *pxih;
+	pxpindex_t *pindex_data;
+
+	pxh = pxdoc->px_head;
+	pindex_data = pxdoc->px_indexdata;
+
+	if(!pindex_data) {
+		px_error(pxdoc, PX_RuntimeError, _("Cannot search for free slot in block without an index."));
+		return -1;
+	}
+
+	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))/pxh->px_recordsize;
+	for(j=0; j<pxdoc->px_indexdatalen; j++) {
+		/* We currently just take level 1 index blocks into account.
+		 * This is only for large databases a speed disadvantage.
+		 */
+		if(pindex_data[j].level == 1) {
+			if(pindex_data[j].numrecords < recsperdatablock) {
+				int blocksize, ret;
+				TDataBlock datablock;
+
+				pxdbinfo->number = pindex_data[j].blocknumber;
+				pxdbinfo->recno = pindex_data[j].numrecords-1;
+				pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
+				pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + pxdbinfo->recno*pxh->px_recordsize;
+
+				/* Go to the start of the data block (skip the header) */
+				if((ret = pxdoc->seek(pxdoc, pxdoc->px_stream, pxdbinfo->blockpos, SEEK_SET)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block."));
+					return -1;
+				}
+
+				/* Get the info about this data block */
+				if((ret = pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not read datablock header."));
+					return -1;
+				}
+
+				blocksize = get_short_le((char *) &datablock.addDataSize);
+
+				pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
+				pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
+				pxdbinfo->size = blocksize+pxh->px_recordsize;
+				pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+				if(pindex_data[j].numrecords != pxdbinfo->numrecords) {
+					px_error(pxdoc, PX_RuntimeError, _("Number of records of block stored in index is unequal to number of records stored in block header."));
+					return -1;
+				}
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+/* }}} */
+
+/* px_find_slot() {{{
+ * Reads all data blocks until a block with a free slot is found.
+ * This function doesn't use a primary index and is therefore far
+ * from being efficient for large files.
+ * Returns 1 if free slot could be found, otherwise 0, and -1
+ * in case of error.
+ */
+int
+px_find_slot(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
+	int found, blockcount, blocknumber;
+	TDataBlock datablock;
+	pxhead_t *pxh;
+
+	pxh = pxdoc->px_head;
+
+	found = 0;
+	blockcount = 0; /* Just a block counter */
+	blocknumber = pxh->px_firstblock; /* Will be set to next block number */
+	while(!found && (blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
+		int datasize, blocksize;
+
+		if(get_datablock_head(pxdoc, pxdoc->px_stream, blocknumber, &datablock) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
+			return -1;
+		}
+
+		/* if deleted is set, then we will disregard the block size in the
+		 * data block header but take the maximum block size as indicated
+		 * by pxh->px_maxtablesize. The variable blocksize is just to test
+		 * whether a record is valid or not.
+		 * If a block is not completely used the blocksize will be less than
+		 * the theortical size of a block. If a block is not used at all
+		 * its blocksize is usually much bigger than the maximal data block
+		 * size. In the second case we set it -1.
+		 */
+		blocksize = get_short_le((char *) &datablock.addDataSize);
+		datasize = blocksize; //get_short_le((char *) &datablock.addDataSize);
+		if ((datasize+pxh->px_recordsize) < (pxh->px_maxtablesize*0x400-(int)sizeof(TDataBlock))) {
+			found = 1;
+			/* if we are within the range of valid data in the block,
+			 * then set the deleted flag to 0
+			 */
+			if(pxdbinfo != NULL) {
+				pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
+				pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
+				pxdbinfo->number = blocknumber;
+				pxdbinfo->size = datasize+pxh->px_recordsize;
+				pxdbinfo->recno = pxdbinfo->size/pxh->px_recordsize;
+				pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+				pxdbinfo->blockpos = pxdoc->tell(pxdoc, pxdoc->px_stream)-sizeof(TDataBlock);
+				pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + pxdbinfo->recno*pxh->px_recordsize;
+			}
 		}
 		blockcount++;
 	}
@@ -1499,6 +1627,155 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 }
 /* }}} */
 
+/* PX_insert_record() {{{
+ * Add a record to the paradox file. The record is saved in the first
+ * free position found in the database. This doesn't have to be in
+ * the last block. If records has been deleted before, this function
+ * will try to reuse the space first.
+ * Returns the record number or -1 in case of an error.
+ */
+PXLIB_API int PXLIB_CALL
+PX_insert_record(pxdoc_t *pxdoc, char *data) {
+	pxhead_t *pxh;
+	pxdatablockinfo_t tmppxdbinfo;
+	int recsperdatablock, datablocknr, recdatablocknr;
+	int itmp, found, recno;
+	int update; /* Will be set by px_add_data_to_block() if an existing
+				   record is updated */
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
+		return -1;
+	}
+	pxh = pxdoc->px_head;
+
+	if(pxdoc->px_indexdata)
+		found = px_find_slot_with_index(pxdoc, &tmppxdbinfo);
+	else
+		found = px_find_slot(pxdoc, &tmppxdbinfo);
+
+	if(found < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Error while searching for free slot of new record."));
+		return -1;
+	}
+
+	if(found == 0) {
+		pxpindex_t *pindex, *pindexold;
+		datablocknr = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_stream);
+		if(itmp < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write new data block."));
+			return -1;
+		}
+		recno = 0;
+		/* Rebuild the index */
+		/* Allocate memory for internal list of index entries */
+		if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
+			px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
+			return -1;
+		}
+
+		pindexold = pxdoc->px_indexdata;
+		memcpy(pindex, pindexold, pxdoc->px_indexdatalen*sizeof(pxpindex_t));
+		pxdoc->free(pxdoc, pxdoc->px_indexdata);
+
+		pxdoc->px_indexdata = pindex;
+		pxdoc->px_indexdatalen = pxh->px_fileblocks;
+
+		pindex[pxh->px_fileblocks-1].data = NULL;
+		pindex[pxh->px_fileblocks-1].blocknumber = datablocknr;
+		pindex[pxh->px_fileblocks-1].numrecords = 1;
+		pindex[pxh->px_fileblocks-1].myblocknumber = 0;
+		pindex[pxh->px_fileblocks-1].level = 1;
+	} else {
+		datablocknr = tmppxdbinfo.number;
+		recno = tmppxdbinfo.recno;
+	}
+	/* The datablock number return by px_put_datablock() should be
+	 * the same as the calculated datablocknr after all datablocks
+	 * has been added.
+	 */
+
+	/* write data */
+	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, recno, data, pxdoc->px_stream, &update);
+
+	/* The record number within the data block must be the same
+	 * as the calculated one.
+	 */
+	if(itmp < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block. Expected record nr. %d, but got %d. %dth record. %dth data block. %d records per block."), recdatablocknr, itmp, pxh->px_numrecords+1, datablocknr, recsperdatablock);
+		return -1;
+	}
+	
+	if(itmp != recdatablocknr) {
+		px_error(pxdoc, PX_Warning, _("Position of record has been recalculated. Requested position was %d, new position is %d."), recno, itmp);
+	}
+
+	pxh->px_numrecords++;
+	put_px_head(pxdoc, pxh, pxdoc->px_stream);
+	return(pxh->px_numrecords);
+}
+/* }}} */
+
+/* PX_update_record() {{{
+ * Updates a record in the paradox file. The record number must
+ * be between 0 and numrecords-1.
+ * Returns -1 in case of an error.
+ */
+PXLIB_API int PXLIB_CALL
+PX_update_record(pxdoc_t *pxdoc, char *data, int recno) {
+	pxhead_t *pxh;
+	pxdatablockinfo_t tmppxdbinfo;
+	int found;
+	int deleted = 0;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
+		return -1;
+	}
+	pxh = pxdoc->px_head;
+
+	if((recno < 0) || (recno >= pxh->px_numrecords)) {
+		px_error(pxdoc, PX_RuntimeError, _("Record number out of range."));
+		return -1;
+	}
+
+	if(pxdoc->px_indexdata)
+		found = px_get_record_pos_with_index(pxdoc, recno, &deleted, &tmppxdbinfo);
+	else
+		found = px_get_record_pos(pxdoc, recno, &deleted, &tmppxdbinfo);
+
+	if(found) {
+		int datablocknr;
+		int ret, update;
+
+		/* We need to calculate the physical block number. tmppxdbinfo.number
+		 * contains the logical number of the block as stored in the header of
+		 * each block.
+		 */
+		datablocknr = ((tmppxdbinfo.blockpos - pxh->px_headersize) / (pxh->px_maxtablesize*0x400)) + 1;
+		ret = px_add_data_to_block(pxdoc, pxh, datablocknr, tmppxdbinfo.recno, data, pxdoc->px_stream, &update);
+		if(update != 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Expected record to be updated, but it was not."));
+			return -1;
+		}
+		return(ret);
+	} else {
+		px_error(pxdoc, PX_RuntimeError, _("Could not find record for update."));
+		return -1;
+	}
+}
+/* }}} */
+
 /* PX_delete_record() {{{
  * Deletes a record into the paradox file.
  */
@@ -1544,6 +1821,17 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 		if(ret >= 0) {
 			pxh->px_numrecords--;
 			put_px_head(pxdoc, pxh, pxdoc->px_stream);
+
+			/* Update the primary index */
+			if(pxdoc->px_indexdata) {
+				int i;
+				pxpindex_t *pindex = pxdoc->px_indexdata;
+				pindex[datablocknr-1].numrecords = ret+1;
+				for(i=0; i<pxdoc->px_indexdatalen; i++) {
+					fprintf(stdout, "%i: blocknummer=%d, num records=%d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
+				}
+			}
+
 		}
 		return(ret);
 	} else {
