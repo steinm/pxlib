@@ -659,10 +659,14 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
  * in a block has number 0.
  * update is set to 1 if an existing record is updated otherwise it will
  * be set to 0.
+ * The function returns the number of records in the modified block. This
+ * is either n+1 or n, depending on whether a new record was added or
+ * an exiting record was updated.
+ * -1 is returned in case of an error.
  */
 int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, char *data, pxstream_t *pxs, int *update) {
 	TDataBlock datablockhead;
-	int ret, n;
+	int ret, n, pos;
 
 	int recsperdatablock = (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
 	if(recnr < 0) {
@@ -704,13 +708,14 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 			return -1;
 		}
 		*update = 0;
+		pos = n;
 	} else {
-		n = recnr;
+		pos = recnr;
 		*update = 1;
 	}
 
 	/* Goto start of record data */
-	if((ret = pxdoc->seek(pxdoc, pxs, n*pxh->px_recordsize, SEEK_CUR)) < 0) {
+	if((ret = pxdoc->seek(pxdoc, pxs, pos*pxh->px_recordsize, SEEK_CUR)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of new record."));
 		return -1;
 	}
@@ -730,6 +735,9 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
  * of the block (the first block has number 1).
  * recnr is the number of the record within the block. The first record
  * in a block has number 0.
+ * The function returns the number of records in the block, which should
+ * be 1 less than before.
+ * -1 is return in case of an error.
  */
 int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, pxstream_t *pxs) {
 	TDataBlock datablockhead;
@@ -771,16 +779,6 @@ int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, in
 	if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
 		return -1;
-	}
-
-	/* Update the primary index */
-	if(pxdoc->px_indexdata) {
-		int i;
-		pxpindex_t *pindex = pxdoc->px_indexdata;
-		pindex[datablocknr-1].numrecords = n+1;
-		for(i=0; i<pxdoc->px_indexdatalen; i++) {
-			fprintf(stdout, "%i: blocknummer=%d, num records=%d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
-		}
 	}
 
 	/* If the last record in the block was deleted, than there is no need
