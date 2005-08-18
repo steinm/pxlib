@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# autogen.sh glue for CMU Cyrus IMAP
+# autogen.sh glue for pxlib
 # $Id$
 #
 # Requires: automake, autoconf, dpkg-dev
