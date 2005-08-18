@@ -684,38 +684,46 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 		return -1;
 	}
 
-	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize;
+	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize + 1;
 //	fprintf(stderr, "Hexdump des alten datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
 //	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
 //	fprintf(stderr, "Datablock %d has %d records\n", datablocknr, n);
+//	fprintf(stderr, "Adding new record at postion %d in block\n", recnr);
 
 	/* Update size of data block and write it back */
 //	fprintf(stderr, "Hexdump des neuen datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
 
+	/* Check if the requested record number is not right behind the last
+	 * record in the block. Fix the record number if needed
+	 */
+	if(recnr > n)
+		recnr = n;
+
 	/* Check if record number within the block is larger then the current
 	 * number of records-1 in the block. If yes, we need to increment the
 	 * number of records, otherwise we simply overwrite an existing record.
 	 */
-	if(recnr > n) {
+	if(recnr == n) {
 		n++;
-		put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
+//		fprintf(stderr, "Set new number of records in block to %d\n", n);
+		put_short_le((char *)&datablockhead.addDataSize, (n-1)*pxh->px_recordsize);
 		if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
 			return -1;
 		}
 		*update = 0;
-		pos = n;
+		pos = n-1;
 	} else {
 		pos = recnr;
 		*update = 1;
 	}
 
 	/* Goto start of record data */
-	if((ret = pxdoc->seek(pxdoc, pxs, pos*pxh->px_recordsize, SEEK_CUR)) < 0) {
+	if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400+sizeof(TDataBlock)+pos*pxh->px_recordsize, SEEK_SET)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of new record."));
 		return -1;
 	}
@@ -726,7 +734,7 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 		return -1;
 	}
 	
-	return n;
+	return pos;
 }
 /* }}} */
 
@@ -772,7 +780,6 @@ int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, in
 		px_error(pxdoc, PX_RuntimeError, _("The record number of the record to be deleted is beyond the number of records in the data block: %d:%d < %d."), datablocknr, recnr, n);
 		return -1;
 	}
-	fprintf(stdout, "datablocknr:%d recnr:%d n:%d\n", datablocknr, recnr, n);
 
 	/* Write header of data block */
 	put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
