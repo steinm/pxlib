@@ -44,7 +44,11 @@
 #include "px_encode.h"
 #include "px_crypt.h"
 
+#ifndef WIN32
 #define max(a,b) ((a)>(b) ? (a) : (b))
+#define min(a,b) ((a)<(b) ? (a) : (b))
+#endif
+
 
 /* PX_get_majorversion() {{{
  */
@@ -314,7 +318,6 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	return 0;
 }
 /* }}} */
-
 
 /* PX_open_stream() {{{
  * Read from a Paradox DB file, which has an already open stream.
@@ -1447,7 +1450,7 @@ px_find_slot(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 }
 /* }}} */
 
-/* px_find_slot() {{{
+/* px_list_index() {{{
  * Reads all data blocks until a block with a free slot is found.
  * This function doesn't use a primary index and is therefore far
  * from being efficient for large files.
@@ -1464,6 +1467,86 @@ px_list_index(pxdoc_t *pxdoc) {
 	for(i=0; i<pxdoc->px_indexdatalen; i++) {
 		fprintf(stdout, "%3d | %7d | %7d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
 	}
+}
+/* }}} */
+
+/* px_convert_data() {{{
+ * Takes a list of pointers, pointing towards the data of each
+ * field and creates a record, which can be stored in the database
+ * file.
+ * Returns 0 on success or and -1 * in case of error.
+ */
+char *
+px_convert_data(pxdoc_t *pxdoc, pxval_t **dataptr) {
+	int numfields;
+	pxhead_t *pxh;
+	pxfield_t *pxf;
+	int i, offset;
+	char *data;
+
+	pxh = pxdoc->px_head;
+
+	if(NULL == (data = pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for data record.")))) {
+		return NULL;
+	}
+
+	numfields = pxh->px_numfields;
+	pxf = pxh->px_fields;
+	offset = 0;
+	for(i=0; i<numfields; i++) {
+		switch(pxf->px_ftype) {
+			case pxfAlpha:
+				if(dataptr[i]->value.str.len > pxf->px_flen) {
+					pxdoc->free(pxdoc, data);
+					return NULL;
+				}
+				PX_put_data_alpha(pxdoc, &data[offset], pxf->px_flen, (char *) dataptr[i]->value.str.val);
+				break;
+			case pxfShort:
+				PX_put_data_short(pxdoc, &data[offset], 2, (short int) dataptr[i]->value.lval);
+				break;
+			case pxfAutoInc:
+			case pxfLong:
+			case pxfTime:
+			case pxfDate:
+				PX_put_data_long(pxdoc, &data[offset], 4, (int) dataptr[i]->value.lval);
+				break;
+			case pxfTimestamp:
+			case pxfCurrency:
+			case pxfNumber:
+				PX_put_data_double(pxdoc, &data[offset], 8, dataptr[i]->value.dval);
+				break;
+			case pxfLogical: {
+				char value;
+				value = (char) dataptr[i]->value.lval;
+				PX_put_data_byte(pxdoc, &data[offset], 1, value);
+				break;
+			}
+			case pxfGraphic:
+				break;
+			case pxfBLOb:
+				break;
+			case pxfOLE:
+				break;
+			case pxfFmtMemoBLOb:
+			case pxfMemoBLOb: {
+				if(0 > PX_put_data_blob(pxdoc, &data[offset], pxf->px_flen, dataptr[i]->value.str.val, dataptr[i]->value.str.len)) {
+					pxdoc->free(pxdoc, data);
+					return NULL;
+				}
+				break;
+			}
+			case pxfBytes:
+				PX_put_data_bytes(pxdoc, &data[offset], min(pxf->px_flen, dataptr[i]->value.str.len), dataptr[i]->value.str.val);
+				break;
+			case pxfBCD:
+				PX_put_data_bcd(pxdoc, &data[offset], pxf->px_flen, dataptr[i]->value.str.val);
+				break;
+		}
+		offset += pxf->px_flen;
+		pxf++;
+	}
+	return(data);
 }
 /* }}} */
 
@@ -1492,6 +1575,7 @@ PXLIB_API char* PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo) {
 	int ret, found;
 	pxhead_t *pxh;
+	pxfield_t *pxf;
 	pxdatablockinfo_t tmppxdbinfo;
 
 	if(pxdoc == NULL) {
@@ -1654,6 +1738,189 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 }
 /* }}} */
 
+/* PX_retrieve_record() {{{
+ * Get a record from the paradox file.
+ * Returns an array of *pxval_t or NULL in case of an error.
+ */
+PXLIB_API pxval_t ** PXLIB_CALL
+PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
+	pxhead_t *pxh;
+	char *data;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return NULL;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
+		return NULL;
+	}
+	pxh = pxdoc->px_head;
+
+	/* Allocate memory for record */
+	if((data = (char *) pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for temporary record."))) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary record."));
+		return NULL;
+	}
+
+	if(NULL != PX_get_record(pxdoc, recno, data)) {
+		int i, offset;
+		pxval_t **dataptr;
+		pxfield_t *pxf;
+
+		/* Allocate memory for return record */
+		if(NULL == (dataptr = (pxval_t **) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxval_t *), _("Allocate memory for array of pointers to field values.")))) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for array of pointers to field values."));
+			pxdoc->free(pxdoc, data);
+			return NULL;
+		}
+		pxf = PX_get_fields(pxdoc);
+		offset = 0;
+		for(i=0; i<PX_get_num_fields(pxdoc); i++) {
+			MAKE_PXVAL(pxdoc, dataptr[i]);
+			dataptr[i]->type = pxf->px_ftype;
+			switch(pxf->px_ftype) {
+				case pxfAlpha: {
+					char *value;
+					int ret;
+					if(0 < (ret = PX_get_data_alpha(pxdoc, &data[offset], pxf->px_flen, &value))) {
+						dataptr[i]->value.str.val = value;
+						dataptr[i]->value.str.len = strlen(value);
+					} else if(ret < 0) {
+						dataptr[i]->isnull = 1;
+						px_error(pxdoc, PX_RuntimeError, _("Could not read of field of type pxfAlpha."));
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+					break;
+				}
+				case pxfShort: {
+					short int value;
+					if(0 < PX_get_data_short(pxdoc, &data[offset], pxf->px_flen, &value)) {
+						dataptr[i]->value.lval = (long) value;
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+					break;
+					}
+				case pxfDate:
+				case pxfTime:
+				case pxfAutoInc:
+				case pxfLong: {
+					long value;
+					if(0 < PX_get_data_long(pxdoc, &data[offset], pxf->px_flen, &value)) {
+						dataptr[i]->value.lval = value;
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+					break;
+					}
+				case pxfTimestamp:
+				case pxfCurrency:
+				case pxfNumber: {
+					double value;
+					if(0 < PX_get_data_double(pxdoc, &data[offset], pxf->px_flen, &value)) {
+						dataptr[i]->value.dval = value;
+					} 
+					break;
+					} 
+				case pxfLogical: {
+					char value;
+					if(0 < PX_get_data_byte(pxdoc, &data[offset], pxf->px_flen, &value)) {
+						dataptr[i]->value.lval = (long) value;
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+					break;
+					}
+				case pxfGraphic:
+				case pxfBLOb:
+				case pxfFmtMemoBLOb:
+				case pxfMemoBLOb:
+				case pxfOLE: {
+					char *blobdata;
+					char filename[200];
+					FILE *fp;
+					int mod_nr, size, ret;
+					if(pxf->px_ftype == pxfGraphic)
+						ret = PX_get_data_graphic(pxdoc, &data[offset], pxf->px_flen, &mod_nr, &size, &blobdata);
+					else
+						ret = PX_get_data_blob(pxdoc, &data[offset], pxf->px_flen, &mod_nr, &size, &blobdata);
+					if(ret > 0) {
+						if(blobdata) {
+							dataptr[i]->value.str.val = blobdata;
+							dataptr[i]->value.str.len = size;
+						} else {
+							dataptr[i]->isnull = 1;
+							fprintf(stderr, "Couldn't get blob data for %d\n", mod_nr);
+							px_error(pxdoc, PX_RuntimeError, _("Could not read blob data."));
+						}
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+
+					break;
+				}
+				case pxfBytes: {
+					char *data;
+					if(0 < PX_get_data_bytes(pxdoc, &data[offset], pxf->px_flen, &data)) {
+						dataptr[i]->value.str.val = data;
+						dataptr[i]->value.str.len = pxf->px_flen;
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+					break;
+					}
+				case pxfBCD: {
+					char *value;
+			//		hex_dump(outfp, &data[offset], pxf->px_flen);
+					if(0 < PX_get_data_bcd(pxdoc, (unsigned char*) &data[offset], pxf->px_fdc, &value)) {
+						dataptr[i]->value.str.val = value;
+						dataptr[i]->value.str.len = strlen(value);
+					} else {
+						dataptr[i]->isnull = 1;
+					}
+					break;
+				}
+				default:
+					dataptr[i]->isnull = 1;
+					break;
+			}
+			offset += pxf->px_flen;
+			pxf++;
+		}
+/*
+		if(filetype == pxfFileTypPrimIndex) {
+			short int value;
+			if(0 < PX_get_data_short(pxdoc, &data[offset], 2, &value)) {
+				fprintf(outfp, "%d", value);
+			}
+			offset += 2;
+			if(0 < PX_get_data_short(pxdoc, &data[offset], 2, &value)) {
+				fprintf(outfp, "%d", value);
+				ireccounter += value;
+			}
+			offset += 2;
+			if(0 < PX_get_data_short(pxdoc, &data[offset], 2, &value)) {
+				fprintf(outfp, "%d", value);
+			}
+			fprintf(outfp, "%d", pxdbinfo.number);
+		}
+		if(markdeleted) {
+			fprintf(outfp, "%d", isdeleted);
+		}
+*/
+		pxdoc->free(pxdoc, data);
+		return(dataptr);
+	} else {
+		px_error(pxdoc, PX_RuntimeError, _("Could not data for record with number %d."), recno);
+		pxdoc->free(pxdoc, data);
+		return NULL;
+	}
+}
+/* }}} */
+
 /* PX_insert_record() {{{
  * Add a record to the paradox file. The record is saved in the first
  * free position found in the database. This doesn't have to be in
@@ -1662,9 +1929,10 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
  * Returns the record number starting from 0 or -1 in case of an error.
  */
 PXLIB_API int PXLIB_CALL
-PX_insert_record(pxdoc_t *pxdoc, char *data) {
+PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	pxhead_t *pxh;
 	pxdatablockinfo_t tmppxdbinfo;
+	char *data;
 	int recsperdatablock, datablocknr, recdatablocknr;
 	int itmp, found, recno, newrecpos;
 	int update; /* Will be set by px_add_data_to_block() if an existing
@@ -1686,13 +1954,14 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
 	else
 		found = px_find_slot(pxdoc, &tmppxdbinfo);
 
-	if(found < 1) {
+	if(found < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Error while searching for free slot of new record."));
 		return -1;
 	}
 
 	if(found == 0) {
 		pxpindex_t *pindex, *pindexold;
+
 		datablocknr = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_stream);
 		if(itmp < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write new data block."));
@@ -1706,18 +1975,19 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
 			return -1;
 		}
 
-		pindexold = pxdoc->px_indexdata;
-		memcpy(pindex, pindexold, pxdoc->px_indexdatalen*sizeof(pxpindex_t));
-		pxdoc->free(pxdoc, pxdoc->px_indexdata);
+		if(pxdoc->px_indexdata) {
+			memcpy(pindex, pxdoc->px_indexdata, pxdoc->px_indexdatalen*sizeof(pxpindex_t));
+			pxdoc->free(pxdoc, pxdoc->px_indexdata);
+		}
 
 		pxdoc->px_indexdata = pindex;
-		pxdoc->px_indexdatalen = pxh->px_fileblocks;
 
-		pindex[pxh->px_fileblocks-1].data = NULL;
-		pindex[pxh->px_fileblocks-1].blocknumber = datablocknr;
-		pindex[pxh->px_fileblocks-1].numrecords = 1;
-		pindex[pxh->px_fileblocks-1].myblocknumber = 0;
-		pindex[pxh->px_fileblocks-1].level = 1;
+		pindex[pxdoc->px_indexdatalen].data = NULL;
+		pindex[pxdoc->px_indexdatalen].blocknumber = datablocknr;
+		pindex[pxdoc->px_indexdatalen].numrecords = 1;
+		pindex[pxdoc->px_indexdatalen].myblocknumber = 0;
+		pindex[pxdoc->px_indexdatalen].level = 1;
+		pxdoc->px_indexdatalen++;
 		newrecpos = pxh->px_numrecords;
 	} else {
 		pxpindex_t *pindex;
@@ -1733,6 +2003,7 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
 	 */
 
 	/* write data */
+	data = px_convert_data(pxdoc, dataptr);
 	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, recno, data, pxdoc->px_stream, &update);
 	if(update == 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Request for inserting a new record turned out to be an update of an exiting record. This should not happen."));
@@ -1759,9 +2030,10 @@ PX_insert_record(pxdoc_t *pxdoc, char *data) {
  * Returns -1 in case of an error.
  */
 PXLIB_API int PXLIB_CALL
-PX_update_record(pxdoc_t *pxdoc, char *data, int recno) {
+PX_update_record(pxdoc_t *pxdoc, pxval_t **dataptr, int recno) {
 	pxhead_t *pxh;
 	pxdatablockinfo_t tmppxdbinfo;
+	char *data;
 	int found;
 	int deleted = 0;
 
@@ -1795,6 +2067,7 @@ PX_update_record(pxdoc_t *pxdoc, char *data, int recno) {
 		 * each block.
 		 */
 		datablocknr = ((tmppxdbinfo.blockpos - pxh->px_headersize) / (pxh->px_maxtablesize*0x400)) + 1;
+		data = px_convert_data(pxdoc, dataptr);
 		ret = px_add_data_to_block(pxdoc, pxh, datablocknr, tmppxdbinfo.recno, data, pxdoc->px_stream, &update);
 		if(update != 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Expected record to be updated, but it was not."));
@@ -3292,7 +3565,7 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
  * len is the space available for the blob in the data record.
  * value is the pointer to the blob with length valuelen.
  * The function determines if the blob data fits into the data record.
- * If it does, it will not need an open blob file.
+ * If it does, it does not need an open blob file.
  */
 static int
 _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int valuelen) {
@@ -3448,6 +3721,56 @@ PX_put_data_blob(pxdoc_t *pxdoc, char *data, int len, char *value, int valuelen)
 /* }}} */
 
 /******* Function for data formating ******/
+
+/* PX_make_time() {{{
+ * Creates a value representing the internal paradox format of a time.
+ * The return value can written with PX_put_data_long() into the record.
+ */
+PXLIB_API pxval_t* PXLIB_CALL
+PX_make_time(pxdoc_t *pxdoc, int hour, int minute, int second) {
+	pxval_t *pxval;
+	MAKE_PXVAL(pxdoc, pxval);
+	pxval->value.lval = hour*3600000 + minute*60000 + second*1000;
+	return(pxval);
+}
+/* }}} */
+
+/* PX_make_date() {{{
+ * Creates a value representing the internal paradox format of a date.
+ * The return value can written with PX_put_data_long() into the record.
+ */
+PXLIB_API pxval_t* PXLIB_CALL
+PX_make_date(pxdoc_t *pxdoc, int year, int month, int day) {
+	pxval_t *pxval;
+	int value;
+	MAKE_PXVAL(pxdoc, pxval);
+	if(0 != (value = PX_GregorianToSdn(year, month, day))) {
+		pxval->value.lval = value-1721425;
+	} else {
+		pxval->isnull = 1;
+	}
+	return(pxval);
+}
+/* }}} */
+
+/* PX_make_timestamp() {{{
+ * Creates a value representing the internal paradox format of a timestamp.
+ * The return value can written with PX_put_data_double() into the record.
+ */
+PXLIB_API pxval_t* PXLIB_CALL
+PX_make_timestamp(pxdoc_t *pxdoc, int year, int month, int day, int hour, int minute, int second) {
+	double value;
+	pxval_t *pxval;
+	MAKE_PXVAL(pxdoc, pxval);
+	if(0.0 != (value = (double) PX_GregorianToSdn(year, month, day))) {
+
+		pxval->value.dval = ((value - 1721425.0) * 86400.0 + hour * 3600 + minute * 60 + second) * 1000.0;
+	} else {
+		pxval->isnull = 1;
+	}
+	return(pxval);
+}
+/* }}} */
 
 #define isleap(year) ((((year) % 4) == 0 && ((year) % 100) != 0) || ((year) % 400)==0)
 /* PX_timestamp2string() {{{
