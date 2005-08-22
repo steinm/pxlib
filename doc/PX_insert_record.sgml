@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>August 18, 2005</date>">
+  <!ENTITY dhdate      "<date>August 22, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -61,12 +61,12 @@ manpage.1: manpage.sgml
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
-		<para>int &funcname;(pxdoc_t *pxdoc, char *data)</para>
+		<para>int &funcname;(pxdoc_t *pxdoc, pxval_t **dataptr)</para>
   </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Inserts a new record stored in the buffer <option>data</option>
+    <para>Inserts a new record stored in the array <option>dataptr</option>
 		  into a Paradox file. The position of the record will be determined
 			by the function itself, starting at the beginning of the file and
 			search towards the end for a free slot. A free slot can be the result
@@ -74,9 +74,8 @@ manpage.1: manpage.sgml
 			completely filled data blocks in the input file. If there is no free
 			slot within the file, then the new record will be added at the
 			end.</para>
-		<para><option>data</option> must be constructed with PX_put_data_xxx(3)
-			functions before. It is of the same structure as the record returned
-			by PX_get_record(3) and PX_get_record2(3).</para>
+		<para>The memory for <option>dataptr</option> can be freed after
+		  <function>&funcname;</function> has been called.</para>
 
   </refsect1>
   <refsect1>
@@ -87,10 +86,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_record(3), PX_get_record2(3), PX_delete_record(3),
-		  PX_update_record(3), PX_put_data_byte(3),
-		  PX_put_data_short(3), PX_put_data_long(3), PX_put_data_double(3),
-			PX_put_data_alpha(3)</para>
+    <para>PX_retrieve_record(3), PX_delete_record(3), PX_update_record(3)</para>
 
   </refsect1>
   <refsect1>
