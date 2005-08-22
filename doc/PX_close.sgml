@@ -67,7 +67,8 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Closes a Paradox file. Do not confuse this function with PX_delete(3)
-		  which has to be called before &funcname;.</para>
+		  which has to be called after &funcname; to free all resources used for
+			the database.</para>
 
   </refsect1>
   <refsect1>
