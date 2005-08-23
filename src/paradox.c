@@ -2534,7 +2534,7 @@ PX_open_blob_file(pxblob_t *pxblob, const char *filename) {
 		return(-1);
 	}
 
-	if((fp = fopen(filename, "r")) == NULL) {
+	if((fp = fopen(filename, "r+")) == NULL) {
 		return -1;
 	}
 
@@ -2609,7 +2609,7 @@ PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
 		return -1;
 	}
 
-	if((fp = fopen(filename, "w")) == NULL) {
+	if((fp = fopen(filename, "w+")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file '%s' for writing."), filename);
 		return -1;
 	}
@@ -3597,8 +3597,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 				used_blocks = ((valuelen+6) / 4096) + 1;
 			else
 				used_blocks = ((valuelen+6) / 4096);
-			/* Fill up the structure that precede the blob in the mb file.
-			 * Blocks are currently all of type 2 */
+			/* Fill up the structure that precede the blob in the mb file. */
 			mbbh.type = 2;
 			put_short_le((char *) &mbbh.numBlocks, used_blocks);
 			put_long_le((char *) &mbbh.blobLen, valuelen);
@@ -3932,6 +3931,26 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 		}
 	}
 	return(str);
+}
+/* }}} */
+
+/* PX_date2string() {{{
+ * Converts a date as stored in the paradox database into
+ * a string as specified by the format string.
+ */
+PXLIB_API char * PXLIB_CALL
+PX_date2string(pxdoc_t *pxdoc, long value, const char *format) {
+	return(PX_timestamp2string(pxdoc, value*1000.0*86400.0, format));
+}
+/* }}} */
+
+/* PX_time2string() {{{
+ * Converts a time as stored in the paradox database into
+ * a string as specified by the format string.
+ */
+PXLIB_API char * PXLIB_CALL
+PX_time2string(pxdoc_t *pxdoc, long value, const char *format) {
+	return(PX_timestamp2string(pxdoc, (double) value, format));
 }
 /* }}} */
 
