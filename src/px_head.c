@@ -447,7 +447,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	/* write tablename */
 	if(pxh->px_tablename == NULL) {
 		len = 0;
-		px_error(pxdoc, PX_Warning, _("Tablename is empty."));
+//		px_error(pxdoc, PX_Warning, _("Tablename is empty."));
 	} else {
 		len = strlen(pxh->px_tablename);
 		if(pxdoc->write(pxdoc, pxs, len, pxh->px_tablename) < 1) {
