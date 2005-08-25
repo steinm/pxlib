@@ -283,7 +283,7 @@ static long makeLongFromBuff(long partial, unsigned char buff[256]) {
  */
 long px_passwd_checksum(const char *aPsw) {
 	unsigned char buff[256];
-	long i, len, count, partial, x, y, result;
+	long len, count, partial, x, y;
 
 	if(aPsw == NULL || aPsw[0] == '\0')
 		return 0;
