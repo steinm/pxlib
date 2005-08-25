@@ -236,6 +236,15 @@ struct px_blockcache {
 };
 typedef struct px_blockcache pxblockcache_t;
 
+struct px_mbblockinfo {
+	int number;
+	char type;
+	char numblobs;
+	int numblocks;
+	int allocspace;
+};
+typedef struct px_mbblockinfo pxmbblockinfo_t;
+
 struct px_blob {
 	char *mb_name;
 	pxdoc_t *pxdoc;
@@ -251,7 +260,11 @@ struct px_blob {
 	int (*seek)(pxblob_t *p, pxstream_t *stream, long offset, int whence);
 	long (*tell)(pxblob_t *p, pxstream_t *stream);
 	size_t (*write)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	/* Cache for the last read block */
 	pxblockcache_t blockcache;
+	/* Index of all blocks in the blob file */
+	pxmbblockinfo_t *blocklist;
+	int blocklistlen;
 };
 
 struct mb_head {
@@ -529,6 +542,12 @@ PX_make_timestamp(pxdoc_t *pxdoc, int year, int month, int day, int hour, int mi
 
 PXLIB_API char * PXLIB_CALL
 PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format);
+
+PXLIB_API char * PXLIB_CALL
+PX_time2string(pxdoc_t *pxdoc, long value, const char *format);
+
+PXLIB_API char * PXLIB_CALL
+PX_date2string(pxdoc_t *pxdoc, long value, const char *format);
 
 PXLIB_API char * PXLIB_CALL
 PX_strdup(pxdoc_t *pxdoc, const char *str);
