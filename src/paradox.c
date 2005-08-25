@@ -1983,7 +1983,7 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 		pxdoc->free(pxdoc, data);
 		return(dataptr);
 	} else {
-		px_error(pxdoc, PX_RuntimeError, _("Could not data for record with number %d."), recno);
+		px_error(pxdoc, PX_RuntimeError, _("Could not read data for record with number %d."), recno);
 		pxdoc->free(pxdoc, data);
 		return NULL;
 	}
@@ -2242,7 +2242,7 @@ PX_update_record(pxdoc_t *pxdoc, pxval_t **dataptr, int recno) {
 
 		/* Delete all blobs associated with this record */
 		if(px_delete_blobs(pxdoc, tmppxdbinfo.recordpos) < 0) {
-			px_error(pxdoc, PX_RuntimeError, _("Could delete blobs of record."));
+			px_error(pxdoc, PX_RuntimeError, _("Could not delete blobs of record."));
 			return -1;
 		}
 
