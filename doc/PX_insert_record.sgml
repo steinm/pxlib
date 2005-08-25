@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>August 22, 2005</date>">
+  <!ENTITY dhdate      "<date>August 23, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -72,10 +72,31 @@ manpage.1: manpage.sgml
 			search towards the end for a free slot. A free slot can be the result
 			of former calls of <function>PX_delete_record(3)</function> or not
 			completely filled data blocks in the input file. If there is no free
-			slot within the file, then the new record will be added at the
+			slot within the file, then a new record will be added at the
 			end.</para>
-		<para>The memory for <option>dataptr</option> can be freed after
+		<para>Blobs will be automatically written if a blob file was set
+		  with <function>PX_set_blob_file(3)</function>.</para>
+		<para>The memory for <option>dataptr</option> and the field values
+		  can be freed after
 		  <function>&funcname;</function> has been called.</para>
+		<para>Each single element in the array of pointers to pxval_t can be easily
+			created with <literal>MAKE_PXVAL(pxdoc_t *pxdoc, pxval_t *val)</literal>
+			and setting the actual value afterwards. A quite common way to build up
+			the record is the following:</para>
+		<programlisting>
+<![CDATA[
+dataptr = (pxval_t **) malloc(PX_numfields(pxdoc)*sizeof(pxval_t *));
+MAKE_PXVAL(pxdoc, dataptr[0]);
+dataptr[0]->type = pxfLong;
+dataptr[0]->value.lval = 45;
+...
+PX_insert_record(pxdoc, dataptr);
+free(dataptr[0]);
+free(dataptr);
+]]>
+		</programlisting>
+		<para>There is currently no need to set the type, though it is
+		  recommended.</para>
 
   </refsect1>
   <refsect1>
