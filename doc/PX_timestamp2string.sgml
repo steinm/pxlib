@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>Mai 26, 2004</date>">
+  <!ENTITY dhdate      "<date>August 22, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2005</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -57,7 +57,7 @@ manpage.1: manpage.sgml
   <refnamediv>
     <refname>&funcname;</refname>
 
-    <refpurpose>duplicate a string</refpurpose>
+    <refpurpose>Convert paradox timestamp into formated string</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <para>#include &lt;paradox.h&gt;</para>
@@ -67,13 +67,17 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Creates a string representation of a paradox timestamp as specified
-		  in the parameter <parameter>format</parameter>.
-		  The timestamp must be retrieved with PX_get_data_double(3). A timestamp
-			contains both time and date information. The format string contains chars
-			which stand for certain values of the date/time. The following table lists
-			all available characters with a meaning. All other characters are being
+			in the parameter <parameter>format</parameter>.  The timestamp must be
+			either retrieved with <function>PX_get_data_double(3)</function> after
+			calling <function>PX_get_record(3)</function> or by simply using the
+			double value in the pxval_t struct as returned by
+			<function>PX_retrieve_record(3)</function>. A timestamp contains both
+			time and date information. The format string contains chars which stand
+			for certain values of the date/time. The following table lists all
+			available characters with a meaning. All other characters are being
 			copied unmodified to the output string. If a special character shall not
 			be interpreted it must be preceded with a backslash.</para>
+
 		<para>
 		 <table>
 		  <title>Characters and their meaning in date/time format string</title>
@@ -158,7 +162,7 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_new2(3)</para>
+    <para>PX_time2string(3), PX_date2string(3)</para>
 
   </refsect1>
   <refsect1>
