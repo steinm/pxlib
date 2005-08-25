@@ -10,6 +10,7 @@ pxlib.3: pxlib.sgml
 	mv index.html $@
 
 distclean: clean
+	rm -f Makefile
 
 clean:
 	rm -f ${man_MANS} ${man_HTMLS}
@@ -50,6 +51,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_insert_record.sgml \
 						 PX_update_record.sgml \
 						 PX_delete_record.sgml \
+						 PX_retrieve_record.sgml \
 						 PX_get_field.sgml \
 						 PX_get_fields.sgml \
 						 PX_get_num_fields.sgml \
@@ -74,6 +76,8 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_close.sgml \
 						 PX_delete.sgml \
 						 PX_timestamp2string.sgml \
+						 PX_time2string.sgml \
+						 PX_date2string.sgml \
 						 PX_strdup.sgml
 
 EXTRA_DIST = ${SGML_FILES} pxformat.txt paradox4.txt pxlib.sgml
