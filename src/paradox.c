@@ -1944,7 +1944,6 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 					}
 				case pxfBCD: {
 					char *value;
-			//		hex_dump(outfp, &data[offset], pxf->px_flen);
 					if(0 < PX_get_data_bcd(pxdoc, (unsigned char*) &data[offset], pxf->px_fdc, &value)) {
 						dataptr[i]->value.str.val = value;
 						dataptr[i]->value.str.len = strlen(value);
@@ -2019,6 +2018,7 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	}
 	pxh = pxdoc->px_head;
 
+	/* Check for a free record in the exiting file */
 	if(pxdoc->px_indexdata)
 		found = px_find_slot_with_index(pxdoc, &tmppxdbinfo);
 	else
@@ -2029,6 +2029,7 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 		return -1;
 	}
 
+	/* If not free space for the new record was found, then create a new block */
 	if(found == 0) {
 		pxpindex_t *pindex;
 
@@ -2150,8 +2151,6 @@ int px_delete_blobs(pxdoc_t *pxdoc, int recordpos) {
 			data = &recorddata[offset];
 			/* leader starts 10 bytes from the end of the field data */
 			leader = pxf[i].px_flen - 10;
-			hex_dump(stderr, data, pxf[i].px_flen );
-			fprintf(stderr, "leader = %d\n", leader);
 
 			/* FIXME: This is a quick hack because graphic blobs have some extra
 			 * 8 Bytes before the data which is contained in the size
@@ -2166,7 +2165,6 @@ int px_delete_blobs(pxdoc_t *pxdoc, int recordpos) {
 				blobsize = size;
 			index = get_long_le(&data[leader]) & 0x000000ff;
 			mod_nr = get_short_le(&data[leader+8]);
-			fprintf(stderr, "size = %d, index = %d, mod_nr = %d\n", size, index, mod_nr);
 
 			if(blobsize <= 0) {
 				continue;
@@ -2187,7 +2185,6 @@ int px_delete_blobs(pxdoc_t *pxdoc, int recordpos) {
 			if(bloboffset == 0) {
 				continue;
 			}
-			fprintf(stderr, "bloboffset = %d\n", bloboffset);
 
 			if(px_delete_blob_data(pxblob, hsize, size, bloboffset, index) > 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Deleting blob failed."));
@@ -2702,7 +2699,6 @@ static int build_mb_block_list(pxblob_t *pxblob) {
 		return -1;
 	}
 	i = 0;
-	fprintf(stderr, "Blob file has %d blocks\n", numblocks);
 	for(i=0; i<numblocks; i++) {
 		if(pxblob->seek(pxblob, pxs, i*4096, SEEK_SET) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not go to start of block in blob file."));
@@ -2718,7 +2714,7 @@ static int build_mb_block_list(pxblob_t *pxblob) {
 		blocklist[i].number = i;
 		blocklist[i].type = mbblockhead.type;
 		blocklist[i].numblocks = (int) (get_short_le((char *) &mbblockhead.numBlocks));
-		fprintf(stderr, "Block %d is of type %d\n", i, blocklist[i].type);
+//		fprintf(stderr, "Block %d is of type %d\n", i, blocklist[i].type);
 		if(blocklist[i].type == 3) {
 			int j;
 			blocklist[i].numblobs = 0;
@@ -2731,12 +2727,12 @@ static int build_mb_block_list(pxblob_t *pxblob) {
 					return -1;
 				}
 				if(mbbhtab.offset != 0) {
-					fprintf(stderr, "  %d. Found blob with %d x 16 bytes\n", j, mbbhtab.length);
+//					fprintf(stderr, "  %d. Found blob with %d x 16 bytes\n", j, mbbhtab.length);
 					blocklist[i].numblobs++;
 					blocklist[i].allocspace += mbbhtab.length;
 				}
 			}
-			fprintf(stderr, "  Block of type 3 had %d blobs using %d from 235 x 16 bytes\n", blocklist[i].numblobs, blocklist[i].allocspace);
+//			fprintf(stderr, "  Block of type 3 had %d blobs using %d from 235 x 16 bytes\n", blocklist[i].numblobs, blocklist[i].allocspace);
 		} else {
 			blocklist[i].numblobs = 1;
 			blocklist[i].allocspace = 0;
@@ -3870,18 +3866,13 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 		}
 
 		if((found = px_find_blob_slot(pxblob, valuelen, &blockinfoptr)) > 0) {
-			fprintf(stderr, "Found block for blob\n");
-			fprintf(stderr, "number = %d\n", blockinfoptr->number);
-			fprintf(stderr, "type = %d\n", blockinfoptr->type);
-			fprintf(stderr, "numblobs = %d\n", blockinfoptr->numblobs);
-			fprintf(stderr, "numblocks = %d\n", blockinfoptr->numblocks);
-			fprintf(stderr, "allocspace = %d\n", blockinfoptr->allocspace);
 		}
 		pxs = pxblob->mb_stream;
 		if(valuelen > 2048) { /* Block of type 2 */
 			TMbBlockHeader2 mbbh;
 			int used_blocks;
 
+			/* FIXME: need to add code which reuses free blocks for blocks of type 2*/
 //			fprintf(stderr, "Blob goes into type 2 block\n");
 			if(pxblob->seek(pxblob, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
@@ -4005,7 +3996,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			pxblob->subblockfree -= mbbhtab.length;
 			pxblob->subblockblobcount++;
 
-			put_long_le((char *) &data[leader], (pxblob->subblockoffset)*4096 + (64-pxblob->subblockblobcount));
+			put_long_le((char *) &data[leader], (pxblob->subblockoffset)*4096 + j);
 			put_short_le((char *) &data[leader+8], ++pxblob->mb_head->modcount);
 		}
 	} else { /* blob fits in db file */
