@@ -743,9 +743,9 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
  * of the block (the first block has number 1).
  * recnr is the number of the record within the block. The first record
  * in a block has number 0.
- * The function returns the number of records in the block, which should
- * be 1 less than before.
- * -1 is return in case of an error.
+ * The function returns the remaining number of records in the block,
+ * which should be 1 less than before.
+ * A value less than 0 is return in case of an error.
  */
 int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, pxstream_t *pxs) {
 	TDataBlock datablockhead;
@@ -759,13 +759,13 @@ int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, in
 	}
 	if(recnr >= recsperdatablock) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is greater than or equal the maximum number of records per block."));
-		return -1;
+		return -2;
 	}
 
 	/* Get header of the data block */
 	if((ret = get_datablock_head(pxdoc, pxs, datablocknr, &datablockhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read data block header."));
-		return -1;
+		return -3;
 	}
 
 	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize;
@@ -778,62 +778,185 @@ int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, in
 		n--;
 	} else {
 		px_error(pxdoc, PX_RuntimeError, _("The record number of the record to be deleted is beyond the number of records in the data block: %d:%d < %d."), datablocknr, recnr, n);
-		return -1;
+		return -4;
 	}
 
 	/* Write header of data block */
 	put_short_le((char *)&datablockhead.addDataSize, n*pxh->px_recordsize);
 	if(put_datablock_head(pxdoc, pxs, datablocknr, &datablockhead) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write updated data block header."));
-		return -1;
+		return -5;
 	}
 
 	/* If the last record in the block was deleted, than there is no need
 	 * to repack the block
 	 */
 	if(recnr == n+1) {
-		return n;
+		return n+1;
 	}
 
 	/* Jump to start of delete record */
 	if((ret = pxdoc->seek(pxdoc, pxs, recnr*pxh->px_recordsize, SEEK_CUR)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of delete record."));
-		return -1;
+		return -6;
 	}
 
 	if((data = (char *) pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for temporary record."))) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary record."));
-		return -1;
+		return -7;
 	}
 
 	for(i=recnr; i<=n; i++) {
 		/* Goto start of next record */
 		if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_recordsize, SEEK_CUR)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of next record."));
-			return -1;
+			pxdoc->free(pxdoc, data);
+			return -8;
 		}
 
 		/* Read data of next record */
 		if((ret = pxdoc->read(pxdoc, pxs, pxh->px_recordsize, data)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read next record."));
-			pxdoc->free(pxdoc, pxh);
-			return -1;
+			pxdoc->free(pxdoc, data);
+			return -9;
 		}
 
 		/* Go back to deleted record */
 		if((ret = pxdoc->seek(pxdoc, pxs, -2*pxh->px_recordsize, SEEK_CUR)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of previous record."));
-			return -1;
+			pxdoc->free(pxdoc, data);
+			return -10;
 		}
 
 		/* Write the record data */
 		if(pxdoc->write(pxdoc, pxs, pxh->px_recordsize, data) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write temporary record."));
-			return -1;
+			pxdoc->free(pxdoc, data);
+			return -11;
 		}
 	}
+	pxdoc->free(pxdoc, data);
 
-	return n;
+	return n+1;
+}
+/* }}} */
+
+/* px_delete_blob_data() {{{
+ * deletes a blob from the blob file
+ */
+int px_delete_blob_data(pxblob_t *pxblob, int hsize, int size, int bloboffset, int index) {
+	pxdoc_t *pxdoc;
+	int ret, blocknumber;
+	unsigned char head[12];
+
+	pxdoc = pxblob->pxdoc;
+
+	if((ret = pxblob->seek(pxblob, pxblob->mb_stream, bloboffset, SEEK_SET)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+		return -1;
+	}
+
+	/* Just read the first 3 Bytes because they are common for all block */
+	if((ret = pxblob->read(pxblob, pxblob->mb_stream, 3, head)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
+		return -1;
+	}
+
+	if(head[0] == 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from 'header' block."));
+		return -1;
+	} else if(head[0] == 4) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to read blob data from a 'free' block."));
+		return -1;
+	}
+
+	if(head[0] == 2) { /* Deleting blob from a block type 2 */
+		int i, numblocks;
+
+		if(index != 0xff) {
+			px_error(pxdoc, PX_RuntimeError, _("Offset points to a single blob block but index field is not 0xff."));
+			return -1;
+		}
+		/* Read the remaining 6/14 bytes from the header */
+		if((ret = pxblob->read(pxblob, pxblob->mb_stream, hsize-3, head)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
+			return -1;
+		}
+		if(size != get_long_le((char*) &head[0])) {
+			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le((char *) &head[0]));
+			return -1;
+		}
+
+		head[0] = 4;
+		blocknumber = bloboffset >> 12;
+		numblocks = ((size-1) >> 12) + 1;
+		for(i=0; i<numblocks; i++) {
+			if((ret = pxblob->seek(pxblob, pxblob->mb_stream, (blocknumber+i)*0x1000, SEEK_SET)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+				return -1;
+			}
+			if((ret = pxblob->write(pxblob, pxblob->mb_stream, 1, &head)) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not write blob type."));
+				return -1;
+			}
+			pxblob->blocklist[blocknumber+i].type = 4;
+		}
+	} else if(head[0] == 3) { /* Deleting blob from a block type 3 */
+		unsigned char *tmpblock1, *tmpblock2;
+		TMbBlockHeader3Table *tableptr;
+		int offset, i;
+
+		if(NULL == (tmpblock1 = pxdoc->malloc(pxdoc, 2*4096, _("Allocate memory for temporary block from blob file.")))) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary block from blob file."));
+			return -1;
+		}
+
+		tmpblock2 = tmpblock1+4096;
+		memcpy(tmpblock1, head, 3);
+
+		/* Read the the rest of the block */
+		if((ret = pxblob->read(pxblob, pxblob->mb_stream, 4096-3, &tmpblock1[3])) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining data of suballocated block."));
+			return -1;
+		}
+		memcpy(tmpblock2, tmpblock1, 4096);
+
+		/* Goto the blob pointer with the passed index */
+		memcpy(head, tmpblock1+12+index*5, 5);
+		memset(tmpblock1+12+index*5, 0, 5);
+
+		if(size != ((int)head[1]-1)*16+head[4]) {
+			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
+			return -1;
+		}
+
+		tableptr = (TMbBlockHeader3Table *) (tmpblock1+12);
+		offset = 0x15;
+		for(i=63; i>=0; i--) {
+			if(tableptr[i].offset != 0) {
+				memcpy(tmpblock1+offset*16, tmpblock2+tableptr[i].offset*16, tableptr[i].length*16);
+				tableptr[i].offset = offset;
+				offset += tableptr[i].length;
+			}
+		}
+
+		/* Goto the start of the blob */
+		if((ret = pxblob->seek(pxblob, pxblob->mb_stream, bloboffset, SEEK_SET)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
+			return -1;
+		}
+		if((ret = pxblob->write(pxblob, pxblob->mb_stream, 4096, tmpblock1)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write data of suballocated block."));
+			return -1;
+		}
+
+		blocknumber = bloboffset >> 12;
+		pxblob->blocklist[blocknumber].allocspace -= head[1];
+		pxblob->blocklist[blocknumber].numblobs--;
+
+		pxdoc->free(pxdoc, tmpblock1);
+	}
+	return 0;
 }
 /* }}} */
 
@@ -856,8 +979,10 @@ mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for document header."));
 		return NULL;
 	}
-	if(pxblob->seek(pxblob, pxs, 0, SEEK_SET) < 0)
+	if(pxblob->seek(pxblob, pxs, 0, SEEK_SET) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to start of blob file."));
 		return NULL;
+	}
 	if((ret = pxblob->read(pxblob, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, mbh);
