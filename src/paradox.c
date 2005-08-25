@@ -466,7 +466,7 @@ PX_open_file(pxdoc_t *pxdoc, const char *filename) {
 	}
 
 	if((fp = fopen(filename, "r+")) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database: %s"), strerror(errno));
 		return -1;
 	}
 
@@ -607,7 +607,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, const char *fil
 	}
 
 	if((fp = fopen(filename, "w+")) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not create file for paradox database."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not create file for paradox database: %s"), strerror(errno));
 		return -1;
 	}
 
@@ -1457,7 +1457,7 @@ px_find_slot(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
  * Returns 1 if free slot could be found, otherwise 0, and -1
  * in case of error.
  */
-int
+void
 px_list_index(pxdoc_t *pxdoc) {
 	pxpindex_t *pindex;
 	int i;
@@ -1467,6 +1467,79 @@ px_list_index(pxdoc_t *pxdoc) {
 	for(i=0; i<pxdoc->px_indexdatalen; i++) {
 		fprintf(stdout, "%3d | %7d | %7d\n", i, pindex[i].blocknumber, pindex[i].numrecords);
 	}
+}
+/* }}} */
+
+/* px_find_blob_slot() {{{
+ * Try to find block(s) in mb file which has/have enough space for the blob
+ * blockinfo returns the pointer to the info block within the block info list
+ * of the blob file or NULL.
+ * Returns 1 if free slot could be found, otherwise 0, and -1
+ * in case of error.
+ */
+int
+px_find_blob_slot(pxblob_t *pxblob, int blobsize, pxmbblockinfo_t **blockinfo) {
+	int numblocks, blockcount;
+	char blocktype;
+
+	if(pxblob->blocklist == NULL) {
+		return -1;
+	}
+
+	if(blobsize > 2048) {
+		blocktype = 2;
+		numblocks = ((blobsize+sizeof(TMbBlockHeader2)-1) / 4096) + 1;
+	} else {
+		blocktype = 3;
+		numblocks = ((blobsize-1) / 16) + 1;
+	}
+
+	blockcount = 0;
+	while(blockcount < pxblob->blocklistlen) {
+		/* Check for complete free blocks */
+		if(blocktype == 2 && pxblob->blocklist[blockcount].type == 4) {
+			/* We have found one free block but we need numblocks.
+			 * Try to find more blocks if needed.
+			 */
+			int i = 1;
+			while((pxblob->blocklist[blockcount+i].type == 4) &&
+			      ((blockcount+i) < pxblob->blocklistlen) && 
+				  (i < numblocks)) {
+				i++;
+			}
+			if(i == numblocks) {
+				*blockinfo = &pxblob->blocklist[blockcount];
+				return 1;
+			}
+			blockcount += i;
+		} else
+		/* First check for exiting type 3 blocks with some free space */
+		if(blocktype == 3 && pxblob->blocklist[blockcount].type == 3) {
+			if((pxblob->blocklist[blockcount].numblobs < 64) &&
+			   (pxblob->blocklist[blockcount].allocspace <= (235 - numblocks))) {
+				*blockinfo = &pxblob->blocklist[blockcount];
+				return 1;
+			}
+		}
+		blockcount++;
+	}
+
+	/* Last change for blobs < 2048 byte. We haven't found an exiting block
+	 * of type 3, maybe we find a completely free block which we can turn into
+	 * a type 3 block. Still better than adding a new one at the end.
+	 */
+	if(blocktype == 3) {
+		blockcount = 0;
+		while(blockcount < pxblob->blocklistlen) {
+			if(pxblob->blocklist[blockcount].type == 4) {
+				*blockinfo = &pxblob->blocklist[blockcount];
+				return 1;
+			}
+			blockcount++;
+		}
+	}
+
+	return(0);
 }
 /* }}} */
 
@@ -1575,7 +1648,6 @@ PXLIB_API char* PXLIB_CALL
 PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablockinfo_t *pxdbinfo) {
 	int ret, found;
 	pxhead_t *pxh;
-	pxfield_t *pxf;
 	pxdatablockinfo_t tmppxdbinfo;
 
 	if(pxdoc == NULL) {
@@ -1840,8 +1912,6 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 				case pxfMemoBLOb:
 				case pxfOLE: {
 					char *blobdata;
-					char filename[200];
-					FILE *fp;
 					int mod_nr, size, ret;
 					if(pxf->px_ftype == pxfGraphic)
 						ret = PX_get_data_graphic(pxdoc, &data[offset], pxf->px_flen, &mod_nr, &size, &blobdata);
@@ -1933,7 +2003,7 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	pxhead_t *pxh;
 	pxdatablockinfo_t tmppxdbinfo;
 	char *data;
-	int recsperdatablock, datablocknr, recdatablocknr;
+	int datablocknr;
 	int itmp, found, recno, newrecpos;
 	int update; /* Will be set by px_add_data_to_block() if an existing
 				   record is updated */
@@ -1960,10 +2030,10 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	}
 
 	if(found == 0) {
-		pxpindex_t *pindex, *pindexold;
+		pxpindex_t *pindex;
 
 		datablocknr = put_px_datablock(pxdoc, pxh, pxh->px_lastblock, pxdoc->px_stream);
-		if(itmp < 0) {
+		if(datablocknr < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write new data block."));
 			return -1;
 		}
@@ -2014,13 +2084,124 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	 * as the calculated one.
 	 */
 	if(itmp < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Inconsistency in writing record into data block. Expected record nr. %d, but got %d. %dth record. %dth data block. %d records per block."), recdatablocknr, itmp, pxh->px_numrecords+1, datablocknr, recsperdatablock);
+		px_error(pxdoc, PX_RuntimeError, _("Error in writing record into data block."));
 		return -1;
 	}
 	
 	pxh->px_numrecords++;
 	put_px_head(pxdoc, pxh, pxdoc->px_stream);
 	return(newrecpos);
+}
+/* }}} */
+
+/* px_delete_blobs() {{{
+ */
+int px_delete_blobs(pxdoc_t *pxdoc, int recordpos) {
+	int i, offset;
+	int leader;
+	pxfield_t *pxf;
+	pxhead_t *pxh;
+	pxstream_t *pxs;
+	pxblob_t *pxblob;
+	char *recorddata = NULL;
+
+	pxh = pxdoc->px_head;
+	pxs = pxdoc->px_stream;
+	pxblob = pxdoc->px_blob;
+
+	/* Check if database has blob fields */
+	offset = 0;
+	pxf = pxh->px_fields;
+	for(i=0; i<pxh->px_numfields; i++) {
+		char *data;
+		int hsize, size, blobsize, index, mod_nr, bloboffset;
+
+		if(pxf[i].px_ftype == pxfMemoBLOb ||
+		   pxf[i].px_ftype == pxfFmtMemoBLOb ||
+		   pxf[i].px_ftype == pxfBLOb ||
+		   pxf[i].px_ftype == pxfOLE ||
+		   pxf[i].px_ftype == pxfGraphic) {
+
+			if(pxf[i].px_ftype == pxfGraphic)
+				hsize = 17;
+			else
+				hsize =9;
+
+			if(NULL == recorddata) {
+				if(NULL == (recorddata = pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for temporary record data.")))) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary record data.."));
+					return -1;
+				}
+				if(pxdoc->seek(pxdoc, pxs, recordpos, SEEK_SET) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of old record."));
+					pxdoc->free(pxdoc, recorddata);
+					return -1;
+				}
+
+				/* Read the record data */
+				if(pxdoc->read(pxdoc, pxs, pxh->px_recordsize, recorddata) < 1) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not read record."));
+					pxdoc->free(pxdoc, recorddata);
+					return -1;
+				}
+			}
+
+			/* Let data point to the field data */
+			data = &recorddata[offset];
+			/* leader starts 10 bytes from the end of the field data */
+			leader = pxf[i].px_flen - 10;
+			hex_dump(stderr, data, pxf[i].px_flen );
+			fprintf(stderr, "leader = %d\n", leader);
+
+			/* FIXME: This is a quick hack because graphic blobs have some extra
+			 * 8 Bytes before the data which is contained in the size
+			 * The real size of the graphic is stored in the second long within
+			 * the extra 8 bytes. But this value seems to be alwasy 8 smaller
+			 * then the size at [leader+4].
+			 */
+			size = get_long_le(&data[leader+4]);
+			if(hsize == 17)
+				blobsize = size - 8;
+			else
+				blobsize = size;
+			index = get_long_le(&data[leader]) & 0x000000ff;
+			mod_nr = get_short_le(&data[leader+8]);
+			fprintf(stderr, "size = %d, index = %d, mod_nr = %d\n", size, index, mod_nr);
+
+			if(blobsize <= 0) {
+				continue;
+			}
+
+			/* First check if the blob data is included in the record itself */
+			if(blobsize <= leader) {
+				continue;
+			} 
+
+			/* Since the blob data is not in the record we will need a blob file */
+			if(!pxblob || !pxblob->mb_stream) {
+				px_error(pxdoc, PX_Warning, _("Blob data is not contained in record and a blob file is not set."));
+				continue;
+			}
+
+			bloboffset = get_long_le(&data[leader]) & 0xffffff00;
+			if(bloboffset == 0) {
+				continue;
+			}
+			fprintf(stderr, "bloboffset = %d\n", bloboffset);
+
+			if(px_delete_blob_data(pxblob, hsize, size, bloboffset, index) > 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Deleting blob failed."));
+				pxdoc->free(pxdoc, recorddata);
+				return -1;
+			}
+
+		}
+		offset += pxf[i].px_flen;
+	}
+	if(recorddata)
+		pxdoc->free(pxdoc, recorddata);
+
+	return 0;
 }
 /* }}} */
 
@@ -2062,6 +2243,12 @@ PX_update_record(pxdoc_t *pxdoc, pxval_t **dataptr, int recno) {
 		int datablocknr;
 		int ret, update;
 
+		/* Delete all blobs associated with this record */
+		if(px_delete_blobs(pxdoc, tmppxdbinfo.recordpos) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could delete blobs of record."));
+			return -1;
+		}
+
 		/* We need to calculate the physical block number. tmppxdbinfo.number
 		 * contains the logical number of the block as stored in the header of
 		 * each block.
@@ -2087,6 +2274,8 @@ PX_update_record(pxdoc_t *pxdoc, pxval_t **dataptr, int recno) {
 PXLIB_API int PXLIB_CALL
 PX_delete_record(pxdoc_t *pxdoc, int recno) {
 	pxhead_t *pxh;
+	pxstream_t *pxs;
+	pxblob_t *pxblob;
 	pxdatablockinfo_t tmppxdbinfo;
 	int found;
 	int deleted = 0;
@@ -2101,9 +2290,10 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 		return -1;
 	}
 	pxh = pxdoc->px_head;
+	pxs = pxdoc->px_stream;
+	pxblob = pxdoc->px_blob;
 
-	if((recno < 0) ||
-	   (pxdoc->px_pindex && (recno >= pxh->px_numrecords))) {
+	if((recno < 0) || (recno >= pxh->px_numrecords)) {
 		px_error(pxdoc, PX_RuntimeError, _("Record number out of range."));
 		return -1;
 	}
@@ -2114,8 +2304,13 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 		found = px_get_record_pos(pxdoc, recno, &deleted, &tmppxdbinfo);
 
 	if(found) {
-		int datablocknr;
-		int ret;
+		int ret, datablocknr;
+
+		/* Delete all blobs associated with this record */
+		if(px_delete_blobs(pxdoc, tmppxdbinfo.recordpos) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could delete blobs of record."));
+			return -1;
+		}
 
 		/* We need to calculate the physical block number. tmppxdbinfo.number
 		 * contains the logical number of the block as stored in the header of
@@ -2129,11 +2324,12 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 
 			/* Update the primary index */
 			if(pxdoc->px_indexdata) {
-				int i;
 				pxpindex_t *pindex = pxdoc->px_indexdata;
 				pindex[datablocknr-1].numrecords = ret+1;
 			}
 
+		} else {
+			px_error(pxdoc, PX_RuntimeError, _("Error while deleting record data. Error number %d."), ret);
 		}
 		return(ret);
 	} else {
@@ -2471,6 +2667,91 @@ PX_set_tablename(pxdoc_t *pxdoc, const char *tablename) {
 
 /******* Function to access Blob files *******/
 
+/* build_mb_block_list() {{{
+ * Build a primary index.
+ */
+static int build_mb_block_list(pxblob_t *pxblob) {
+	pxdoc_t *pxdoc;
+	pxstream_t *pxs;
+	int i;
+	size_t filesize;
+	int numblocks;
+	pxmbblockinfo_t *blocklist;
+	TMbBlockHeader2 mbblockhead;
+
+	pxdoc = pxblob->pxdoc;
+	pxs = pxblob->mb_stream;
+
+	if(pxblob->seek(pxblob, pxs, 0, SEEK_END) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to end of blob file."));
+		return -1;
+	}
+	filesize = pxblob->tell(pxblob, pxs);
+	if(filesize & 0x00000fff) {
+		px_error(pxdoc, PX_RuntimeError, _("Size of blob file is not multiple of 4kB."));
+		return -1;
+	}
+
+	if(pxblob->seek(pxblob, pxs, 0, SEEK_SET) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to start of blob file."));
+		return -1;
+	}
+
+	numblocks = filesize >> 12;
+	if(NULL == (blocklist = pxdoc->malloc(pxdoc, numblocks*sizeof(pxmbblockinfo_t), _("Allocate memory for block info in blob file.")))) {
+		return -1;
+	}
+	i = 0;
+	fprintf(stderr, "Blob file has %d blocks\n", numblocks);
+	for(i=0; i<numblocks; i++) {
+		if(pxblob->seek(pxblob, pxs, i*4096, SEEK_SET) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not go to start of block in blob file."));
+			pxdoc->free(pxdoc, blocklist);
+			return -1;
+		}
+
+		if(pxblob->read(pxblob, pxs, sizeof(TMbBlockHeader3), &mbblockhead) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read header of block in blob file."));
+			pxdoc->free(pxdoc, blocklist);
+			return -1;
+		}
+		blocklist[i].number = i;
+		blocklist[i].type = mbblockhead.type;
+		blocklist[i].numblocks = (int) (get_short_le((char *) &mbblockhead.numBlocks));
+		fprintf(stderr, "Block %d is of type %d\n", i, blocklist[i].type);
+		if(blocklist[i].type == 3) {
+			int j;
+			blocklist[i].numblobs = 0;
+			blocklist[i].allocspace = 0;
+
+			for(j=0; j<64; j++) {
+				TMbBlockHeader3Table mbbhtab;
+				if(pxblob->read(pxblob, pxs, sizeof(TMbBlockHeader3Table), &mbbhtab) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
+					return -1;
+				}
+				if(mbbhtab.offset != 0) {
+					fprintf(stderr, "  %d. Found blob with %d x 16 bytes\n", j, mbbhtab.length);
+					blocklist[i].numblobs++;
+					blocklist[i].allocspace += mbbhtab.length;
+				}
+			}
+			fprintf(stderr, "  Block of type 3 had %d blobs using %d from 235 x 16 bytes\n", blocklist[i].numblobs, blocklist[i].allocspace);
+		} else {
+			blocklist[i].numblobs = 1;
+			blocklist[i].allocspace = 0;
+		}
+
+	}
+	if(NULL != pxblob->blocklist) {
+		pxdoc->free(pxdoc, pxblob->blocklist);
+	}
+	pxblob->blocklist = blocklist;
+	pxblob->blocklistlen = numblocks;
+	return 0;
+}
+/* }}} */
+
 /* PX_new_blob() {{{
  * Create a new blob document
  */
@@ -2518,6 +2799,9 @@ PX_open_blob_fp(pxblob_t *pxblob, FILE *fp) {
 		px_error(pxdoc, PX_RuntimeError, _("Unable to get header of blob file."));
 		return -1;
 	}
+
+	build_mb_block_list(pxblob);
+	pxblob->used_datablocks = pxblob->blocklistlen-1;
 
 	return(0);
 }
@@ -3268,8 +3552,8 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 			*value = NULL;
 			return -1;
 		}
-		if(size != get_long_le(&head[0])) {
-			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le(&head[0]));
+		if(size != get_long_le((char*) &head[0])) {
+			px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, get_long_le((char *) &head[0]));
 			*value = NULL;
 			return -1;
 		}
@@ -3577,10 +3861,21 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 	 * we don't need to bother writing into the blob file. */
 	leader = len - 10;
 	if(valuelen > leader) {
+		int found;
+		pxmbblockinfo_t *blockinfoptr = NULL;
 		pxblob = pxdoc->px_blob;
 		if(!pxblob || !pxblob->mb_stream) {
 			px_error(pxdoc, PX_RuntimeError, _("Paradox database has no blob file."));
 			return(-1);
+		}
+
+		if((found = px_find_blob_slot(pxblob, valuelen, &blockinfoptr)) > 0) {
+			fprintf(stderr, "Found block for blob\n");
+			fprintf(stderr, "number = %d\n", blockinfoptr->number);
+			fprintf(stderr, "type = %d\n", blockinfoptr->type);
+			fprintf(stderr, "numblobs = %d\n", blockinfoptr->numblobs);
+			fprintf(stderr, "numblocks = %d\n", blockinfoptr->numblocks);
+			fprintf(stderr, "allocspace = %d\n", blockinfoptr->allocspace);
 		}
 		pxs = pxblob->mb_stream;
 		if(valuelen > 2048) { /* Block of type 2 */
@@ -3593,10 +3888,8 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 				return -1;
 			}
 			/* Calculate how many blocks of 4K this blob will need */
-			if((valuelen+6) % 4096)
-				used_blocks = ((valuelen+6) / 4096) + 1;
-			else
-				used_blocks = ((valuelen+6) / 4096);
+			used_blocks = ((valuelen+sizeof(TMbBlockHeader2)-1) / 4096) + 1;
+
 			/* Fill up the structure that precede the blob in the mb file. */
 			mbbh.type = 2;
 			put_short_le((char *) &mbbh.numBlocks, used_blocks);
@@ -3618,9 +3911,15 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			pxblob->used_datablocks += used_blocks;
 		} else { /* Block of type 3 */
 			TMbBlockHeader3Table mbbhtab;
+			int j;
 //			fprintf(stderr, "Blob goes into type 3 block\n");
-			/* Do we have subblock already? Does the block has enough space? */
-			if(pxblob->subblockoffset == 0 || ((pxblob->subblockfree*16) < valuelen)) {
+			if(found > 0) {
+				pxblob->subblockoffset = blockinfoptr->number;
+				pxblob->subblockblobcount = blockinfoptr->numblobs;
+				pxblob->subblockfree = 235-blockinfoptr->allocspace;
+			}
+			/* Do we have subblock already? Does the block have enough space? */
+			if(pxblob->subblockoffset == 0 || (pxblob->subblockblobcount > 63) || ((pxblob->subblockfree*16) < valuelen)) {
 				TMbBlockHeader3 mbbh;
 				int i, nullint=0;
 
@@ -3653,16 +3952,35 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			 * space to store the blob data.
 			 * First write the table entry pointing to the blob data. The table is
 			 * filled from the end to the beginning.
+			 * FIXME: The assumption that all table entries are filled starting from
+			 * the end isn't true anymore. PX_delete_record() could have left empty
+			 * slots in the table. Loop through the index table from the end to the
+			 * start and use the first free slot.
 			 */
-			if(pxblob->seek(pxblob, pxs, (pxblob->subblockoffset)*4096+sizeof(TMbBlockHeader3)+(63-pxblob->subblockblobcount)*5, SEEK_SET) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not go to table entry for the blob data."));
+			if(pxblob->seek(pxblob, pxs, (pxblob->subblockoffset)*4096+sizeof(TMbBlockHeader3)+63*sizeof(TMbBlockHeader3Table), SEEK_SET) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not go to last table entry for the blob data."));
 				return -1;
 			}
-			mbbhtab.offset = (4096/16)-pxblob->subblockfree; /* offset/16 to blob data */
-			mbbhtab.length = valuelen/16;
-			if(valuelen % 16) {
-				mbbhtab.length++;
+			for(j=63; j>=0; j--) {
+				if(pxblob->read(pxblob, pxblob->mb_stream, sizeof(TMbBlockHeader3Table), &mbbhtab) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not read entry in index table of type 3 block."));
+					return -1;
+				}
+				if(mbbhtab.offset == 0) {
+					if(pxblob->seek(pxblob, pxs, -sizeof(TMbBlockHeader3Table), SEEK_CUR) < 0) {
+						px_error(pxdoc, PX_RuntimeError, _("Could not go to table entry for the blob data."));
+						return -1;
+					}
+					break;
+				}
+				if(pxblob->seek(pxblob, pxs, -2*sizeof(TMbBlockHeader3Table), SEEK_CUR) < 0) {
+					px_error(pxdoc, PX_RuntimeError, _("Could not go to table entry for the blob data."));
+					return -1;
+				}
 			}
+			mbbhtab.offset = (4096/16)-pxblob->subblockfree; /* offset/16 to blob data */
+			mbbhtab.length = (valuelen-1)/16 + 1;
+
 			/* FIXME: Using subblockblobcount is probably not sufficient. It
 			 * maybe a counter over the whole file and not just the block.
 			 * Uwe 17.12.2004: Tried (pxblob->mb_head->modcount+1) instead of
