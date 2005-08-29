@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>August 29, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2003-2005</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -73,6 +73,8 @@ manpage.1: manpage.sgml
 		  record. It must be calculated by summing up all field length before
 			the field to operate on and add it to the base pointer of the
 			record.</para>
+		<note><para>This function is deprecated and obsolete if
+		  <function>PX_retrieve_record(3)</function> is used.</para></note>
 
   </refsect1>
   <refsect1>

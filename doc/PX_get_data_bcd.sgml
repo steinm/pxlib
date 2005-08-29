@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>July 19, 2004</date>">
+  <!ENTITY dhdate      "<date>August 29, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -79,6 +79,8 @@ manpage.1: manpage.sgml
 		<para>The function allocates memory for the string returned in
 		  <option>*value</option>. This memory has to be freed by the application.
 			</para>
+		<note><para>This function is deprecated and obsolete if
+		  <function>PX_retrieve_record(3)</function> is used.</para></note>
 
   </refsect1>
   <refsect1>
