@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>August 29, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -70,6 +70,8 @@ manpage.1: manpage.sgml
 		  first record has number 0, the last one has number_of_records-1.</para>
 		<para>If you accessing several records, do it in ascending order, because
 		  this is the most efficient way.</para>
+		<note><para>This function is deprecated.
+		  Use <function>PX_retrieve_record(3)</function> instead</para></note>
 
   </refsect1>
   <refsect1>
