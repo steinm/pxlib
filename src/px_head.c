@@ -684,11 +684,14 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 		return -1;
 	}
 
-	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize + 1;
+	/* Use get_short_le_s() instead of get_short_le() because the value
+	 * is negative if the block has no records.
+	 */
+	n = get_short_le_s((char *) &datablockhead.addDataSize)/pxh->px_recordsize + 1;
 //	fprintf(stderr, "Hexdump des alten datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
-//	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le((char *) &datablockhead.addDataSize));
+//	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le_s((char *) &datablockhead.addDataSize));
 //	fprintf(stderr, "Datablock %d has %d records\n", datablocknr, n);
 //	fprintf(stderr, "Adding new record at postion %d in block\n", recnr);
 
@@ -768,7 +771,7 @@ int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, in
 		return -3;
 	}
 
-	n = get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize;
+	n = get_short_le_s((char *) &datablockhead.addDataSize)/pxh->px_recordsize;
 
 	/* Check if record number within the block is less or equal the current
 	 * number of records-1 in the block. If yes, we need to decrement the
