@@ -45,7 +45,28 @@ void put_long_le(char *cp, long lval)
 /*
  * routine to change little endian short to host short
  */
-short int get_short_le(const char *cp)
+unsigned short int get_short_le(const char *cp)
+{
+	unsigned short int ret;
+	unsigned char *source = (unsigned char *)cp;
+
+	if(NULL == cp)
+		return 0;
+
+	ret = *source++;
+	ret += ((*source++)<<8);
+
+	return ret;
+}
+
+/*
+ * routine to change little endian short to host short
+ * This one returns a signed integer because reading
+ * datablockhead.addDataSize needs to be done signed.
+ * datablockhead.addDataSize is negativ if the datablock
+ * is empty.
+ */
+short int get_short_le_s(const char *cp)
 {
 	short int ret;
 	unsigned char *source = (unsigned char *)cp;

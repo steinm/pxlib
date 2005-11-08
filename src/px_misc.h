@@ -2,7 +2,8 @@
 #define __PX_MISC_H__
 extern void put_long_le(char *cp, long lval);
 extern long get_long_le(const char *cp);
-extern short int get_short_le(const char *cp);
+extern unsigned short int get_short_le(const char *cp);
+extern short int get_short_le_s(const char *cp);
 extern void put_short_le(char *cp, short int sval);
 extern void put_double_le(char *cp, double fval);
 extern double get_double_le(const char *cp);
