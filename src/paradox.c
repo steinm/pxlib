@@ -288,6 +288,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 		pxdoc->free(pxdoc, pxdoc->px_indexdata);
 	}
 	/* Allocate memory for internal list of index entries */
+//	fprintf(stderr, "fileblocks = %d\n", pxh->px_fileblocks);
 	if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
 		return -1;
@@ -1733,7 +1734,7 @@ PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 
 //	fprintf(stderr, "Putting record at position %d\n", recpos);
 
-	/* All the following calculation assume sequentially writting of
+	/* All the following calculation assume sequentially writing of
 	 * records and filling a datablock first before starting a new one.
 	 * This should be fixed. Better would be, if we keep record
 	 * in px_data (like a primary index) which datablocks are available
