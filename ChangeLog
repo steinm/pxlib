@@ -1,8 +1,20 @@
 Version 0.6.0
+	- Add get_short_le_s() which returns signed short int because the size
+	  of a datablock as stored in the datablock header can be negative.
+	- fixed overflow in px_head->px_fileblocks which is now an unsigned
+	  int, as well as px_firstblock and px_lastblock. Also make get_short_le()
+		return unsigned int. Thanks to Arkadiusz.
+	- fixed calculation for number of blocks needed by a blob which
+	  is stored in block of type 2
+	- _px_put_data_blob() doesn't store more than 64 blobs in block
+	  of type 3
 	- use a cache for reading encrypted blobs
 	- make databases opened with PX_open_file() writable
 	- added new functions PX_delete_record(), PX_update_record(),
 	  PX_insert_record() allowing to modify an existing database
+	- added new function PX_retrieve_record() which delivers a record
+	  as an array of (pxval_t *). This is a functional replacement for
+	  PX_get_record()
 
 Version 0.5.1
 	- fixed bug when reading header of blob (Thanks to Giovanni Giacobbi)
