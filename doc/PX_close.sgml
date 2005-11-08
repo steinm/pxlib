@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>August 29, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -66,9 +66,13 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>Closes a Paradox file. Do not confuse this function with PX_delete(3)
-		  which has to be called after &funcname; to free all resources used for
-			the database.</para>
+    <para>Closes a Paradox file. Do not confuse this function with
+		  <function>PX_delete(3)</function> which has to be called after
+			<function>&funcname;(3)</function> to free all resources used for
+			the database. <function>&funcname;(3)</function> closes the associated
+			file if it was opened by pxlib. If the database file was opened with
+			<function>fopen(3)</function> it must be closed with
+			<function>flcose(3)</function> by the calling application.</para>
 
   </refsect1>
   <refsect1>

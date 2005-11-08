@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>August 29, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -68,9 +68,10 @@ manpage.1: manpage.sgml
 
     <para>Creates a new Paradox document in an already open file with the given
 		  field specification. <option>pxdoc</option> must be created before
-			with PX_new(3) or PX_new2(3). The file must be opened in read/write mode
-			(w+) with fopen(3). <option>fields</option> is an array
-			of <option>numfields</option> field specifications to set the
+			with <function>PX_new(3)</function> or <function>PX_new2(3)</function>.
+			The file must be opened in read/write mode
+			(w+) with <function>fopen(3)</function>. <option>fields</option> is an
+			array of <option>numfields</option> field specifications to set the
 			schema of the database. The memory for the field specifications and
 			field names must be allocated by the caller and may not be freed, since
 			the memory is freed when the document is deleted. Make sure to use the
@@ -80,11 +81,11 @@ manpage.1: manpage.sgml
 			The field name can be
 			left empty if a primary index file is to be created. The type of the
 			file can be set in the last parameter. Currently only database
-			(pxfFileTypIndexDB, pxfFileTypNonIndexDB)
+			(pxfFileTypIndexDB, pxfFileTypNonIndexDB) and
 			primary index (pxfFileTypPrimIndex) files are supported.</para>
 		<para>After creating the paradox database you may want to call
-		  PX_set_tablename(3) in order to set the table name as it is stored
-			in the header of the database.</para>
+		  <function>PX_set_tablename(3)</function> in order to set the table
+			name as it is stored in the header of the database.</para>
 
   </refsect1>
   <refsect1>

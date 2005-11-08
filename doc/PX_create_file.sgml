@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>August 29, 2005</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -67,8 +67,8 @@ manpage.1: manpage.sgml
     <title>DESCRIPTION</title>
 
     <para>Creates a new Paradox database with the given filename.
-		  This functions internally calls PX_create_fp(3) after the file is
-			opened.</para>
+		  This functions internally calls <function>PX_create_fp(3)</function>
+			after the file was opened. The file is opened in `w+' mode.</para>
 		<para>The table name will be set to the filename be default. It can
 		  be overwritten by calling PX_set_parameter(3) afterwards.</para>
 
