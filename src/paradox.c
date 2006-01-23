@@ -621,7 +621,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, const char *fil
 //	pxh->px_tablename = px_strdup(pxdoc, filename);
 	PX_set_tablename(pxdoc, filename);
 	pxdoc->px_name = px_strdup(pxdoc, filename);
-	pxdoc->px_close_fp = px_true;
+	pxdoc->px_stream->close = px_true;
 	return 0;
 }
 /* }}} */
