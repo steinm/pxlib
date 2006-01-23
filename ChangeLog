@@ -1,4 +1,5 @@
 Version 0.6.0
+	- close file which was opened by PX_create_file()
 	- Add get_short_le_s() which returns signed short int because the size
 	  of a datablock as stored in the datablock header can be negative.
 	- fixed overflow in px_head->px_fileblocks which is now an unsigned
