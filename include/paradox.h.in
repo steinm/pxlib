@@ -169,7 +169,7 @@ struct px_doc {
 //	FILE *px_fp;       /* File pointer of file */
 	pxstream_t *px_stream; /* input stream to read file from */
 	char *px_name;     /* Name of file */
-	int px_close_fp;   /* set to true if file pointer must be closed */
+	int px_close_fp;   /* set to true if file pointer must be closed, deprecated */
 //	int px_filemode;   /* set to pxfFileRead|pxfFileWrite */
 	pxhead_t *px_head; /* Pointer to header of file */
 	void *px_data;     /* Pointer to data of file (used in prim. index for
