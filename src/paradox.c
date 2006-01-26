@@ -3670,9 +3670,10 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 			free(obuf);
 			return;
 		}
+		*optr = '\0';
 //		printf("value(%d) = '%s'\n", ilen, value);
 //		printf("obuf(%d) = '%s'\n", olen, obuf);
-		olen = strlen(value);
+		olen = optr-obuf;
 #endif
 #endif
 	} else {
@@ -3784,6 +3785,7 @@ PXLIB_API void PXLIB_CALL
 PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	unsigned char obuf[17];
 	unsigned char sign;
+	struct lconv *lc;
 	char *dpptr;
 	int i, j;
 
@@ -3797,7 +3799,11 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 			sign = 0x0f;
 			memset(obuf+1, 255, 16);
 		} 
-		dpptr = strchr(value, '.');
+		lc = localeconv();
+		if(lc)
+			dpptr = strchr(value, lc->decimal_point[0]);
+		else
+			dpptr = strchr(value, '.');
 		if(dpptr) {
 			j = dpptr-value+1;
 			i = 0;
