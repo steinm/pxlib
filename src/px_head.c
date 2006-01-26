@@ -407,7 +407,10 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	pxf = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		pxinfo.fType = pxf->px_ftype;
-		pxinfo.fSize = pxf->px_flen;
+		if(pxf->px_ftype == pxfBCD)
+			pxinfo.fSize = pxf->px_fdc;
+		else
+			pxinfo.fSize = pxf->px_flen;
 		if(pxdoc->write(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write field specification."));
 			return -1;
