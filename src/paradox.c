@@ -2358,6 +2358,10 @@ PX_close(pxdoc_t *pxdoc) {
 
 	if(pxdoc->px_stream && pxdoc->px_stream->close && (pxdoc->px_stream->s.fp != NULL)){
 		fclose(pxdoc->px_stream->s.fp);
+	}
+
+	/* Free memory for io stream */
+	if(pxdoc->px_stream) {
 		pxdoc->free(pxdoc, pxdoc->px_stream);
 		pxdoc->px_stream = NULL;
 	}
@@ -2442,6 +2446,7 @@ PX_delete(pxdoc_t *pxdoc) {
 	if(pxdoc->curblock) {
 		pxdoc->free(pxdoc, pxdoc->curblock);
 	}
+
 	pxdoc->free(pxdoc, pxdoc);
 }
 /* }}} */
