@@ -1,4 +1,5 @@
 Version 0.6.0
+	- fixed minor memory leak cause by memory used for the pxs_stream
 	- fixed reading of fields of type BCD
 	- conversion from multi byte to one byte strings in PX_put_data_alpha()
 	  terminates the resulting string propperly
