@@ -1,3 +1,15 @@
+pxlib (0.6.0-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Uwe Steinmann <steinm@debian.org>  Mon, 06 Feb 2006 12:26:20 +0100
+
+pxlib (0.5.1-2) unstable; urgency=low
+
+  * Rebuild due to library versioning change of libgsf-1 (Closes: #338711)
+
+ -- Uwe Steinmann <steinm@debian.org>  Mon, 14 Nov 2005 07:27:16 +0100
+
 pxlib (0.5.1-1) unstable; urgency=low
 
   * New upstream release.
