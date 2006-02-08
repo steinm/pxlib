@@ -2077,6 +2077,7 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	/* write data */
 	data = px_convert_data(pxdoc, dataptr);
 	itmp = px_add_data_to_block(pxdoc, pxh, datablocknr, recno, data, pxdoc->px_stream, &update);
+	pxdoc->free(pxdoc, data);
 	if(update == 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Request for inserting a new record turned out to be an update of an exiting record. This should not happen."));
 		return -1;
@@ -2254,6 +2255,7 @@ PX_update_record(pxdoc_t *pxdoc, pxval_t **dataptr, int recno) {
 		datablocknr = ((tmppxdbinfo.blockpos - pxh->px_headersize) / (pxh->px_maxtablesize*0x400)) + 1;
 		data = px_convert_data(pxdoc, dataptr);
 		ret = px_add_data_to_block(pxdoc, pxh, datablocknr, tmppxdbinfo.recno, data, pxdoc->px_stream, &update);
+		pxdoc->free(pxdoc, data);
 		if(update != 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Expected record to be updated, but it was not."));
 			return -1;
