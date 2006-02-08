@@ -85,7 +85,7 @@ manpage.1: manpage.sgml
 			the record is the following:</para>
 		<programlisting>
 <![CDATA[
-dataptr = (pxval_t **) malloc(PX_numfields(pxdoc)*sizeof(pxval_t *));
+dataptr = (pxval_t **) malloc(PX_get_num_fields(pxdoc)*sizeof(pxval_t *));
 MAKE_PXVAL(pxdoc, dataptr[0]);
 dataptr[0]->type = pxfLong;
 dataptr[0]->value.lval = 45;
