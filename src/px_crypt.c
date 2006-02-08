@@ -6,6 +6,18 @@
 #include "paradox.h"
 #include "px_crypt.h"
 
+static void px_encrypt_chunk(unsigned char src[256], unsigned char dst[256],
+                             unsigned char a, unsigned char b,
+                             unsigned char c, unsigned char d);
+
+static void px_decrypt_chunk(unsigned char src[256], unsigned char dst[256],
+                             unsigned char a, unsigned char b,
+                             unsigned char c, unsigned char d);
+
+static void px_encrypt_chunk2(unsigned char src[256], unsigned char dst[256],
+                       int lenpassw);
+
+static long makeLongFromBuff(long partial, unsigned char buff[256]);
 
 /* static unsigned char encryption_table_a[256] {{{
  */
