@@ -749,9 +749,12 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
  * of the block (the first block has number 1).
  * recnr is the number of the record within the block. The first record
  * in a block has number 0.
+ * The block is reorganized to make sure all records are stored at
+ * the beginning of the block. If record n of m records is deleted,
+ * then the records n+1 up to m will be copied to n up to m-1.
  * The function returns the remaining number of records in the block,
  * which should be 1 less than before.
- * A value less than 0 is return in case of an error.
+ * A value less than 0 is returned in case of an error.
  */
 int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, pxstream_t *pxs) {
 	TDataBlock datablockhead;
