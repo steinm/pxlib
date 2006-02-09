@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>August 22, 2005</date>">
+  <!ENTITY dhdate      "<date>February 09, 2006</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2005</year>
+      <year>2005-2006</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -68,11 +68,14 @@ manpage.1: manpage.sgml
 
     <para>Removes the record with number <option>recpos</option> from the
 		  Paradox file. The first record has number 0. The data of the record
-			will not be wiped out, making it possible to reconstruct it later
-			unless it was overwritten.
+			will be wiped out, making it impossible to reconstruct it later.
+			The data block where the record was stored is reconstruct to make
+			sure all records are at the beginning of the data block followed by
+			the free space.</para>
+		<para>
 			Calls of <function>PX_insert_record(3)</function> will use
-			the space left by this function and overwrite the data.
-			</para>
+			the first datablock with free space and add the new record
+			after the records in the data block.</para>
 
   </refsect1>
   <refsect1>
