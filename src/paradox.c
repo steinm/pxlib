@@ -1328,7 +1328,7 @@ px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *px
  * Returns the record number if a free slot could be found, 0 if
  * none could be found * and -1 in case of an error. In the second
  * case the calling function has to create a new data block.
- * The record starts at 1 because 0 is ambigous.
+ * The record number starts at 1 because 0 is ambigous.
  */
 int
 px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
@@ -1351,6 +1351,7 @@ px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 		 * This is only for large databases a speed disadvantage.
 		 */
 		if(pindex_data[j].level == 1) {
+			/* Is there a free slot in the block?j */
 			if(pindex_data[j].numrecords < recsperdatablock) {
 				int blocksize, ret;
 				TDataBlock datablock;
@@ -1379,11 +1380,15 @@ px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 				pxdbinfo->size = blocksize+pxh->px_recordsize;
 				pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
 				if(pindex_data[j].numrecords != pxdbinfo->numrecords) {
-					px_error(pxdoc, PX_RuntimeError, _("Number of records of block stored in index is unequal to number of records stored in block header."));
+					px_error(pxdoc, PX_RuntimeError, _("Number of records of block stored in index (%d) is unequal to number of records stored in block header (%d)."), pindex_data[j].numrecords, pxdbinfo->numrecords);
 					return -1;
 				}
 				return reccount+pindex_data[j].numrecords+1;
 			} else {
+				/* Just count the number of records found so far. It doesn't
+				 * make a difference if we add recsperdatablock or
+				 * pindex_data[j].numrecords because they equal anyway.
+				 */
 				reccount += recsperdatablock;
 			}
 		}
@@ -2325,7 +2330,7 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 			/* Update the primary index */
 			if(pxdoc->px_indexdata) {
 				pxpindex_t *pindex = pxdoc->px_indexdata;
-				pindex[datablocknr-1].numrecords = ret+1;
+				pindex[datablocknr-1].numrecords = ret;
 			}
 
 		} else {
