@@ -43,7 +43,11 @@ manpage.1: manpage.sgml
       &dhfirstname;
       &dhsurname;
     </author>
-    <copyright> <year>2005</year> <holder>&dhusername;</holder> </copyright> &dhdate;
+    <copyright>
+     <year>2005-2006</year>
+     <holder>&dhusername;</holder> 
+		</copyright>
+		&dhdate;
   </refentryinfo>
   <refmeta>
     &dhucpackage;
@@ -216,8 +220,9 @@ main(int argc, char *argv[]) {
 			requires three further parameters to specify the database layout and the
 			file type, e.g. pxfFileTypNonIndexDB. The function can be used to create
 			both databases and primary index files. Secondary index files are not currently
-			supported. A database opened for reading cannot be written and vise versa.
-			This disadvantage may be removed in one of the next versions.
+			supported. pxlib >= 0.6.0 can open databases for reading and writing
+			and provide four new functions for this purpose.</para>
+		<para>
 			Each field of the database is described by a structure:</para>
 	  <programlisting>
 typedef struct px_field pxfield_t;
@@ -706,6 +711,50 @@ main(int argc, char *argv[]) {
 	PX_shutdown();
 }
 	  </programlisting>
+  </refsect1>
+
+  <refsect1>
+    <title>MODIFYING A DATABASE</title>
+
+		<para>Starting from version 0.6.0 pxlib supports to open databases for
+		  reading and writing at the same time. If you intend to do so, please
+			ensure to open the file for the database in `w+', `r+', or `a+'
+			mode. You will have also have to use a new set of function as described
+			below.</para>
+
+    <funcsynopsis>
+	    <funcprototype>
+		    <funcdef>int <function>PX_insert_record</function></funcdef>
+			  <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+			  <paramdef>pxval_t **<parameter>data</parameter></paramdef>
+		  </funcprototype>
+	  </funcsynopsis>
+
+    <funcsynopsis>
+	    <funcprototype>
+		    <funcdef>int <function>PX_update_record</function></funcdef>
+			  <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+			  <paramdef>pxval_t **<parameter>data</parameter></paramdef>
+			  <paramdef>int <parameter>recno</parameter></paramdef>
+		  </funcprototype>
+	  </funcsynopsis>
+
+    <funcsynopsis>
+	    <funcprototype>
+		    <funcdef>int <function>PX_delete_record</function></funcdef>
+			  <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+			  <paramdef>int <parameter>recno</parameter></paramdef>
+		  </funcprototype>
+	  </funcsynopsis>
+
+    <funcsynopsis>
+	    <funcprototype>
+		    <funcdef>int <function>PX_retrieve_record</function></funcdef>
+			  <paramdef>pxdoc_t *<parameter>pxdoc</parameter></paramdef>
+			  <paramdef>int <parameter>recno</parameter></paramdef>
+		  </funcprototype>
+	  </funcsynopsis>
+
   </refsect1>
 
   <refsect1>
