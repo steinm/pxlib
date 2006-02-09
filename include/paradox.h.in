@@ -293,8 +293,8 @@ struct px_pindex {
 };
 
 #define MAKE_PXVAL(pxdoc, pxval) \
-	(pxval) = (pxdoc)->malloc((pxdoc), sizeof(pxval_t), "Allocate memory for pxval_t"); \
-	memset((pxval), 0, sizeof(pxval_t));
+	(pxval) = (pxval_t *) (pxdoc)->malloc((pxdoc), sizeof(pxval_t), "Allocate memory for pxval_t"); \
+	memset((void *) (pxval), 0, sizeof(pxval_t));
 
 #define FREE_PXVAL(pxdoc, pxval) \
 	(pxdoc)->free((pxdoc), (pxval));
