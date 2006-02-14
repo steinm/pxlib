@@ -91,16 +91,18 @@ struct px_val {
 		</programlisting>
 		<para>The element <parameter>isnull</parameter> is set to 1 if the
 		  value is NULL otherwise it is set to 0. <parameter>type</parameter>
-			is the type of paradox field as defined in <filename>paradox.h</filename>.
+			is the type of the paradox field as defined in
+			<filename>paradox.h</filename>.
 			A field value can be either a long int, a double or a string, depending
 			on the paradox field type. The paradox field types pxfShort, pxfLong,
 			pxfDate, pxfTime, and pxfAutoInc are returned as long int values.
 			pxfTimestamp, pxfNumber, and pxfCurrency are returned as double values
 			and all remaining paradox field types are stored as strings with the length
-			in <literal>value.len</literal>. You can rely in strings being Null
-			terminated.</para>
+			in <literal>value.len</literal>. You can rely on strings being Null
+			terminated. Blobs are stored as string but are not guarented to be
+			Null terminated.</para>
 		<para>The paradox field types pxfTimestamp, pxfTime, an pxfDate use an
-		  uncommon format which can be formated into a string with
+		  uncommon format which can be converted into a string with
 			<function>PX_timestamp2string(3)</function>,
 			<function>PX_time2string(3)</function>, and
 			<function>PX_date2string(3)</function>.</para>
@@ -113,8 +115,12 @@ struct px_val {
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_update_record(3), PX_timestamp2string(3), PX_time2string(3),
-		  PX_date2string(3)</para>
+    <para>
+			<function>PX_update_record(3)</function>,
+			<function>PX_timestamp2string(3)</function>,
+			<function>PX_time2string(3)</function>,
+		  <function>PX_date2string(3)</function>
+		</para>
 
   </refsect1>
   <refsect1>
