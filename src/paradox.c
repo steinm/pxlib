@@ -491,10 +491,19 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	pxhead_t *pxh;
 	pxfield_t *pxf;
 	pxstream_t *pxs;
-	int i, recordsize = 0;
+	int i, c, recordsize = 0;
 	int approxheadersize = 0; /* The name indicates that this size not accurate,
 							   * actually it is very precise. */
 
+	pxf = fields;
+	for(i=0, c=0; i<numfields; i++, pxf++) {
+		recordsize += pxf->px_flen;
+		if(pxf->px_ftype == pxfAutoInc)
+			c++;
+	}
+	if(c > 1) {
+		px_error(pxdoc, PX_Warning, _("Database has %d auto increment fields. The automatic incrementation works only with one field of that type."), c);
+	}
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Allocate memory for database header."))) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for databae header."));
 		return -1;
@@ -1553,6 +1562,9 @@ px_find_blob_slot(pxblob_t *pxblob, int blobsize, pxmbblockinfo_t **blockinfo) {
  * Takes a list of pointers, pointing towards the data of each
  * field and creates a record, which can be stored in the database
  * file.
+ * Notice: This function modifies the header of the paradox database
+ * if a field of type pxfAutoInc is affected and its value is NULL.
+ *
  * Returns 0 on success or and -1 * in case of error.
  */
 char *
@@ -1568,59 +1580,71 @@ px_convert_data(pxdoc_t *pxdoc, pxval_t **dataptr) {
 	if(NULL == (data = pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for data record.")))) {
 		return NULL;
 	}
+	/* Initialize to 0, so null values are the default */
+	memset(data, 0, pxh->px_recordsize);
 
 	numfields = pxh->px_numfields;
 	pxf = pxh->px_fields;
 	offset = 0;
 	for(i=0; i<numfields; i++) {
-		switch(pxf->px_ftype) {
-			case pxfAlpha:
-				if(dataptr[i]->value.str.len > pxf->px_flen) {
-					pxdoc->free(pxdoc, data);
-					return NULL;
+		/* No need to store a null value, unless a pxfAutoInc field */
+		if(!dataptr[i]->isnull || pxf->px_ftype == pxfAutoInc) {
+			switch(pxf->px_ftype) {
+				case pxfAlpha:
+					if(dataptr[i]->value.str.len > pxf->px_flen) {
+						pxdoc->free(pxdoc, data);
+						return NULL;
+					}
+					PX_put_data_alpha(pxdoc, &data[offset], pxf->px_flen, (char *) dataptr[i]->value.str.val);
+					break;
+				case pxfShort:
+					PX_put_data_short(pxdoc, &data[offset], 2, (short int) dataptr[i]->value.lval);
+					break;
+				case pxfAutoInc:
+					if(dataptr[i]->isnull) {
+						pxh->px_autoinc++;
+						PX_put_data_long(pxdoc, &data[offset], 4, (int) pxh->px_autoinc);
+					} else {
+						PX_put_data_long(pxdoc, &data[offset], 4, (int) dataptr[i]->value.lval);
+					}
+					break;
+				case pxfLong:
+				case pxfTime:
+				case pxfDate:
+					PX_put_data_long(pxdoc, &data[offset], 4, (int) dataptr[i]->value.lval);
+					break;
+				case pxfTimestamp:
+				case pxfCurrency:
+				case pxfNumber:
+					PX_put_data_double(pxdoc, &data[offset], 8, dataptr[i]->value.dval);
+					break;
+				case pxfLogical: {
+					char value;
+					value = (char) dataptr[i]->value.lval;
+					PX_put_data_byte(pxdoc, &data[offset], 1, value);
+					break;
 				}
-				PX_put_data_alpha(pxdoc, &data[offset], pxf->px_flen, (char *) dataptr[i]->value.str.val);
-				break;
-			case pxfShort:
-				PX_put_data_short(pxdoc, &data[offset], 2, (short int) dataptr[i]->value.lval);
-				break;
-			case pxfAutoInc:
-			case pxfLong:
-			case pxfTime:
-			case pxfDate:
-				PX_put_data_long(pxdoc, &data[offset], 4, (int) dataptr[i]->value.lval);
-				break;
-			case pxfTimestamp:
-			case pxfCurrency:
-			case pxfNumber:
-				PX_put_data_double(pxdoc, &data[offset], 8, dataptr[i]->value.dval);
-				break;
-			case pxfLogical: {
-				char value;
-				value = (char) dataptr[i]->value.lval;
-				PX_put_data_byte(pxdoc, &data[offset], 1, value);
-				break;
-			}
-			case pxfGraphic:
-				break;
-			case pxfBLOb:
-				break;
-			case pxfOLE:
-				break;
-			case pxfFmtMemoBLOb:
-			case pxfMemoBLOb: {
-				if(0 > PX_put_data_blob(pxdoc, &data[offset], pxf->px_flen, dataptr[i]->value.str.val, dataptr[i]->value.str.len)) {
-					pxdoc->free(pxdoc, data);
-					return NULL;
+				case pxfGraphic:
+					break;
+				case pxfBLOb:
+					break;
+				case pxfOLE:
+					break;
+				case pxfFmtMemoBLOb:
+				case pxfMemoBLOb: {
+					if(0 > PX_put_data_blob(pxdoc, &data[offset], pxf->px_flen, dataptr[i]->value.str.val, dataptr[i]->value.str.len)) {
+						pxdoc->free(pxdoc, data);
+						return NULL;
+					}
+					break;
 				}
-				break;
+				case pxfBytes:
+					PX_put_data_bytes(pxdoc, &data[offset], min(pxf->px_flen, dataptr[i]->value.str.len), dataptr[i]->value.str.val);
+					break;
+				case pxfBCD:
+					PX_put_data_bcd(pxdoc, &data[offset], pxf->px_flen, dataptr[i]->value.str.val);
+					break;
 			}
-			case pxfBytes:
-				PX_put_data_bytes(pxdoc, &data[offset], min(pxf->px_flen, dataptr[i]->value.str.len), dataptr[i]->value.str.val);
-				break;
-			case pxfBCD:
-				PX_put_data_bcd(pxdoc, &data[offset], pxf->px_flen, dataptr[i]->value.str.val);
-				break;
 		}
 		offset += pxf->px_flen;
 		pxf++;
@@ -2341,6 +2365,72 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not find record for deletion."));
 		return -1;
 	}
+}
+/* }}} */
+
+/* PX_pack() {{{
+ * Packs database into the smallest possible file size by filling
+ * all datablocks to its maximum number of records and deleting
+ * empty datablocks.
+ */
+PXLIB_API int PXLIB_CALL
+PX_pack(pxdoc_t *pxdoc) {
+	pxhead_t *pxh;
+	pxstream_t *pxs;
+	pxpindex_t *pindex_data;
+	long blockpos, blockoutpos;
+	long recordpos, recordoutpos;
+	long blocknumber, blockoutnumber;
+	int recsperblock;
+	int i, j, n, jout, nout;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if(pxdoc->px_head == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("File has no header."));
+		return -1;
+	}
+	pxh = pxdoc->px_head;
+	pxs = pxdoc->px_stream;
+	pindex_data = pxdoc->px_indexdata;
+	recsperblock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxh->px_recordsize;
+
+	jout = 0;
+	nout = 0;
+	blockoutnumber = pindex_data[jout].blocknumber;
+	blockoutpos = pxh->px_headersize + (blockoutnumber-1)*pxh->px_maxtablesize*0x400;
+	for(j=0; j<pxdoc->px_indexdatalen; j++) {
+		if(pindex_data[j].level == 1) {
+			int n;
+			blocknumber = pindex_data[j].blocknumber;
+			blockpos = pxh->px_headersize + (blocknumber-1)*pxh->px_maxtablesize*0x400;
+			n = pindex_data[j].numrecords;
+			for(i=0; i<n; i++) {
+				recordpos = blockpos + sizeof(TDataBlock) + i*pxh->px_recordsize;
+				recordoutpos = blockoutpos + sizeof(TDataBlock) + nout*pxh->px_recordsize;
+				if(recordpos != recordoutpos)
+					fprintf(stdout, "copy record from 0x%X (block %d) to 0x%X (block %d)\n", recordpos, j, recordoutpos, jout);
+				nout++;
+				if(nout > recsperblock) {
+					jout++;
+					nout = 0;
+					blockoutnumber = pindex_data[jout].blocknumber;
+					blockoutpos = pxh->px_headersize + (blockoutnumber-1)*pxh->px_maxtablesize*0x400;
+				}
+			}
+		}
+	}
+	if(nout == 0)
+		jout--;
+	if(pxdoc->px_indexdatalen > jout+1) {
+		for(i=jout; i<pxdoc->px_indexdatalen; i++) {
+			fprintf(stdout, "Block %d is empty\n", i);
+		}
+	}
+	return 0;
 }
 /* }}} */
 
