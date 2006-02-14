@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>April 28, 2003</date>">
+  <!ENTITY dhdate      "<date>February 14, 2006</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003</year>
+      <year>2003-2006</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -86,8 +86,12 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_data_alpha(3), PX_set_inputencoding(3), PX_set_parameter(3),
-		  iconv(1), recode(1)</para>
+    <para>
+			<function>PX_get_data_alpha(3)</function>,
+			<function>PX_set_inputencoding(3)</function>,
+			<function>PX_set_parameter(3)</function>,
+		  iconv(1), recode(1)
+		</para>
 
   </refsect1>
   <refsect1>

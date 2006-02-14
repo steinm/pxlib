@@ -86,7 +86,10 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_open_file(3), PX_create_file(3)</para>
+    <para>
+			<function>PX_open_file(3)</function>,
+			<function>PX_create_file(3)</function>
+		</para>
 
   </refsect1>
   <refsect1>
