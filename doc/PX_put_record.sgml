@@ -82,10 +82,16 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_record(3), PX_get_record2(3), PX_put_recordn(3),
-		  PX_put_data_byte(3),
-		  PX_put_data_short(3), PX_put_data_long(3), PX_put_data_double(3),
-			PX_put_data_alpha(3)</para>
+    <para>
+			<function>PX_get_record(3)</function>,
+			<function>PX_get_record2(3)</function>,
+			<function>PX_put_recordn(3)</function>,
+		  <function>PX_put_data_byte(3)</function>,
+		  <function>PX_put_data_short(3)</function>,
+			<function>PX_put_data_long(3)</function>,
+			<function>PX_put_data_double(3)</function>,
+			<function>PX_put_data_alpha(3)</function>
+		</para>
 
   </refsect1>
   <refsect1>
