@@ -719,7 +719,7 @@ main(int argc, char *argv[]) {
 		<para>Starting from version 0.6.0 pxlib supports to open databases for
 		  reading and writing at the same time. If you intend to do so, please
 			ensure to open the file for the database in `w+', `r+', or `a+'
-			mode. You will have also have to use a new set of function as described
+			mode. You will also have to use a new set of functions as described
 			below.</para>
 
     <funcsynopsis>
@@ -729,6 +729,8 @@ main(int argc, char *argv[]) {
 			  <paramdef>pxval_t **<parameter>data</parameter></paramdef>
 		  </funcprototype>
 	  </funcsynopsis>
+		<para><function>PX_insert_record(3)</function> inserts a new record into
+		  a database.</para>
 
     <funcsynopsis>
 	    <funcprototype>
@@ -738,6 +740,8 @@ main(int argc, char *argv[]) {
 			  <paramdef>int <parameter>recno</parameter></paramdef>
 		  </funcprototype>
 	  </funcsynopsis>
+		<para><function>PX_update_record(3)</function> updates an existing
+		  record in database.</para>
 
     <funcsynopsis>
 	    <funcprototype>
@@ -768,7 +772,7 @@ main(int argc, char *argv[]) {
 			<function>PX_get_value(3)</function> by passing `codepage' as the value
 			name. Reading fields of type <literal>pxfAlpha</literal> will return
 			the unmodified value unless the target encoding has been set by
-			<function>PX_set_paramter(3)</function> differently
+			<function>PX_set_parameter(3)</function> differently
 			from the one stored in the database header. If the target encoding
 			is set differently <function>PX_get_data_alpha(3)</function> will
 			automatically convert into the requested encoding. This is either
@@ -877,7 +881,7 @@ main(int argc, char *argv[]) {
 			pxlib reads encrypted files silently without asking for additional
 			information. Writing an encrypted file requires to supply a password
 			for calculating the checksum. The password can be set with
-			<function>PX_set_paramter(3)</function>. Once it is set, encryption
+			<function>PX_set_parameter(3)</function>. Once it is set, encryption
 			is automatically turned on. The password must be set before writing
 			any records. The best place to do this, is right after calling
 			<function>PX_create_file(3)</function> or
