@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>August 23, 2005</date>">
+  <!ENTITY dhdate      "<date>February 13, 2006</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2005</year>
+      <year>2005-2006</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -69,7 +69,7 @@ manpage.1: manpage.sgml
     <para>Inserts a new record stored in the array <option>dataptr</option>
 		  into a Paradox file. The position of the record will be determined
 			by the function itself, starting at the beginning of the file and
-			search towards the end for a free slot. A free slot can be the result
+			searching towards the end for a free slot. A free slot can be the result
 			of former calls of <function>PX_delete_record(3)</function> or not
 			completely filled data blocks in the input file. If there is no free
 			slot within the file, then a new record will be added at the
@@ -89,14 +89,25 @@ dataptr = (pxval_t **) malloc(PX_get_num_fields(pxdoc)*sizeof(pxval_t *));
 MAKE_PXVAL(pxdoc, dataptr[0]);
 dataptr[0]->type = pxfLong;
 dataptr[0]->value.lval = 45;
+dataptr[1]->type = pxfAlpha;
+dataptr[1]->value.str.val = "test";
+dataptr[1]->value.str.len = 4;
 ...
 PX_insert_record(pxdoc, dataptr);
 free(dataptr[0]);
+free(dataptr[1]);
 free(dataptr);
 ]]>
 		</programlisting>
 		<para>There is currently no need to set the type, though it is
 		  recommended.</para>
+		<para>The field types pxfMemoBLOb and pxfFmtMemoBLOb are treated
+		  like strings.</para>
+		<para>Fields of type pxfAutoInc are automatically incremented if
+		  its value is set to NULL. In such a case the value is taken from
+			the header of the database. You should not have more than one
+			field of type pxfAutoInc in your database, otherwise the
+			automatic incrementation will not work.</para>
 
   </refsect1>
   <refsect1>
@@ -107,7 +118,11 @@ free(dataptr);
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_retrieve_record(3), PX_delete_record(3), PX_update_record(3)</para>
+    <para>
+			<function>PX_retrieve_record(3)</function>,
+			<function>PX_delete_record(3)</function>,
+			<function>PX_update_record(3)</function>
+		</para>
 
   </refsect1>
   <refsect1>
