@@ -72,6 +72,8 @@ manpage.1: manpage.sgml
 			The first record has number 0.</para>
 		<para>The memory for <option>dataptr</option> can be freed after
 		  <function>&funcname;</function> has been called.</para>
+		<para>Check the documentation of <function>PX_insert_record(3)</function>
+		  for more information on how to build up the record data</para>
 
   </refsect1>
   <refsect1>
