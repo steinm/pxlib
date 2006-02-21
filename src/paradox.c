@@ -3669,6 +3669,7 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 		if((ret = pxblob->read(pxblob, pxblob->mb_stream, *blobsize, blobdata)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 			*value = NULL;
+			pxdoc->free(pxdoc, blobdata);
 			return -1;
 		}
 	} else if(head[0] == 3) { /* Reading data from a block type 3 */
@@ -3704,11 +3705,13 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 		if((ret = pxblob->seek(pxblob, pxblob->mb_stream, offset+head[0]*16, SEEK_SET)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
 			*value = NULL;
+			pxdoc->free(pxdoc, blobdata);
 			return -1;
 		}
 		if((ret = pxblob->read(pxblob, pxblob->mb_stream, size, blobdata)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read all blob data."));
 			*value = NULL;
+			pxdoc->free(pxdoc, blobdata);
 			return -1;
 		}
 	}
@@ -4213,7 +4216,7 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 	for (i = 0; i < strlen(format); i++) {
 		switch(format[i]) {
 			case 'Y':       /* year, numeric, 4 digits */
-				size += 4;
+				size += 6;  /* Allow years to be 6 digits long */
 				break;
 			case 'y':		/* year, numeric, 2 digits */
 			case 'm':		/* month, numeric */
