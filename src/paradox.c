@@ -1953,11 +1953,12 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 							dataptr[i]->value.str.len = size;
 						} else {
 							dataptr[i]->isnull = 1;
-							fprintf(stderr, "Couldn't get blob data for %d\n", mod_nr);
 							px_error(pxdoc, PX_RuntimeError, _("Could not read blob data."));
 						}
-					} else {
+					} else if(ret == 0) {
 						dataptr[i]->isnull = 1;
+					} else {
+						px_error(pxdoc, PX_RuntimeError, _("Could not read blob data."));
 					}
 
 					break;
@@ -2858,9 +2859,10 @@ PXLIB_API pxblob_t* PXLIB_CALL
 PX_new_blob(pxdoc_t *pxdoc) {
 	pxblob_t *pxblob;
 
-	pxblob = pxdoc->malloc(pxdoc, sizeof(pxblob_t), _("Could not allocate memory for blob."));
-	if(!pxblob)
+	if(NULL == (pxblob = pxdoc->malloc(pxdoc, sizeof(pxblob_t), _("Allocate memory for blob.")))) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for blob."));
 		return(NULL);
+	}
 
 	memset(pxblob, 0, sizeof(pxblob_t));
 	pxblob->pxdoc = pxdoc;
@@ -3173,9 +3175,9 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 		*blobsize = size;
 	index = get_long_le(&data[leader]) & 0x000000ff;
 	*mod = mod_nr = get_short_le(&data[leader+8]);
-//	fprintf(stderr, "index=%ld ", index);
-//	fprintf(stderr, "size=%ld ", size);
-//	fprintf(stderr, "mod_nr=%d \n", mod_nr);
+/*	fprintf(stderr, "index=%ld ", index); */
+/*	fprintf(stderr, "size=%ld ", size); */
+/*	fprintf(stderr, "mod_nr=%d \n", mod_nr); */
 
 	if(!pxblob || !pxblob->mb_stream) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a blob file."));
@@ -3188,8 +3190,8 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 	}
 
 	if(*blobsize <= leader) {
-		blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
-		if(!blobdata) {
+		if(NULL == (blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Allocate memory for blob.")))) {
+			px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for blob."));
 			return(NULL);
 		}
 		memcpy(blobdata, data, *blobsize);
@@ -3238,8 +3240,8 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 			 * was passed to PX_read_blobdata()
 			 */
 
-			blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Could not allocate memory for blob."));
-			if(!blobdata) {
+			if(NULL == (blobdata = pxdoc->malloc(pxblob->pxdoc, *blobsize, _("Allocate memory for blob.")))) {
+				px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for blob."));
 				return(NULL);
 			}
 
@@ -3267,8 +3269,8 @@ _px_read_blobdata(pxblob_t *pxblob, const char *data, int len, int hsize, int *m
 				px_error(pxdoc, PX_RuntimeError, _("Blob does not have expected size (%d != %d)."), size, ((int)head[1]-1)*16+head[4]);
 				return(NULL);
 			}
-			blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Could not allocate memory for blob."));
-			if(!blobdata) {
+			if(NULL == (blobdata = pxdoc->malloc(pxblob->pxdoc, size, _("Allocate memory for blob.")))) {
+				px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for blob."));
 				return(NULL);
 			}
 			/* Goto the start of the blob */
@@ -3579,20 +3581,21 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 		*blobsize = size;
 	index = get_long_le(&data[leader]) & 0x000000ff;
 	*mod = mod_nr = get_short_le(&data[leader+8]);
-//	fprintf(stderr, "index=%ld ", index);
-//	fprintf(stderr, "size=%ld ", size);
-//	fprintf(stderr, "mod_nr=%d \n", mod_nr);
+/*	fprintf(stderr, "index=%ld ", index); */
+/*	fprintf(stderr, "size=%ld ", size); */
+/*	fprintf(stderr, "mod_nr=%d \n", mod_nr); */
 
 	if(*blobsize <= 0) {
-//		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes."));
+/*		px_error(pxdoc, PX_RuntimeError, _("Makes no sense to read blob with 0 or less bytes.")); */
 		*value = NULL;
-		return -1;
+		return 0;
 	}
 
 	/* First check if the blob data is included in the record itself */
 	if(*blobsize <= leader) {
-		blobdata = pxdoc->malloc(pxdoc, *blobsize, _("Could not allocate memory for blob."));
+		blobdata = pxdoc->malloc(pxdoc, *blobsize, _("Allocate memory for blob data."));
 		if(!blobdata) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for blob data."));
 			*value = NULL;
 			return -1;
 		}
@@ -3610,6 +3613,7 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 
 	offset = get_long_le(&data[leader]) & 0xffffff00;
 	if(offset == 0) {
+		px_error(pxdoc, PX_Warning, _("Offset in blob file is unexpectedly zero."));
 		*blobsize = 0;
 		*value = NULL;
 		return -1;
@@ -3660,8 +3664,9 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 		 * was passed to PX_read_blobdata()
 		 */
 
-		blobdata = pxdoc->malloc(pxdoc, *blobsize, _("Could not allocate memory for blob."));
+		blobdata = pxdoc->malloc(pxdoc, *blobsize, _("Allocate memory for blob data."));
 		if(!blobdata) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for blob data."));
 			*value = NULL;
 			return -1;
 		}
@@ -3696,8 +3701,9 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 			*value = NULL;
 			return -1;
 		}
-		blobdata = pxdoc->malloc(pxdoc, size, _("Could not allocate memory for blob."));
+		blobdata = pxdoc->malloc(pxdoc, size, _("Allocate memory for blob data."));
 		if(!blobdata) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for blob data."));
 			*value = NULL;
 			return -1;
 		}
