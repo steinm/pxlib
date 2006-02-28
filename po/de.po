@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-02-09 14:07+0100\n"
+"POT-Creation-Date: 2006-02-27 23:30+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Uwe Steinmann <uwe@steinmann.cx>\n"
 "Language-Team: DE <uwe@steinmann.cx>\n"
@@ -27,15 +27,15 @@ msgstr "Konnte Speicher für PX-Objekt nicht allocieren."
 
 #: ../src/paradox.c:227 ../src/paradox.c:247 ../src/paradox.c:332
 #: ../src/paradox.c:376 ../src/paradox.c:420 ../src/paradox.c:465
-#: ../src/paradox.c:606 ../src/paradox.c:635 ../src/paradox.c:681
-#: ../src/paradox.c:748 ../src/paradox.c:829 ../src/paradox.c:868
-#: ../src/paradox.c:1660 ../src/paradox.c:1730 ../src/paradox.c:1829
-#: ../src/paradox.c:2017 ../src/paradox.c:2226 ../src/paradox.c:2289
-#: ../src/paradox.c:2354 ../src/paradox.c:2389 ../src/paradox.c:2468
-#: ../src/paradox.c:2491 ../src/paradox.c:2520 ../src/paradox.c:2539
-#: ../src/paradox.c:2558 ../src/paradox.c:2580 ../src/paradox.c:2622
-#: ../src/paradox.c:2658 ../src/paradox.c:2964 ../src/paradox.c:3011
-#: ../src/paradox.c:3056 ../src/px_io.c:20
+#: ../src/paradox.c:615 ../src/paradox.c:644 ../src/paradox.c:690
+#: ../src/paradox.c:757 ../src/paradox.c:838 ../src/paradox.c:877
+#: ../src/paradox.c:1684 ../src/paradox.c:1754 ../src/paradox.c:1853
+#: ../src/paradox.c:2042 ../src/paradox.c:2251 ../src/paradox.c:2314
+#: ../src/paradox.c:2389 ../src/paradox.c:2445 ../src/paradox.c:2480
+#: ../src/paradox.c:2559 ../src/paradox.c:2582 ../src/paradox.c:2611
+#: ../src/paradox.c:2630 ../src/paradox.c:2649 ../src/paradox.c:2671
+#: ../src/paradox.c:2713 ../src/paradox.c:2749 ../src/paradox.c:3056
+#: ../src/paradox.c:3103 ../src/paradox.c:3148 ../src/px_io.c:20
 msgid "Did not pass a paradox database."
 msgstr "Keine Paradox-Datenbank übergeben."
 
@@ -47,16 +47,16 @@ msgstr "Konnte neuen IO-Strom nicht erzeugen."
 #. fprintf(stderr, "fileblocks = %d\n", pxh->px_fileblocks);
 #. Rebuild the index
 #. Allocate memory for internal list of index entries
-#: ../src/paradox.c:292 ../src/paradox.c:2050
+#: ../src/paradox.c:292 ../src/paradox.c:2075
 msgid "Allocate memory for self build internal primary index."
 msgstr "Alloziere Speicher für selbsterstellten internen Primärindex."
 
-#: ../src/paradox.c:293 ../src/paradox.c:2051
+#: ../src/paradox.c:293 ../src/paradox.c:2076
 msgid "Could not allocate memory for self build internal index."
 msgstr ""
 "Konnte Speicher für selbsterstellten internen Primärindex nicht allozieren."
 
-#: ../src/paradox.c:305 ../src/paradox.c:1254 ../src/paradox.c:1422
+#: ../src/paradox.c:305 ../src/paradox.c:1263 ../src/paradox.c:1431
 #, c-format
 msgid "Could not get head of data block nr. %d."
 msgstr "Konnte auf Kopf von Datenblock Nr. %d nicht zugreifen."
@@ -73,8 +73,8 @@ msgstr "Konnte auf Kopf nicht zugreifen."
 msgid "Could not create new gsf io stream."
 msgstr "Konnte neuen gsf IO-Strom nicht erzeugen."
 
-#: ../src/paradox.c:425 ../src/paradox.c:576 ../src/paradox.c:2796
-#: ../src/paradox.c:2860
+#: ../src/paradox.c:425 ../src/paradox.c:585 ../src/paradox.c:2888
+#: ../src/paradox.c:2952
 msgid "Could not create new file io stream."
 msgstr "Konnte neuen Datei IO-Strom nicht erzeugen."
 
@@ -83,97 +83,104 @@ msgstr "Konnte neuen Datei IO-Strom nicht erzeugen."
 msgid "Could not open file of paradox database: %s"
 msgstr "Konnte die Datei der Paradox-Datenbank nicht öffnen: %s"
 
-#: ../src/paradox.c:475 ../src/paradox.c:616
+#: ../src/paradox.c:475 ../src/paradox.c:625
 msgid "Could not open paradox database."
 msgstr "Konnte Paradox-Datenbank nicht öffnen."
 
-#. The name indicates that this size not accurate,
-#. * actually it is very precise.
-#: ../src/paradox.c:498
+#: ../src/paradox.c:505
+#, c-format
+msgid ""
+"Database has %d auto increment fields. The automatic incrementation works "
+"only with one field of that type."
+msgstr ""
+"Datenbank hat %d auto increment Felder. Das automatische Hochzählen "
+"funktioniert nur mit einem Feld dieses Typs."
+
+#: ../src/paradox.c:507
 msgid "Allocate memory for database header."
 msgstr "Alloziere Speicher für Datenbankkopf."
 
-#: ../src/paradox.c:499
+#: ../src/paradox.c:508
 msgid "Could not allocate memory for databae header."
 msgstr "Konnte Speicher für Datenbankkopf nicht allozieren."
 
-#: ../src/paradox.c:588 ../src/paradox.c:2877
+#: ../src/paradox.c:597 ../src/paradox.c:2969
 msgid "Unable to put header."
 msgstr "Konnte Kopf nicht speichern."
 
-#: ../src/paradox.c:611
+#: ../src/paradox.c:620
 #, c-format
 msgid "Could not create file for paradox database: %s"
 msgstr "Konnte Datei für Paradox-Datenbank nicht erzeugen: %s"
 
-#: ../src/paradox.c:640 ../src/paradox.c:767 ../src/paradox.c:777
+#: ../src/paradox.c:649 ../src/paradox.c:776 ../src/paradox.c:786
 #, c-format
 msgid "File is not writable. Setting '%s' has no effect."
 msgstr "Datei ist nicht schreibbar. Das Setzen von '%s' hat keine Auswirkung."
 
-#: ../src/paradox.c:646
+#: ../src/paradox.c:655
 msgid "Number of primary keys must be greater or equal 0."
 msgstr "Anzahl der Primärschlüssel muss größer oder gleich 0 sein."
 
-#: ../src/paradox.c:660
+#: ../src/paradox.c:669
 msgid "codepage must be greater 0."
 msgstr "Codepage muss größer als 0 sein."
 
-#: ../src/paradox.c:668
+#: ../src/paradox.c:677
 #, c-format
 msgid "There is no such value like '%s' to set."
 msgstr "Es gibt keinen Wert '%s', der gesetzt werden kann."
 
-#: ../src/paradox.c:737
+#: ../src/paradox.c:746
 msgid "No such value name."
 msgstr "Kein Wert mit diesem Namen."
 
-#: ../src/paradox.c:753 ../src/paradox.c:834 ../src/paradox.c:873
-#: ../src/paradox.c:2585 ../src/paradox.c:2627 ../src/paradox.c:2663
+#: ../src/paradox.c:762 ../src/paradox.c:843 ../src/paradox.c:882
+#: ../src/paradox.c:2676 ../src/paradox.c:2718 ../src/paradox.c:2754
 msgid "Header of file has not been read."
 msgstr "Kopf der Datei wurde noch nicht gelesen."
 
-#: ../src/paradox.c:789 ../src/paradox.c:2598
+#: ../src/paradox.c:798 ../src/paradox.c:2689
 msgid "Target encoding could not be set."
 msgstr "Ziel-Kodierung konnt nicht gesetzt werden."
 
-#: ../src/paradox.c:793 ../src/paradox.c:810 ../src/paradox.c:2602
-#: ../src/paradox.c:2645
+#: ../src/paradox.c:802 ../src/paradox.c:819 ../src/paradox.c:2693
+#: ../src/paradox.c:2736
 msgid "Library has not been compiled with support for reencoding."
 msgstr "Bibliothek wurde nicht mit Unterstützung für Umkodierung erstellt."
 
-#: ../src/paradox.c:806 ../src/paradox.c:2640
+#: ../src/paradox.c:815 ../src/paradox.c:2731
 msgid "Input encoding could not be set."
 msgstr "Eingabe-Kodierung konnte nicht gesetzt werden."
 
-#: ../src/paradox.c:848
+#: ../src/paradox.c:857
 msgid "No such parameter name."
 msgstr "Kein Parameter mit diesem Namen."
 
-#: ../src/paradox.c:878
+#: ../src/paradox.c:887
 msgid ""
 "Cannot add a primary index to a database which is not of type 'IndexDB'."
 msgstr ""
 "Kann den Primärindex nicht einer Datenbank zuweisen, die nicht vom Typ "
 "'IndexDB' ist."
 
-#: ../src/paradox.c:883
+#: ../src/paradox.c:892
 msgid "Did not pass a paradox index file."
 msgstr "Keinen Primärindex übergeben."
 
-#: ../src/paradox.c:887
+#: ../src/paradox.c:896
 msgid "Header of index file has not been read."
 msgstr "Kopf der Index-Datei wurde noch nicht gelesen."
 
-#: ../src/paradox.c:892 ../src/paradox.c:960
+#: ../src/paradox.c:901 ../src/paradox.c:969
 msgid "Did not pass a paradox primary index file."
 msgstr "Keinen Primärindex übergeben."
 
-#: ../src/paradox.c:897
+#: ../src/paradox.c:906
 msgid "Primary index file has no index data."
 msgstr "Primärindex hat keine Index-Daten."
 
-#: ../src/paradox.c:902
+#: ../src/paradox.c:911
 msgid ""
 "Number of primay index fields in database and and number fields in primary "
 "index differ."
@@ -181,21 +188,21 @@ msgstr ""
 "Anzahl der Primärschlüssel in der Datenbank unterscheidet sich von der "
 "Anzahl der Felder im Primärindex."
 
-#: ../src/paradox.c:910
+#: ../src/paradox.c:919
 #, c-format
 msgid "Type of primay key field '%s' in database differs from index file."
 msgstr ""
 "Typ des Primärschlüssels '%s' in der Datenbank unterscheidet sich vom Typ in "
 "der Index-Datei."
 
-#: ../src/paradox.c:914
+#: ../src/paradox.c:923
 #, c-format
 msgid "Length of primay key field '%s' in database differs from index file."
 msgstr ""
 "Länge des Primärschlüssels '%s' in der Datenbank unterscheidet sich von der "
 "Länge in der Index-Datei."
 
-#: ../src/paradox.c:930
+#: ../src/paradox.c:939
 #, c-format
 msgid ""
 "Index file is for database with %d records, but database has %d records."
@@ -203,19 +210,19 @@ msgstr ""
 "Index-Datei ist für Datenbank mit %d Datensätzen. Die Datenbank hat aber %d "
 "Datensätze."
 
-#: ../src/paradox.c:965
+#: ../src/paradox.c:974
 msgid "Allocate memory for primary index data."
 msgstr "Alloziere Speicher für Primärindex."
 
-#: ../src/paradox.c:967 ../src/paradox.c:976 ../src/paradox.c:1094
+#: ../src/paradox.c:976 ../src/paradox.c:985 ../src/paradox.c:1103
 msgid "Could not allocate memory for primary index data."
 msgstr "Konnte Speicher für Primärindex nicht allozieren."
 
-#: ../src/paradox.c:975 ../src/paradox.c:1093
+#: ../src/paradox.c:984 ../src/paradox.c:1102
 msgid "Allocate memory for data of index record."
 msgstr "Alloziere Speicher für Daten des Primärindex."
 
-#: ../src/paradox.c:992
+#: ../src/paradox.c:1001
 #, c-format
 msgid ""
 "Inconsistency in length of primary index record. Expected %d but calculated %"
@@ -225,32 +232,32 @@ msgstr ""
 "wurde %d."
 
 #. Copy the data part for later sorting
-#: ../src/paradox.c:1004
+#: ../src/paradox.c:1013
 msgid "Allocate memory for data part of index record."
 msgstr "Alloziere Speicher für Datenteil des Primärindex."
 
-#: ../src/paradox.c:1015
+#: ../src/paradox.c:1024
 #, c-format
 msgid "Could not read record no. %d of primary index data."
 msgstr "Konnte Datensatz Nr. %s des Primärindex nicht lesen."
 
-#: ../src/paradox.c:1053
+#: ../src/paradox.c:1062
 msgid "The number of records coverd by index level 2 is unequal to level 1."
 msgstr "Die Zahl der Datensätze im Index-Level 2 ist ungleich der in Level 1."
 
-#: ../src/paradox.c:1182 ../src/paradox.c:1344
+#: ../src/paradox.c:1191 ../src/paradox.c:1353
 msgid "Cannot search for free slot in block without an index."
 msgstr "Kann nach freien Platz in einem Block nicht ohne Index suchen."
 
-#: ../src/paradox.c:1208 ../src/paradox.c:1366
+#: ../src/paradox.c:1217 ../src/paradox.c:1375
 msgid "Could not fseek start of first data block."
 msgstr "Konnte nicht zum Start des ersten Datenblocks gehen."
 
-#: ../src/paradox.c:1214 ../src/paradox.c:1372
+#: ../src/paradox.c:1223 ../src/paradox.c:1381
 msgid "Could not read datablock header."
 msgstr "Konnte den Datenblockkopf nicht lesen."
 
-#: ../src/paradox.c:1383
+#: ../src/paradox.c:1392
 #, c-format
 msgid ""
 "Number of records of block stored in index (%d) is unequal to number of "
@@ -259,38 +266,38 @@ msgstr ""
 "Die Anzahl der Datensätze im Index des Blocks (%d) ist ungleich der Anzahl "
 "der Datensätze im Kopf des Blocks (%d)."
 
-#: ../src/paradox.c:1568
+#: ../src/paradox.c:1580
 msgid "Allocate memory for data record."
 msgstr "Alloziere Speicher für Datensatz."
 
-#: ../src/paradox.c:1665 ../src/paradox.c:1735 ../src/paradox.c:1834
-#: ../src/paradox.c:2022 ../src/paradox.c:2231 ../src/paradox.c:2294
-#: ../src/paradox.c:2473 ../src/paradox.c:2496 ../src/paradox.c:2525
-#: ../src/paradox.c:2544 ../src/paradox.c:2563
+#: ../src/paradox.c:1689 ../src/paradox.c:1759 ../src/paradox.c:1858
+#: ../src/paradox.c:2047 ../src/paradox.c:2256 ../src/paradox.c:2319
+#: ../src/paradox.c:2394 ../src/paradox.c:2564 ../src/paradox.c:2587
+#: ../src/paradox.c:2616 ../src/paradox.c:2635 ../src/paradox.c:2654
 msgid "File has no header."
 msgstr "Datei hat keinen Kopf."
 
-#: ../src/paradox.c:1679 ../src/paradox.c:2237 ../src/paradox.c:2302
+#: ../src/paradox.c:1703 ../src/paradox.c:2262 ../src/paradox.c:2327
 msgid "Record number out of range."
 msgstr "Datensatznummer ist außerhalb des Bereichs."
 
-#: ../src/paradox.c:1694
+#: ../src/paradox.c:1718
 msgid "Could not fseek start of record data."
 msgstr "Konnte nicht zum Start des Datensatzes gehen."
 
-#: ../src/paradox.c:1698
+#: ../src/paradox.c:1722
 msgid "Could not read data of record."
 msgstr "Konnte Daten des Datensatzes nicht lesen."
 
-#: ../src/paradox.c:1703
+#: ../src/paradox.c:1727
 msgid "Could not find record in database."
 msgstr "Konnte Datensatz nicht finden."
 
-#: ../src/paradox.c:1764 ../src/paradox.c:2044
+#: ../src/paradox.c:1788 ../src/paradox.c:2069
 msgid "Could not write new data block."
 msgstr "Konnte neuen Datenblock nicht schreiben."
 
-#: ../src/paradox.c:1774
+#: ../src/paradox.c:1798
 #, c-format
 msgid ""
 "Inconsistency in writing data block. Expected data block nr. %d, but got %d."
@@ -298,7 +305,7 @@ msgstr ""
 "Unstimmigkeit beim Schreiben eines Datenblocks. Erwartete Datenblocknr %d, "
 "erhaltene Nummer %d."
 
-#: ../src/paradox.c:1785
+#: ../src/paradox.c:1809
 #, c-format
 msgid ""
 "Inconsistency in writing record into data block. Expected record nr. %d, but "
@@ -308,7 +315,7 @@ msgstr ""
 "Erwartete Datensatznr. %d, erhaltene Nummer %d. %d. Datensatz. %d. "
 "Datenblock. %d Datensätze pro Block."
 
-#: ../src/paradox.c:1790
+#: ../src/paradox.c:1814
 #, c-format
 msgid ""
 "Position of record has been recalculated. Requested position was %d, new "
@@ -318,41 +325,41 @@ msgstr ""
 "neue Position ist %d."
 
 #. Allocate memory for record
-#: ../src/paradox.c:1840 ../src/px_head.c:813
+#: ../src/paradox.c:1864 ../src/px_head.c:813
 msgid "Allocate memory for temporary record."
 msgstr "Alloziere Speicher für temporären Datensatz."
 
-#: ../src/paradox.c:1841 ../src/px_head.c:814
+#: ../src/paradox.c:1865 ../src/px_head.c:814
 msgid "Could not allocate memory for temporary record."
 msgstr "Konnte Speicher für temporären Datensatz nicht allozieren."
 
 #. Allocate memory for return record
-#: ../src/paradox.c:1851
+#: ../src/paradox.c:1875
 msgid "Allocate memory for array of pointers to field values."
 msgstr "Alloziere Speicher für Array der Zeiger auf Feldwerte."
 
-#: ../src/paradox.c:1852
+#: ../src/paradox.c:1876
 msgid "Could not allocate memory for array of pointers to field values."
 msgstr "Konnte Speicher für Array der Zeiger auf Feldwerte nicht allozieren."
 
-#: ../src/paradox.c:1870
+#: ../src/paradox.c:1894
 msgid "Could not read of field of type pxfAlpha."
 msgstr "Konnte ein Feld vom Typ pxfAlpha nicht lesen."
 
-#: ../src/paradox.c:1933
+#: ../src/paradox.c:1956 ../src/paradox.c:1961
 msgid "Could not read blob data."
 msgstr "Konnte Blob-Daten nicht lesen."
 
-#: ../src/paradox.c:1992
+#: ../src/paradox.c:2017
 #, c-format
 msgid "Could not read data for record with number %d."
 msgstr "Konnte den Datensatz Nummer %d nicht lesen."
 
-#: ../src/paradox.c:2034
+#: ../src/paradox.c:2059
 msgid "Error while searching for free slot of new record."
 msgstr "Fehler bei der Suche nach freien Platz für einen neuen Datensatz."
 
-#: ../src/paradox.c:2087
+#: ../src/paradox.c:2112
 msgid ""
 "Request for inserting a new record turned out to be an update of an exiting "
 "record. This should not happen."
@@ -360,264 +367,283 @@ msgstr ""
 "Versuch einen neuen Datensatz einzufügen entpuppte sich als Update eines "
 "existierenden Datensatzes. Dies sollte nicht passieren."
 
-#: ../src/paradox.c:2095
+#: ../src/paradox.c:2120
 msgid "Error in writing record into data block."
 msgstr "Fehler beim Schreiben eines Datensatzes in den Datenblock."
 
-#: ../src/paradox.c:2139
+#: ../src/paradox.c:2164
 msgid "Allocate memory for temporary record data."
 msgstr "Alloziere Speicher für temporären Datensatz."
 
-#: ../src/paradox.c:2140
+#: ../src/paradox.c:2165
 msgid "Could not allocate memory for temporary record data.."
 msgstr "Konnte Speicher für temporären Datensatz nicht allozieren."
 
-#: ../src/paradox.c:2144
+#: ../src/paradox.c:2169
 msgid "Could not fseek to start of old record."
 msgstr "Konnte nicht zum Start des alten Datensatzes springen."
 
-#: ../src/paradox.c:2151
+#: ../src/paradox.c:2176
 msgid "Could not read record."
 msgstr "Konnte Datensatzes nicht lesen."
 
-#: ../src/paradox.c:2187 ../src/paradox.c:3516
+#: ../src/paradox.c:2212 ../src/paradox.c:3609
 msgid "Blob data is not contained in record and a blob file is not set."
 msgstr ""
 "Blob-Daten sind nicht im Datensatz enthalten und eine Blob-Datei ist nicht "
 "gesetzt."
 
-#: ../src/paradox.c:2197
+#: ../src/paradox.c:2222
 msgid "Deleting blob failed."
 msgstr "Löschen eines Blobs schlug fehl."
 
-#: ../src/paradox.c:2252
+#: ../src/paradox.c:2277
 msgid "Could not delete blobs of record."
 msgstr "Konnte die Blobs eines Datensatzes nicht löschen."
 
-#: ../src/paradox.c:2265
+#: ../src/paradox.c:2290
 msgid "Expected record to be updated, but it was not."
 msgstr "Habe update eines Datensatzes erwartet, aber daraus wurde nichts."
 
-#: ../src/paradox.c:2270
+#: ../src/paradox.c:2295
 msgid "Could not find record for update."
 msgstr "Konnte zu aktualisierenden Datensatz nicht finden."
 
-#: ../src/paradox.c:2316
+#: ../src/paradox.c:2341
 msgid "Could delete blobs of record."
 msgstr "Konnte die Blobs eines Datensatzes nicht löschen."
 
-#: ../src/paradox.c:2337
+#: ../src/paradox.c:2362
 #, c-format
 msgid "Error while deleting record data. Error number %d."
 msgstr "Fehler beim Löschen eines Datensatzes. Fehlernummer %d."
 
-#: ../src/paradox.c:2341
+#: ../src/paradox.c:2366
 msgid "Could not find record for deletion."
 msgstr "Konnte zu löschenden Datensatz nicht finden."
 
-#: ../src/paradox.c:2503
+#: ../src/paradox.c:2594
 msgid "Field number out of range."
 msgstr "Feldnummer ist außerhalb des Bereichs."
 
-#: ../src/paradox.c:2590
+#: ../src/paradox.c:2681
 msgid "Target encoding already set."
 msgstr "Ziel-Kodierung schon gesetzt."
 
-#: ../src/paradox.c:2632
+#: ../src/paradox.c:2723
 msgid "Input encoding already set."
 msgstr "Eingabe-Kodierung schon gesetzt."
 
-#: ../src/paradox.c:2696
+#: ../src/paradox.c:2787
 msgid "Could not go to end of blob file."
 msgstr "Konnte nicht an das Ende der Blob-Datei springen."
 
-#: ../src/paradox.c:2701
+#: ../src/paradox.c:2792
 msgid "Size of blob file is not multiple of 4kB."
 msgstr "Größe der Blob-Datei ist kein Vielfaches von 4kB."
 
-#: ../src/paradox.c:2706 ../src/px_head.c:992
+#: ../src/paradox.c:2797 ../src/px_head.c:992
 msgid "Could not go to start of blob file."
 msgstr "Konnte nicht an den Anfang der Blob-Datei springen."
 
-#: ../src/paradox.c:2711
+#: ../src/paradox.c:2802
 msgid "Allocate memory for block info in blob file."
 msgstr "Alloziere Speicher für Blockinfog einer Blob-Datei."
 
-#: ../src/paradox.c:2717
+#: ../src/paradox.c:2808
 msgid "Could not go to start of block in blob file."
 msgstr "Konnte nicht an den Anfang des Blocks in der Blob-Datei springen."
 
-#: ../src/paradox.c:2723
+#: ../src/paradox.c:2814
 msgid "Could not read header of block in blob file."
 msgstr "Konnte den Kopf der eines Blocks in der Blob-Datei lesen."
 
-#: ../src/paradox.c:2739 ../src/paradox.c:3173 ../src/paradox.c:3599
+#: ../src/paradox.c:2830 ../src/paradox.c:3265 ../src/paradox.c:3695
 msgid "Could not read blob pointer."
 msgstr "Konnte Blob-Zeiger nicht lesen."
 
 #. We may check for identical modificatio number as well, if it
 #. * was passed to PX_read_blobdata()
 #.
-#: ../src/paradox.c:2771 ../src/paradox.c:3101 ../src/paradox.c:3151
-#: ../src/paradox.c:3180 ../src/paradox.c:3504 ../src/paradox.c:3573
-#: ../src/paradox.c:3608
+#: ../src/paradox.c:2862 ../src/paradox.c:3193 ../src/paradox.c:3243
+#: ../src/paradox.c:3272
+msgid "Allocate memory for blob."
+msgstr "Alloziere Speicher für Blob."
+
+#: ../src/paradox.c:2863 ../src/paradox.c:3194 ../src/paradox.c:3244
+#: ../src/paradox.c:3273
 msgid "Could not allocate memory for blob."
 msgstr "Konnte Speicher für Blob nicht allozieren."
 
-#: ../src/paradox.c:2791 ../src/paradox.c:2855 ../src/paradox.c:2901
-#: ../src/paradox.c:2929
+#: ../src/paradox.c:2883 ../src/paradox.c:2947 ../src/paradox.c:2993
+#: ../src/paradox.c:3021
 msgid "No paradox document associated with blob file."
 msgstr "Keine Paradox Datenbank mit der Blob-Datei assoziiert."
 
-#: ../src/paradox.c:2808
+#: ../src/paradox.c:2900
 msgid "Unable to get header of blob file."
 msgstr "Konnte auf Kopf der Blob-Datei nicht zugreifen."
 
-#: ../src/paradox.c:2871
+#: ../src/paradox.c:2963
 msgid "Allocate memory for header of blob file."
 msgstr "Alloziere Speicher für Kopf der Blob-Datei."
 
-#: ../src/paradox.c:2872
+#: ../src/paradox.c:2964
 msgid "Could not allocate memory for header of blob file."
 msgstr "Konnte Speicher für Kopf der Blob-Datei nicht allozieren."
 
-#: ../src/paradox.c:2906
+#: ../src/paradox.c:2998
 #, c-format
 msgid "Could not open blob file '%s' for writing."
 msgstr "Konnte Blob-Datei '%s' zum Schreiben nicht öffnen."
 
-#: ../src/paradox.c:2969 ../src/paradox.c:3016
+#: ../src/paradox.c:3061 ../src/paradox.c:3108
 msgid ""
 "Paradox database has not been opened or created when setting the blob file."
 msgstr ""
 "Paradox Datenbank wurde noch nicht geöffnet oder erzeugt beim Setzen der "
 "Blob-Datei."
 
-#: ../src/paradox.c:2974 ../src/paradox.c:3021
+#: ../src/paradox.c:3066 ../src/paradox.c:3113
 msgid "Blob file has been set already. I will delete the existing one."
 msgstr "Blob-Datei wurde schon gesetzt. Existierende Datei wird gelöscht."
 
-#: ../src/paradox.c:2980 ../src/paradox.c:3027
+#: ../src/paradox.c:3072 ../src/paradox.c:3119
 msgid "Could not create new blob file object."
 msgstr "Konnte neues PX-Objekt nicht erzeugen."
 
-#: ../src/paradox.c:2987 ../src/paradox.c:3034
+#: ../src/paradox.c:3079 ../src/paradox.c:3126
 msgid "Could not open blob file."
 msgstr "Konnte Blob-Datei nicht öffnen."
 
-#: ../src/paradox.c:2992 ../src/paradox.c:3039
+#: ../src/paradox.c:3084 ../src/paradox.c:3131
 msgid "Could not create blob file."
 msgstr "Konnte Blob-Datei nicht erzeugen."
 
-#: ../src/paradox.c:3091
+#: ../src/paradox.c:3183
 msgid "Did not pass a blob file."
 msgstr "Keine Blob-Datei übergeben."
 
-#: ../src/paradox.c:3096
+#: ../src/paradox.c:3188
 msgid "Makes no sense to read blob with 0 or less bytes."
 msgstr ""
 "Es macht keinen Sinn eine Blob-Datei mit 0 oder weniger Bytes zu lesen."
 
-#: ../src/paradox.c:3115 ../src/paradox.c:3186 ../src/paradox.c:3530
-#: ../src/paradox.c:3615 ../src/px_head.c:864 ../src/px_head.c:904
+#: ../src/paradox.c:3207 ../src/paradox.c:3278 ../src/paradox.c:3624
+#: ../src/paradox.c:3712 ../src/px_head.c:864 ../src/px_head.c:904
 #: ../src/px_head.c:954
 msgid "Could not fseek start of blob."
 msgstr "Konnte nicht zum Start des Blobs gehen."
 
-#: ../src/paradox.c:3121 ../src/paradox.c:3537 ../src/px_head.c:870
+#: ../src/paradox.c:3213 ../src/paradox.c:3631 ../src/px_head.c:870
 msgid "Could not read head of blob data."
 msgstr "Konnte den Kopf des Blobs nicht lesen."
 
-#: ../src/paradox.c:3126 ../src/paradox.c:3543 ../src/px_head.c:875
+#: ../src/paradox.c:3218 ../src/paradox.c:3637 ../src/px_head.c:875
 msgid "Trying to read blob data from 'header' block."
 msgstr "Versuche BLOB-Daten von 'header'-Block zu lesen."
 
-#: ../src/paradox.c:3129 ../src/paradox.c:3547 ../src/px_head.c:878
+#: ../src/paradox.c:3221 ../src/paradox.c:3641 ../src/px_head.c:878
 msgid "Trying to read blob data from a 'free' block."
 msgstr "Versuch BLOB-Daten von einem 'free'-Block zu lesen."
 
-#: ../src/paradox.c:3135 ../src/paradox.c:3554 ../src/px_head.c:886
+#: ../src/paradox.c:3227 ../src/paradox.c:3648 ../src/px_head.c:886
 msgid "Offset points to a single blob block but index field is not 0xff."
 msgstr ""
 "Offset zeigt auf einen 'single blob' Block, aber Index hat nicht den Wert "
 "0xff."
 
-#: ../src/paradox.c:3140 ../src/paradox.c:3560 ../src/px_head.c:891
+#: ../src/paradox.c:3232 ../src/paradox.c:3654 ../src/px_head.c:891
 msgid "Could not read remaining head of single data block."
 msgstr "Konnte den verbleibenen Kopf des 'single data' Blocks nicht lesen."
 
-#: ../src/paradox.c:3144 ../src/paradox.c:3177 ../src/paradox.c:3565
-#: ../src/paradox.c:3604 ../src/px_head.c:895 ../src/px_head.c:938
+#: ../src/paradox.c:3236 ../src/paradox.c:3269 ../src/paradox.c:3659
+#: ../src/paradox.c:3700 ../src/px_head.c:895 ../src/px_head.c:938
 #, c-format
 msgid "Blob does not have expected size (%d != %d)."
 msgstr "Blob hat nicht erwartete Größe. (%d != %d)."
 
-#: ../src/paradox.c:3157 ../src/paradox.c:3190 ../src/paradox.c:3580
-#: ../src/paradox.c:3620
+#: ../src/paradox.c:3249 ../src/paradox.c:3282 ../src/paradox.c:3675
+#: ../src/paradox.c:3718
 msgid "Could not read all blob data."
 msgstr "Konnte Blob-Daten nicht lesen."
 
-#: ../src/paradox.c:3163 ../src/paradox.c:3587
+#: ../src/paradox.c:3255 ../src/paradox.c:3683
 msgid "Could not read remaining head of suballocated block."
 msgstr "Konnte den verbleibenen Kopf des 'suballocated' Blocks nicht lesen."
 
-#: ../src/paradox.c:3168 ../src/paradox.c:3593
+#: ../src/paradox.c:3260 ../src/paradox.c:3689
 msgid "Could not fseek blob pointer."
 msgstr "Konnte nicht zum Start des Blobs Zeigers gehen."
 
 #. Copy the encoded string into memory which belongs to pxlib
-#: ../src/paradox.c:3272 ../src/paradox.c:3304 ../src/paradox.c:3414
+#: ../src/paradox.c:3364 ../src/paradox.c:3396 ../src/paradox.c:3506
 msgid "Allocate memory for field data."
 msgstr "Alloziere Speicher für Feld-Daten."
 
-#: ../src/paradox.c:3883
+#. We may check for identical modificatio number as well, if it
+#. * was passed to PX_read_blobdata()
+#.
+#: ../src/paradox.c:3596 ../src/paradox.c:3667 ../src/paradox.c:3704
+msgid "Allocate memory for blob data."
+msgstr "Alloziere Speicher für Blob-Daten."
+
+#: ../src/paradox.c:3598 ../src/paradox.c:3669 ../src/paradox.c:3706
+msgid "Could not allocate memory for blob data."
+msgstr "Konnte Speicher für Blob-Daten nicht allozieren."
+
+#: ../src/paradox.c:3616
+msgid "Offset in blob file is unexpectedly zero."
+msgstr "Offset ist in Blob-Datei ist unerwarted Null."
+
+#: ../src/paradox.c:3982
 msgid "Paradox database has no blob file."
 msgstr "Paradox Datenbank hat keine Blob-Datei gesetzt."
 
-#: ../src/paradox.c:3897 ../src/paradox.c:3937
+#: ../src/paradox.c:3996 ../src/paradox.c:4036
 msgid "Could not go to the begining of the first free block in the blob file."
 msgstr ""
 "Konnte nicht an den Anfang des ersten freien Blocks in der Blob-Datei "
 "springen."
 
-#: ../src/paradox.c:3911 ../src/paradox.c:3946
+#: ../src/paradox.c:4010 ../src/paradox.c:4045
 msgid "Could not write header of blob data to file."
 msgstr "Konnte den Kopf der Blob-Datei nicht schreiben."
 
-#: ../src/paradox.c:3916 ../src/paradox.c:4012
+#: ../src/paradox.c:4015 ../src/paradox.c:4111
 msgid "Could not write blob data to file."
 msgstr "Konnte Daten nicht in Blob-Datei schreiben."
 
-#: ../src/paradox.c:3951
+#: ../src/paradox.c:4050
 msgid "Could not write remaining of a type 3 block."
 msgstr "Konnte den verbleibenen Platz eines Blocks vom Typ 3 nicht schreiben."
 
-#: ../src/paradox.c:3971
+#: ../src/paradox.c:4070
 msgid "Could not go to last table entry for the blob data."
 msgstr "Konnte nicht zum letzten Tabelleneintrag der Blob-Daten springen."
 
-#: ../src/paradox.c:3976
+#: ../src/paradox.c:4075
 msgid "Could not read entry in index table of type 3 block."
 msgstr ""
 "Konnte den Eintrag in der Index-Tabelle eines Blocks vom Typ 3 nicht lesen."
 
-#: ../src/paradox.c:3981 ../src/paradox.c:3987
+#: ../src/paradox.c:4080 ../src/paradox.c:4086
 msgid "Could not go to table entry for the blob data."
 msgstr "Konnte nicht zum Tabelleneintrag der Blob-Daten springen."
 
-#: ../src/paradox.c:4003
+#: ../src/paradox.c:4102
 msgid "Could not write table entry for blob data to file."
 msgstr "Konnte den Tabelleneintrag der Blob-Daten nicht in Datei schreiben."
 
-#: ../src/paradox.c:4008
+#: ../src/paradox.c:4107
 msgid "Could not go to the begining of the slot for the blob."
 msgstr "Konnte nicht an den Anfang des Bereichs für die Blob-Daten springen."
 
-#: ../src/paradox.c:4153
+#: ../src/paradox.c:4252
 msgid "Allocate memory for timestamp string."
 msgstr "Alloziere Speicher für Zeitstempel-String."
 
-#: ../src/paradox.c:4154
+#: ../src/paradox.c:4253
 msgid "Could not allocate memory for timestamp string."
 msgstr "Konnte Speicher für Zeitstempel-String nicht allozieren."
 
