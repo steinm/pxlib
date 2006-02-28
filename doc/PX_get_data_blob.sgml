@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>August 29, 2005</date>">
+  <!ENTITY dhdate      "<date>February 20, 2006</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -77,7 +77,8 @@ manpage.1: manpage.sgml
 		  an MB files which must have been set with
 			<function>PX_set_blob_file(3)</function>.</para>
 		<para>The function allocates memory for the data returned in
-		  <option>*value</option>. This memory has to be freed by the application.
+		  <option>*value</option>. This memory has to be freed by the application,
+			if the function returns successfully.
 			The amount of memory for the blob is returned in
 			<option>*blobsize</option>. <option>*mod</option> returns the so called
 			modification number of the blob which can often be used as an unique
@@ -95,7 +96,16 @@ manpage.1: manpage.sgml
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>PX_get_data_graphic(3), PX_get_data_bcd(3), PX_get_data_byte(3), PX_get_data_long(3), PX_get_data_short(3), PX_get_data_double(3), PX_get_data_byte(3), PX_get_data_bytes(3)</para>
+    <para>
+			<function>PX_get_data_graphic(3)</function>,
+			<function>PX_get_data_bcd(3)</function>,
+			<function>PX_get_data_byte(3)</function>,
+			<function>PX_get_data_long(3)</function>,
+			<function>PX_get_data_short(3)</function>,
+			<function>PX_get_data_double(3)</function>,
+			<function>PX_get_data_byte(3)</function>,
+			<function>PX_get_data_bytes(3)</function>
+		</para>
 
   </refsect1>
   <refsect1>
