@@ -179,6 +179,7 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 	pxdoc->free = freeproc;
 	pxdoc->px_stream = NULL;
 
+	pxdoc->px_head = NULL;
 	pxdoc->px_pindex = NULL;
 
 	pxdoc->last_position = -1;
@@ -2463,6 +2464,8 @@ PX_close(pxdoc_t *pxdoc) {
 		pxdoc->free(pxdoc, pxdoc->px_stream);
 		pxdoc->px_stream = NULL;
 	}
+
+	pxdoc->px_head = NULL;
 }
 /* }}} */
 
