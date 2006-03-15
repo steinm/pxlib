@@ -1,3 +1,19 @@
+Version 0.6.1
+	- read tablename propperly from .Xnn and .XGn files
+	- set pxdoc->px_head to NULL in PX_new3() (allows to detect PX_new() without
+	  PX_open_fp())
+	- Fixed various error messages issued by pxlib
+	- PX_get_blob_data() returns 0 if blob is null.
+	- PX_insert_record() and PX_update_record() treat null values propperly.
+	- PX_insert_record() automatically counts up fields of type pxfAutoInc
+	  if the value is NULL. PX_create_fp() checks for more than one pxfAutoInc
+	  field and issues a warning, because the automatic incrementation works
+	  only with one field of that type.
+	- various man page updates
+	- PX_delete_record() now updates the internal index propperly
+	- fixed some compile errors when g++ is used, fixed some compile warnings
+	- fixed memory leak in PX_insert_record() and PX_update_record()
+
 Version 0.6.0
 	- fixed minor memory leak cause by memory used for the pxs_stream
 	- fixed reading of fields of type BCD
@@ -8,7 +24,7 @@ Version 0.6.0
 	  of a datablock as stored in the datablock header can be negative.
 	- fixed overflow in px_head->px_fileblocks which is now an unsigned
 	  int, as well as px_firstblock and px_lastblock. Also make get_short_le()
-		return unsigned int. Thanks to Arkadiusz.
+	  return unsigned int. Thanks to Arkadiusz.
 	- fixed calculation for number of blocks needed by a blob which
 	  is stored in block of type 2
 	- _px_put_data_blob() doesn't store more than 64 blobs in block
