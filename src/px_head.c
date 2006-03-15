@@ -119,7 +119,9 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
-		  (pxh->px_filetype == pxfFileTypIncSecIndex)) &&
+		  (pxh->px_filetype == pxfFileTypIncSecIndex) ||
+          (pxh->px_filetype == pxfFileTypNonIncSecIndexG) ||
+		  (pxh->px_filetype == pxfFileTypIncSecIndexG)) &&
 		  (pxh->px_fileversion >= 40)) {
 		if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) < 0) {
 			pxdoc->free(pxdoc, pxh);
@@ -174,8 +176,10 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 		return NULL;
 	}
 
-	/* skip the tfieldNamePtrArray, not present in index files */
-	if(pxhead.fileType == 0 || pxhead.fileType == 2) {
+	/* skip the tfieldNamePtrArray, not present in primary index files */
+	if(pxhead.fileType == 0 || pxhead.fileType == 2 ||
+	   pxhead.fileType == 3 || pxhead.fileType == 5 ||
+	   pxhead.fileType == 6 || pxhead.fileType == 8) {
 		for(i=0; i<pxh->px_numfields; i++) {
 			if((ret = pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
 				pxdoc->free(pxdoc, pxh->px_fields);
@@ -245,7 +249,9 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	isindex = !((pxh->px_filetype == pxfFileTypIndexDB) ||
 		        (pxh->px_filetype == pxfFileTypNonIndexDB) ||
 		        (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
-		        (pxh->px_filetype == pxfFileTypIncSecIndex));
+		        (pxh->px_filetype == pxfFileTypIncSecIndex) ||
+                (pxh->px_filetype == pxfFileTypNonIncSecIndexG) ||
+		        (pxh->px_filetype == pxfFileTypIncSecIndexG));
 
 	put_short_le((char *)&pxhead.recordSize, pxh->px_recordsize);
 	put_short_le((char *)&pxhead.headerSize, pxh->px_headersize);
