@@ -314,8 +314,8 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 		pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
 		pindex[blockcount].myblocknumber = 0;
 		pindex[blockcount].level = 1;
+		blocknumber = get_short_le((const char *) &datablockhead.nextBlock);
 		blockcount++;
-		blocknumber = get_short_le((char *) &datablockhead.nextBlock);
 	}
 	return 0;
 }
@@ -498,7 +498,6 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 
 	pxf = fields;
 	for(i=0, c=0; i<numfields; i++, pxf++) {
-		recordsize += pxf->px_flen;
 		if(pxf->px_ftype == pxfAutoInc)
 			c++;
 	}
@@ -532,6 +531,13 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	pxh->px_sortorder = 0x62;
 	pxh->px_encryption = 0;
 
+	/* secondary index files have primarykeyfields always set to 2 */
+	if((type == pxfFileTypIncSecIndex) ||
+	   (type == pxfFileTypNonIncSecIndex) ||
+	   (type == pxfFileTypIncSecIndexG) ||
+	   (type == pxfFileTypNonIncSecIndexG))
+		pxh->px_primarykeyfields = 2;
+
 	/* Calculate record size and get an idea on how big the header might
 	 * get due to the fieldnames, which is the major none fixed size. */
 	pxf = pxh->px_fields;
@@ -555,7 +561,9 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
-		  (pxh->px_filetype == pxfFileTypIncSecIndex)) &&
+		  (pxh->px_filetype == pxfFileTypIncSecIndex) ||
+		  (pxh->px_filetype == pxfFileTypNonIncSecIndexG) ||
+		  (pxh->px_filetype == pxfFileTypIncSecIndexG)) &&
 		  (pxh->px_fileversion >= 40)) {
 		approxheadersize += sizeof(TPxDataHeader);
 	}
@@ -567,7 +575,9 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	if(((pxh->px_filetype == pxfFileTypIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIndexDB) ||
 		  (pxh->px_filetype == pxfFileTypNonIncSecIndex) ||
-		  (pxh->px_filetype == pxfFileTypIncSecIndex)) &&
+		  (pxh->px_filetype == pxfFileTypIncSecIndex) ||
+		  (pxh->px_filetype == pxfFileTypNonIncSecIndexG) ||
+		  (pxh->px_filetype == pxfFileTypIncSecIndexG)) &&
 		  (pxh->px_fileversion >= 40)) {
 		approxheadersize += numfields * sizeof(pchar);
 		/* next would be the field names which has been added already */
@@ -657,6 +667,9 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 			return -1;
 		}
 		pxdoc->px_head->px_primarykeyfields = (int) value;
+		/* FIXME: You can't change the file type if the number of
+		 * primarykeyfields changes.
+		 */
 		if(value == 0) {
 			pxdoc->px_head->px_filetype = pxfFileTypNonIndexDB;
 		} else {
