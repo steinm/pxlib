@@ -312,6 +312,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			break;
 	}
 	pxhead.sortOrder = pxh->px_sortorder;
+	pxhead.refIntegrity = pxh->px_refintegrity;
 	if(!isindex && (pxh->px_fileversion >= 40)) {
 		dataheadoffset = 0x78;
 	} else {
