@@ -355,7 +355,11 @@ PX_open_stream(pxdoc_t *pxdoc, void *stream) {
 	 */
 	pxh = pxdoc->px_head;
 	if(pxh->px_filetype == pxfFileTypIndexDB ||
-	   pxh->px_filetype == pxfFileTypNonIndexDB) {
+	   pxh->px_filetype == pxfFileTypNonIndexDB ||
+	   pxh->px_filetype == pxfFileTypNonIncSecIndex ||
+	   pxh->px_filetype == pxfFileTypIncSecIndex ||
+	   pxh->px_filetype == pxfFileTypNonIncSecIndexG ||
+	   pxh->px_filetype == pxfFileTypIncSecIndexG) {
 		if(build_primary_index(pxdoc) < 0) {
 			return -1;
 		}
@@ -399,7 +403,11 @@ PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf) {
 	 */
 	pxh = pxdoc->px_head;
 	if(pxh->px_filetype == pxfFileTypIndexDB ||
-	   pxh->px_filetype == pxfFileTypNonIndexDB) {
+	   pxh->px_filetype == pxfFileTypNonIndexDB ||
+	   pxh->px_filetype == pxfFileTypNonIncSecIndex ||
+	   pxh->px_filetype == pxfFileTypIncSecIndex ||
+	   pxh->px_filetype == pxfFileTypNonIncSecIndexG ||
+	   pxh->px_filetype == pxfFileTypIncSecIndexG) {
 		if(build_primary_index(pxdoc) < 0) {
 			return -1;
 		}
@@ -445,7 +453,11 @@ PX_open_fp(pxdoc_t *pxdoc, FILE *fp) {
 	 */
 	pxh = pxdoc->px_head;
 	if(pxh->px_filetype == pxfFileTypIndexDB ||
-	   pxh->px_filetype == pxfFileTypNonIndexDB) {
+	   pxh->px_filetype == pxfFileTypNonIndexDB ||
+	   pxh->px_filetype == pxfFileTypNonIncSecIndex ||
+	   pxh->px_filetype == pxfFileTypIncSecIndex ||
+	   pxh->px_filetype == pxfFileTypNonIncSecIndexG ||
+	   pxh->px_filetype == pxfFileTypIncSecIndexG) {
 		if(build_primary_index(pxdoc) < 0) {
 			return -1;
 		}
@@ -531,12 +543,17 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	pxh->px_sortorder = 0x62;
 	pxh->px_encryption = 0;
 
-	/* secondary index files have primarykeyfields always set to 2 */
+	/* secondary index files have primarykeyfields always set to 2
+	 * and sort order (stored in px_refintegrity is set to ascending
+	 * by default.
+	 */
 	if((type == pxfFileTypIncSecIndex) ||
 	   (type == pxfFileTypNonIncSecIndex) ||
 	   (type == pxfFileTypIncSecIndexG) ||
-	   (type == pxfFileTypNonIncSecIndexG))
+	   (type == pxfFileTypNonIncSecIndexG)) {
 		pxh->px_primarykeyfields = 2;
+		pxh->px_refintegrity = 1;
+	}
 
 	/* Calculate record size and get an idea on how big the header might
 	 * get due to the fieldnames, which is the major none fixed size. */
@@ -546,7 +563,9 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 		if(pxf->px_fname)
 			approxheadersize += strlen(pxf->px_fname) + 1;
 	}
-	if(type == pxfFileTypPrimIndex)
+	if(type == pxfFileTypPrimIndex ||
+	   type == pxfFileTypSecIndex ||
+	   type == pxfFileTypSecIndexG)
 		recordsize += 6;
 	pxh->px_recordsize = recordsize;
 	if(recordsize < 30) {
