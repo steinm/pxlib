@@ -568,9 +568,9 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 	   type == pxfFileTypSecIndexG)
 		recordsize += 6;
 	pxh->px_recordsize = recordsize;
-	if(recordsize < 30) {
+	if(recordsize < 80) {
 		pxh->px_maxtablesize = 2;
-	} else if(recordsize < 120) {
+	} else if(recordsize < 140) {
 		pxh->px_maxtablesize = 3;
 	}
 
