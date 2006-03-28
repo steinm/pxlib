@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>August 22, 2005</date>">
+  <!ENTITY dhdate      "<date>March 24, 2006</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -44,7 +44,7 @@ manpage.1: manpage.sgml
       &dhsurname;
     </author>
     <copyright>
-      <year>2003-2005</year>
+      <year>2003-2006</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -95,7 +95,8 @@ struct px_val {
 			<filename>paradox.h</filename>.
 			A field value can be either a long int, a double or a string, depending
 			on the paradox field type. The paradox field types pxfShort, pxfLong,
-			pxfDate, pxfTime, and pxfAutoInc are returned as long int values.
+			pxfDate, pxfTime, pxfLogical, and pxfAutoInc are returned as long int
+			values.
 			pxfTimestamp, pxfNumber, and pxfCurrency are returned as double values
 			and all remaining paradox field types are stored as strings with the length
 			in <literal>value.len</literal>. You can rely on strings being Null
