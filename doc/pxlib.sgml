@@ -20,7 +20,7 @@ manpage.1: manpage.sgml
   <!ENTITY dhfirstname "<firstname>UWE</firstname>">
   <!ENTITY dhsurname   "<surname>STEINMANN</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>January 24, 2005</date>">
+  <!ENTITY dhdate      "<date>March 27, 2006</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>3</manvolnum>">
@@ -64,8 +64,8 @@ manpage.1: manpage.sgml
 
     <para>pxlib is a library to read and write Paradox databases. It is far
 		  from being complete but should be very helpful for those working on
-			unix and having the need to handle paradox databases, blob files and
-			primary indexes.
+			unix and having the need to handle paradox databases, blob files,
+			primary and secondary indexes.
 			</para>
 		<para>pxlib is a C-library with bindings for Python and PHP.
 		  The later is part of PECL (http://pecl.php.net).
@@ -75,7 +75,9 @@ manpage.1: manpage.sgml
 			The PHP extension of pxlib is documented in PEAR. The extension is
 			called Paradox.</para>
 		<para>This library is the base for a gnumeric plugin which has been
-		  officially added to gnumeric in version 1.4.0.</para>
+		  officially added to gnumeric in version 1.4.0. pxlib is also used
+			by hk_classes which itself is the database access utilized by
+			knoda (http://www.knoda.org).</para>
 
   </refsect1>
   <refsect1>
@@ -84,7 +86,13 @@ manpage.1: manpage.sgml
     <para>Programs which want to use pxlib will have to include the
 		  header file <literal>paradox.h</literal> and link against libpx.
 			If the libgsf file access is to be used <literal>paradox-gsf.h</literal>
-			has to be included instead of <literal>paradox.h</literal>.
+			has to be included instead of <literal>paradox.h</literal>. The gsf
+			library cannot be used currently for writing because pxlib requires
+			read access on the database as well, which is not supported by libgsf.
+			In such a case you will have to create a temporary file first and
+			copy it the gsf stream afterwards.
+		</para>
+		<para>
 			Before reading or writing a
 			database file the library should be initialized with
 			<function>PX_boot(3)</function>. It will set the locale and selects
@@ -94,8 +102,7 @@ manpage.1: manpage.sgml
 		<para>A Paradox database is
 			represented by a pointer to <literal>pxdoc_t</literal>. Such an object
 			can be created with <function>PX_new(3)</function> and destroyed
-			with <function>PX_delete(3)</function>. <function>PX_new(3)</function> 
-			returns a pointer to <literal>pxdoc_t</literal>. You can easily handle
+			with <function>PX_delete(3)</function>.  You can easily handle
 			several documents at the same time, each represented by its own
 			pointer to <literal>pxdoc_t</literal>.</para>
 		<para><literal>pxdoc_t</literal> is a faily large structure with various
@@ -133,11 +140,13 @@ struct px_head {
 };
 	  </programlisting>
 		<para>The structure is defined in <literal>paradox.h</literal> and can be
-			directly
-		  accessed, thought it is not encouraged at all, because the structure will
+			accessed directly,
+		  thought it is not encouraged at all, because the structure will
 			disappear in the future. Most header values can already be read with
 			<function>PX_get_value(3)</function> or
-			<function>PX_get_parameter(3)</function>.</para>
+			<function>PX_get_parameter(3)</function> and set by
+			<fucntion>PX_set_value(3)</function> respectively
+			<function>PX_set_parameter(3)</function></para>
 		<para>The following example will do the basic
 			preparation without creating nor opening a document on the disk.</para>
 	  <programlisting>
@@ -198,7 +207,8 @@ main(int argc, char *argv[]) {
 			<function>PX_close(3)</function>
 			is crucial because it also flushes unwritten blocks to disk.
 			</para>
-		<para>There are more sophisticated functions to open a Paradox database.
+		<para>There are more sophisticated functions to create the handle for the
+		  Paradox database.
 		  They are used when error handling and memory management
 			shall be controlled by the calling application. Check the manual pages
 			<function>PX_new2(3)</function> and <function>PX_new3(3)</function> for
@@ -219,9 +229,14 @@ main(int argc, char *argv[]) {
 		<para>instead of <function>PX_open_file(3)</function>. Creating a Paradox file
 			requires three further parameters to specify the database layout and the
 			file type, e.g. pxfFileTypNonIndexDB. The function can be used to create
-			both databases and primary index files. Secondary index files are not currently
-			supported. pxlib >= 0.6.0 can open databases for reading and writing
-			and provide four new functions for this purpose.</para>
+			both databases and primary index files. Secondary index files are not
+			supported before version &lt;= 0.6.0 due to several bugs in pxlib.
+			Since the format of a secondary index file is indentical to a database
+			file there is actually no need for special support of secondary indexes.
+			It is left to the application to create them itself.
+			pxlib &gt;= 0.6.0 can open databases for reading and writing
+			and provide four new functions for this purpose. They will be
+			described in the section `Modifying a database'.</para>
 		<para>
 			Each field of the database is described by a structure:</para>
 	  <programlisting>
@@ -273,7 +288,8 @@ struct px_field {
 	  </funcsynopsis>
     <para>The second function returns additional data about the internal
 		  location
-			of the record within the file, which is mostly valueable for debuging.
+			of the record within the file, which is mostly valueable for debuging
+			or creating a seconday index.
 			Both functions need a record number starting at 0 for the first record
 			and a memory area large enough for the record. The size of that area
 			can be determined by the function <function>PX_get_value(3)</function>
@@ -281,12 +297,15 @@ struct px_field {
 			that piece of memory straight from the database file without
 			modifications.</para>
 		<para>Paradox files can be encrypted. pxlib will automatically decrypt
-		  a file while reading without the need to supply a password.</para>
+		  a file while reading without the need to supply a password. This is
+			possible because of a very weak encryption algorithmn and the password
+			being stored in the database file itself.</para>
 		<para>
 			Once the record data has been read it can be accessed with a number of
 			different functions depending on the field type. The following
 			list contains the field type and the function needed to retrieve
-			the value.</para>
+			the value. Nothing can prevent you from accessing the record data
+			in a different way if you know what you are doing.</para>
     <para>
 		<variablelist>
 		  <varlistentry>
@@ -311,7 +330,9 @@ struct px_field {
            be freed by the application. The chunk of memory can be different
 					 from len when encoding involves conversion from a 1-byte to a
 					 2-byte character representaion. This is also the reason why the
-					 application cannot precisly allocate the memory for the data.
+					 application cannot precisly allocate the memory for the data and
+					 it must be left to pxlib. Read the section about `Memory
+					 allocation' for more details.
 			  </para></listitem>
 			</varlistentry>
 		  <varlistentry>
@@ -327,7 +348,7 @@ struct px_field {
 					 </funcprototype>
 				 </funcsynopsis>
 			 </para>
-			 <para>Fields of type date are actually 4 byte interger values counting
+			 <para>Fields of type date are actually 4 byte integer values counting
 			   days since jan-00-0000. In order to convert it into 3 single integers
 				 for year, month and
 				 day, you will have to add 1721425 to the value and call the function
@@ -346,6 +367,7 @@ struct px_field {
 			 <para>
 			   in order to get a valid date. The value 1721425 is the number of days
 				 between the start of the julian calendar (4714 BC) and jan-00-0000.
+				 <parameter>len</parameter> must be set to 4.
 			 </para>
 			 </listitem>
 			</varlistentry>
@@ -361,7 +383,12 @@ struct px_field {
 						 <paramdef>short int *<parameter>value</parameter></paramdef>
 					 </funcprototype>
 				 </funcsynopsis>
-			   </para></listitem>
+			 </para>
+			 <para>
+			 	 This type is a short integer which is 2 bytes long.
+				 <parameter>len</parameter> must be set to 2.
+			 </para>
+			 </listitem>
 			</varlistentry>
 		  <varlistentry>
 			 <term>pxfLong, pxfAutoInc</term>
@@ -375,7 +402,12 @@ struct px_field {
 						 <paramdef>long *<parameter>value</parameter></paramdef>
 					 </funcprototype>
 				 </funcsynopsis>
-			 </para></listitem>
+			 </para>
+			 <para>
+			 	 This type is a integer which is 4 bytes long.
+				 <parameter>len</parameter> must be set to 4.
+			 </para>
+			 </listitem>
 			</varlistentry>
 		  <varlistentry>
 			 <term>pxfNumber, pxfCurrency</term>
@@ -389,6 +421,10 @@ struct px_field {
 						 <paramdef>double *<parameter>value</parameter></paramdef>
 					 </funcprototype>
 				 </funcsynopsis>
+			 </para>
+			 <para>
+			 	 These types are floating poing numbers.
+				 <parameter>len</parameter> must be set to 8.
 			 </para></listitem>
 			</varlistentry>
 		  <varlistentry>
@@ -404,7 +440,8 @@ struct px_field {
 					 </funcprototype>
 				 </funcsynopsis>
        </para>
-			 <para>The extracted value is either 0 (false) or >0 (true).
+			 <para>The extracted value is either 0 (false) or &lt;0 (true).
+				 <parameter>len</parameter> must be set to 1.
 			 </para></listitem>
 			</varlistentry>
 		  <varlistentry>
@@ -431,7 +468,9 @@ struct px_field {
 			</varlistentry>
 		  <varlistentry>
 			 <term>pxfOLE</term>
-			 <listitem><para></para></listitem>
+			 <listitem><para>This type is not supported because there is too little
+			   known about it. Accessing fields of type pxfOLE like fields
+				 of type pxfBLOb may work.</para></listitem>
 			</varlistentry>
 		  <varlistentry>
 			 <term>pxfGraphic</term>
@@ -447,6 +486,9 @@ struct px_field {
 						 <paramdef>char **<parameter>value</parameter></paramdef>
 					 </funcprototype>
 				 </funcsynopsis>
+       </para>
+			 <para>
+			  This function has not been tested very well. 
        </para></listitem>
 			</varlistentry>
 		  <varlistentry>
