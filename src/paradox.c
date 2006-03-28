@@ -272,7 +272,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	pxhead_t *pxh;
 	pxstream_t *pxs;
 	pxpindex_t *pindex;
-	int blockcount, blocknumber;
+	int blockcount, blocknumber, numrecords;
 
 	pxh = pxdoc->px_head;
 	pxs = pxdoc->px_stream;
@@ -299,6 +299,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	pxdoc->px_indexdata = pindex;
 	pxdoc->px_indexdatalen = pxh->px_fileblocks;
 	blockcount = 0; /* Just a block counter */
+	numrecords = 0;
 	blocknumber = pxh->px_firstblock; /* Will be set to next block number */
 	while((blockcount < pxh->px_fileblocks) && (blocknumber > 0)) {
 		TDataBlock datablockhead;
@@ -312,10 +313,46 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 		pindex[blockcount].data = NULL;
 		pindex[blockcount].blocknumber = blocknumber;
 		pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
+		numrecords += pindex[blockcount].numrecords;
+		if(pindex[blockcount].numrecords == 0) {
+			fprintf(stderr, _("Block with number %d has no records"), blocknumber);
+			fprintf(stderr, "\n");
+		}
 		pindex[blockcount].myblocknumber = 0;
 		pindex[blockcount].level = 1;
 		blocknumber = get_short_le((const char *) &datablockhead.nextBlock);
 		blockcount++;
+	}
+	/* Check if the number of records in the blocks sums up to number
+	 * of records in the header
+	 */
+	if(numrecords != pxh->px_numrecords) {
+		fprintf(stderr, _("Number of records counted in blocks does not match number of records in header (%d != %d)"), numrecords, pxh->px_numrecords);
+		fprintf(stderr, "\n");
+	}
+
+	/* Read remaining blocks. This should not happen, but I've seen a database
+	 * where it does happen. So better check for it.
+	 */
+	if(blocknumber != 0) {
+		while(blocknumber > 0) {
+			fprintf(stderr, "next blocknumber after creating primary index: %d\n", blocknumber);
+			TDataBlock datablockhead;
+			if(get_datablock_head(pxdoc, pxs, blocknumber, &datablockhead) < 0) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
+				pxdoc->free(pxdoc, pindex);
+				return -1;
+			}
+			/* The data can be NULL because we don't support searching for field
+			 * data yet. */
+/*			pindex[blockcount].data = NULL;
+			pindex[blockcount].blocknumber = blocknumber;
+			pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
+			pindex[blockcount].myblocknumber = 0;
+			pindex[blockcount].level = 1;
+*/			blocknumber = get_short_le((const char *) &datablockhead.nextBlock);
+			blockcount++;
+		}
 	}
 	return 0;
 }
@@ -1758,7 +1795,6 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 		return data;
 	} else {
 		px_error(pxdoc, PX_RuntimeError, _("Could not find record in database."));
-		px_list_index(pxdoc);
 		return NULL;
 	}
 }
