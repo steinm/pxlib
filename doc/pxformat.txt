@@ -179,7 +179,7 @@
 |      |        or blocks have been added to the table, but I still haven't  |
 |      |        figured it out.                                              |
 |      |        Uwe: This field and 0x2C must be set correctly for a         |
-|      |        .PX file (see note at 0x2C).                                 |
+|      |        .PX file (see note at 0x2C). This field is less critical.    |
 |      |        Uwe: This field in a .PX file and a .DB file seem to be      |
 |      |        related. The value in the .PX file is in most cases 1 larger |
 |      |        than in the .DB. The value in the .DB file itself is seldom  |
@@ -284,8 +284,8 @@
 |      |        to the .PX file. If you add 2 new records to the .DB file    |
 |      |        this will increment by two. If you delete 2 records it will  |
 |      |        also increment by two. If you change a primary key field     |
-|      |        if will increment for each change field. If you change a     |
-|      |        field and change it back it will for two.                    |
+|      |        if will increment for each changed field. If you change a    |
+|      |        field and change it back it will be incremented by two.      |
 |      |                                                                     |
 +------+---------------------------------------------------------------------+
 | 002D | byte        changeCount1                                            |
