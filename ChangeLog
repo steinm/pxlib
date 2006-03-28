@@ -1,4 +1,6 @@
 Version 0.6.1
+	- much better handling of databases with corrupted block number
+	- fixed rpm spec file (Copyright is now License)
 	- read tablename propperly from .Xnn and .XGn files
 	- set pxdoc->px_head to NULL in PX_new3() (allows to detect PX_new() without
 	  PX_open_fp())
