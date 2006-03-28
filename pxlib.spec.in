@@ -2,7 +2,7 @@ Summary: A library to read Paradox DB files
 Name: @PACKAGE@
 Version: @PACKAGE_VERSION@
 Release: 1
-Copyright: see doc/COPYING
+License: see doc/COPYING
 Group: Applications/Utils
 Url: http://@PACKAGE@.sourceforge.net/
 Packager: Uwe Steinmann <uwe@steinmann.cx>
