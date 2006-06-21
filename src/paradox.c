@@ -516,7 +516,7 @@ PX_open_file(pxdoc_t *pxdoc, const char *filename) {
 		return -1;
 	}
 
-	if((fp = fopen(filename, "r+")) == NULL) {
+	if((fp = fopen(filename, "rb+")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database: %s"), strerror(errno));
 		return -1;
 	}
@@ -683,7 +683,7 @@ PX_create_file(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, const char *fil
 		return -1;
 	}
 
-	if((fp = fopen(filename, "w+")) == NULL) {
+	if((fp = fopen(filename, "wb+")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not create file for paradox database: %s"), strerror(errno));
 		return -1;
 	}
@@ -781,6 +781,9 @@ PX_get_value(pxdoc_t *pxdoc, const char *name, float *value) {
 		return(0);
 	} else if(strcmp(name, "theonumrecords") == 0) {
 		*value = (float) pxdoc->px_head->px_theonumrecords;
+		return(0);
+	} else if(strcmp(name, "recordsperblock") == 0) {
+		*value = (float) (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
 		return(0);
 	} else if(strcmp(name, "fileversion") == 0) {
 		*value = (float) pxdoc->px_head->px_fileversion/10.0;
@@ -2990,7 +2993,7 @@ PX_open_blob_file(pxblob_t *pxblob, const char *filename) {
 		return(-1);
 	}
 
-	if((fp = fopen(filename, "r+")) == NULL) {
+	if((fp = fopen(filename, "rb+")) == NULL) {
 		return -1;
 	}
 
@@ -3065,7 +3068,7 @@ PX_create_blob_file(pxblob_t *pxblob, const char *filename) {
 		return -1;
 	}
 
-	if((fp = fopen(filename, "w+")) == NULL) {
+	if((fp = fopen(filename, "wb+")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open blob file '%s' for writing."), filename);
 		return -1;
 	}
