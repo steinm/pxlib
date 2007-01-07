@@ -2036,9 +2036,9 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 					break;
 				}
 				case pxfBytes: {
-					char *data;
-					if(0 < PX_get_data_bytes(pxdoc, &data[offset], pxf->px_flen, &data)) {
-						dataptr[i]->value.str.val = data;
+					char *value;
+					if(0 < PX_get_data_bytes(pxdoc, &data[offset], pxf->px_flen, &value)) {
+						dataptr[i]->value.str.val = value;
 						dataptr[i]->value.str.len = pxf->px_flen;
 					} else {
 						dataptr[i]->isnull = 1;
