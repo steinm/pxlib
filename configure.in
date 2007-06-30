@@ -93,13 +93,15 @@ if test "$am_cv_func_iconv" != "yes" ; then
 	fi
 
 	AC_CHECK_LIB(recode, recode_new_outer,
-		RECODE_LIBDIR="$RECODE_LIBDIR -lrecode",
-		AC_MSG_ERROR([librecode not found]),
-		"$RECODE_LIBDIR")
+		[
+		RECODE_LIBDIR="$RECODE_LIBDIR -lrecode";
+		RECODE_LIBS=-lrecode;
+		PX_HAVE_RECODE=1;
+		AC_DEFINE(HAVE_RECODE, 1, [Define if you have the recode library.])
+		],[
+		AC_MSG_RESULT([librecode not found])
+		], "$RECODE_LIBDIR")
 
-	RECODE_LIBS=-lrecode
-	AC_DEFINE(HAVE_RECODE, 1, [Define if you have the recode library.])
-	PX_HAVE_RECODE=1
 else
 	PX_HAVE_ICONV=1
 	AC_MSG_CHECKING([for recode])
