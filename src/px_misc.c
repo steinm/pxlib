@@ -14,6 +14,13 @@
 
 #include "px_misc.h"
 
+#ifdef WIN32
+#define localtime_r( _clock, _result ) \
+	( *(_result) = *localtime( (_clock) ), \
+	(_result) )
+
+#endif
+
 /*
  * routine to change little endian long to host long
  * these functions are used read header data
