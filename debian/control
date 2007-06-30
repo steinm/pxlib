@@ -7,7 +7,7 @@ Standards-Version: 3.6.1
 Package: pxlib-dev
 Section: libdevel
 Architecture: any
-Depends: pxlib1 (= ${Source-Version})
+Depends: pxlib1 (= ${binary:Version}), libgsf-1-dev (>= 1.13.2)
 Description: library to read/write Paradox database files
  Library to read and write Paradox DB files. This package
  contains the development files.
