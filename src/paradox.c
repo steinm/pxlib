@@ -183,8 +183,10 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 	pxdoc->px_pindex = NULL;
 
 	pxdoc->last_position = -1;
+#if PX_USE_ICONV
 	pxdoc->in_iconvcd = (iconv_t) -1;
 	pxdoc->out_iconvcd = (iconv_t) -1;
+#endif
 	pxdoc->targetencoding = NULL;
 	pxdoc->inputencoding = NULL;
 	pxdoc->px_data = NULL;
@@ -3608,10 +3610,12 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 	}
 	if(lz)
 		buffer[j++] = '0';
+#ifdef HAVE_LOCALE_H
 	lc = localeconv();
 	if(lc)
 		buffer[j++] = lc->decimal_point[0];
 	else
+#endif
 		buffer[j++] = '.';
 	for(; i<34; i++) {
 		if(i%2)
@@ -3984,10 +3988,12 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 			sign = 0x0f;
 			memset(obuf+1, 255, 16);
 		} 
+#ifdef HAVE_LOCALE_H
 		lc = localeconv();
 		if(lc)
 			dpptr = strchr(value, lc->decimal_point[0]);
 		else
+#endif
 			dpptr = strchr(value, '.');
 		if(dpptr) {
 			j = dpptr-value+1;
