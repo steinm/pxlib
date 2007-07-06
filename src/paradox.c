@@ -18,7 +18,9 @@
  *    Boston, MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -116,7 +118,11 @@ PX_is_bigendian(void) {
  */
 PXLIB_API char * PXLIB_CALL
 PX_get_builddate(void) {
+#ifdef PXLIB_BUILD_DATE
 	return(PXLIB_BUILD_DATE);
+#else
+	return("");
+#endif
 }
 /* }}} */
 

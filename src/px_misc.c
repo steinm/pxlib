@@ -5,7 +5,9 @@
  *
  * This file was taken from the php source code ext/dbase/db_misc.c
  */
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
