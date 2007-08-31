@@ -1,4 +1,6 @@
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,7 +139,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	pxh->px_autoinc = get_long_le((const char *)&pxhead.autoInc);
 
 	pxh->px_encryption = get_long_le((const char*)&pxhead.encryption1);
-	if (pxh->px_encryption == 0xFF00FF00) {
+	if ((pxh->px_encryption & 0xFFFFFFFF) == 0xFF00FF00) {
 		pxh->px_encryption = get_long_le((const char*)&pxdatahead.encryption2);
 	}
 
@@ -533,6 +535,7 @@ int get_datablock_head(pxdoc_t *pxdoc, pxstream_t *pxs, int datablocknr, TDataBl
 
 	pxh = pxdoc->px_head;
 	position = pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
+	fprintf(stderr, "datablock position = %d\n", position);
 	if((ret = pxdoc->seek(pxdoc, pxs, position, SEEK_SET)) < 0) {
 		return -1;
 	}
@@ -734,6 +737,118 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 		pos = recnr;
 		*update = 1;
 	}
+
+	/* Goto start of record data */
+	if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400+sizeof(TDataBlock)+pos*pxh->px_recordsize, SEEK_SET)) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not fseek to start of new record."));
+		return -1;
+	}
+
+	/* Write the record data */
+	if(pxdoc->write(pxdoc, pxs, pxh->px_recordsize, data) < 1) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write record."));
+		return -1;
+	}
+	
+	return pos;
+}
+/* }}} */
+
+/* _put_px_datablock() {{{
+ * This function is dangerous! Use only if you know what you are doing.
+ * It doesn't do any checking for conistency of blocknumbers.
+ * The function has been added to provide an alternative for
+ * put_px_datablock() for write only files.
+ * Adds an empty data block logically between block 'prev' and 'next'.
+ * The block is physically always added at the end of the file but
+ * logically inserted into the link list. All header entries (px_firstblock,
+ * px_lastblock and px_fileblocks) will be updated.
+ * The number of records in the block as stored in the header of the block 
+ * is set to the values passed by 'recnos'.
+ * Returns the number of the new datablock. The first one has number
+ * 1 as stored in the datablock head as well.
+ */
+int _put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int prev, int next, int recnos, pxstream_t *pxs) {
+	TDataBlock newdatablockhead;
+	int i, nullint = 0;
+
+	if(next > pxh->px_fileblocks) {
+		px_error(pxdoc, PX_RuntimeError, _("Trying to insert data block after block number %d, but file has only %d blocks."), next, pxh->px_fileblocks);
+		return -1;
+	}
+
+	if(prev < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("You did not pass a valid block number."));
+		return -1;
+	}
+
+	memset(&newdatablockhead, 0, sizeof(TDataBlock));
+	put_short_le((char *)&newdatablockhead.prevBlock, prev);
+	put_short_le((char *)&newdatablockhead.nextBlock, next);
+	/* This block is still empty, so set it to -recordsize */
+	put_short_le((char *)&newdatablockhead.addDataSize, (recnos-1)*pxh->px_recordsize);
+//	fprintf(stderr, "Hexdump of new datablock: ");
+//	hex_dump(stderr, &newdatablockhead, sizeof(TDataBlock));
+//	fprintf(stderr, "\n");
+	/* Write new datablock at the end of the file */
+	if(put_datablock_head(pxdoc, pxs, pxh->px_fileblocks+1, &newdatablockhead) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write new data block header."));
+		return -1;
+	}
+
+	/* write an empty block. File pointer is still at right position. */
+	for(i=0; i<pxh->px_maxtablesize*0x400-(int)sizeof(TDataBlock); i++) {
+		if(pxdoc->write(pxdoc, pxs, 1, &nullint) < 1) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not write empty data block."));
+			return -1;
+		}
+	}
+
+	/* Update the header */
+	pxh->px_fileblocks++;
+	if(prev == 0)
+		pxh->px_firstblock = pxh->px_fileblocks;
+	if(next == 0)
+		pxh->px_lastblock = pxh->px_fileblocks;
+	if(put_px_head(pxdoc, pxh, pxs) < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Unable to write file header."));
+		return -1;
+	}
+	return(pxh->px_fileblocks);
+}
+/* }}} */
+
+/* _px_add_data_to_block() {{{
+ * This function is dangerous! Use only if you know what you are doing.
+ * The function has been added to provide an alternative for
+ * px_add_data_to_block() for write only files.
+ * The function does not update the number of records in the block
+ * as stored in the block header.
+ * Stores a record into a data block. datablocknr is the physical number
+ * of the block (the first block has number 1).
+ * recnr is the number of the record within the block. The first record
+ * in a block has number 0.
+ * update is set to 1 if an existing record is updated otherwise it will
+ * be set to 0.
+ * The function returns the number of records in the modified block. This
+ * is either n+1 or n, depending on whether a new record was added or
+ * an exiting record was updated.
+ * -1 is returned in case of an error.
+ */
+int _px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, char *data, pxstream_t *pxs, int *update) {
+	int ret, n, pos;
+
+	int recsperdatablock = (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
+	if(recnr < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is less than 0."));
+		return -1;
+	}
+	if(recnr >= recsperdatablock) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not write a record into a block, because the record position is greater than or equal the maximum number of records per block."));
+		return -1;
+	}
+
+	pos = recnr;
 
 	/* Goto start of record data */
 	if((ret = pxdoc->seek(pxdoc, pxs, pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400+sizeof(TDataBlock)+pos*pxh->px_recordsize, SEEK_SET)) < 0) {
