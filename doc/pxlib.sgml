@@ -145,7 +145,7 @@ struct px_head {
 			disappear in the future. Most header values can already be read with
 			<function>PX_get_value(3)</function> or
 			<function>PX_get_parameter(3)</function> and set by
-			<fucntion>PX_set_value(3)</function> respectively
+			<function>PX_set_value(3)</function> respectively
 			<function>PX_set_parameter(3)</function></para>
 		<para>The following example will do the basic
 			preparation without creating nor opening a document on the disk.</para>
