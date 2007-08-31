@@ -1,3 +1,8 @@
+Version 0.6.2
+	- added support cmake
+	- various small fixes to make it compile in a mingw environment
+	- works on amd64 (and possible other 64 bit architectures) again
+
 Version 0.6.1
 	- much better handling of databases with corrupted block number
 	- fixed rpm spec file (Copyright is now License)
