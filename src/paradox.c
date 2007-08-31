@@ -321,6 +321,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 		pindex[blockcount].data = NULL;
 		pindex[blockcount].blocknumber = blocknumber;
 		pindex[blockcount].numrecords = (get_short_le((char *) &datablockhead.addDataSize)/pxh->px_recordsize)+1;
+
 		numrecords += pindex[blockcount].numrecords;
 		if(pindex[blockcount].numrecords == 0) {
 			fprintf(stderr, _("Block with number %d has no records"), blocknumber);
