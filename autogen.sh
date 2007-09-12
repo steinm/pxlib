@@ -6,10 +6,20 @@
 # Requires: automake, autoconf, dpkg-dev
 set -e
 
-intltoolize --force --copy
+# Refresh GNU autotools toolchain.
+for i in config.guess config.sub missing install-sh mkinstalldirs ; do
+	test -r /usr/share/automake/${i} && {
+		rm -f ${i}
+		cp /usr/share/automake/${i} .
+	}
+	chmod 755 ${i}
+done
+
+libtoolize --force --copy
 aclocal
 autoheader
 automake --verbose --copy --force --add-missing
+intltoolize --force --copy
 autoconf
 
 # For the Debian build
