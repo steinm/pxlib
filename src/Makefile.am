@@ -37,3 +37,5 @@ libpx_la_LIBADD = @RECODE_LIBS@ @GSF_LIBS@
 
 BUILD_LIBS = -lm
 
+#clean-am:
+#	rm -rf CMakeFiles cmake_install.cmake
