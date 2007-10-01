@@ -836,7 +836,7 @@ int _put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int prev, int next, int rec
  * -1 is returned in case of an error.
  */
 int _px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int recnr, char *data, pxstream_t *pxs, int *update) {
-	int ret, n, pos;
+	int ret, pos;
 
 	int recsperdatablock = (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
 	if(recnr < 0) {
