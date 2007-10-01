@@ -3497,7 +3497,7 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	memcpy(&tmp, data, 8);
 	if(tmp[0] & 0x80) {
 		tmp[0] &= 0x7f;
-	} else if(*((long long int *)tmp) != 0) {
+	} else if(*((long int *)tmp) != 0) {
 		int k;
 		for(k=0; k<len; k++)
 			tmp[k] = ~tmp[k];
@@ -4299,7 +4299,7 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 
 	value = value / 1000.0;
 	days = (int) (value / 86400);
-	secs = ((long long) value) % 86400;
+	secs = ((long) value) % 86400;
 	PX_SdnToGregorian(days+1721425, &ta.tm_year, &ta.tm_mon, &ta.tm_mday);
 	ta.tm_mon--;
 	ta.tm_hour = secs/3600;
