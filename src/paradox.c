@@ -345,8 +345,8 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	 */
 	if(blocknumber != 0) {
 		while(blocknumber > 0) {
-			fprintf(stderr, "next blocknumber after creating primary index: %d\n", blocknumber);
 			TDataBlock datablockhead;
+//			fprintf(stderr, "next blocknumber after creating primary index: %d\n", blocknumber);
 			if(get_datablock_head(pxdoc, pxs, blocknumber, &datablockhead) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not get head of data block nr. %d."), blocknumber);
 				pxdoc->free(pxdoc, pindex);
