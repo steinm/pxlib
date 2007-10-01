@@ -5,9 +5,6 @@
 #define PX_USE_ICONV @PX_HAVE_ICONV@
 
 #include <stdio.h>
-#ifndef __NetBSD__
-#include <stdbool.h>
-#endif
 #if PX_USE_RECODE
 #include <recode.h>
 #else
