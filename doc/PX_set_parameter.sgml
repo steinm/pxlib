@@ -81,6 +81,22 @@ manpage.1: manpage.sgml
 				</listitem>
 			</varlistentry>
 		  <varlistentry>
+			  <term>password</term>
+			  <listitem>
+				  <para>Set the password for writing an encrypted database. It must
+					  be set before writing the first record. There
+					  is no need to set the password for reading a database.
+					</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
+			  <term>warning</term>
+			  <listitem>
+				  <para>Turn on/off warnings. Warnings are turned on by default.
+					</para>
+				</listitem>
+			</varlistentry>
+		  <varlistentry>
 			  <term>targetencoding</term>
 			  <listitem>
 				  <para>The encoding for the output. Data which is being read with
