@@ -4,7 +4,7 @@ SUBDIRS = include src po $(DOCDIR)
 
 spec = $(PACKAGE).spec
 
-EXTRA_DIST = intltool-extract.in intltool-merge.in intltool-update.in $(spec) $(spec).in autogen.sh pxlib.pc.in CMakeLists.txt cmakeconfig.h.in
+EXTRA_DIST = intltool-extract.in intltool-merge.in intltool-update.in $(spec) $(spec).in autogen.sh pxlib.pc.in CMakeLists.txt cmakeconfig.h.in cmake
 
 #all-local: $(spec)
 
