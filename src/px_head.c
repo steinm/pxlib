@@ -535,7 +535,6 @@ int get_datablock_head(pxdoc_t *pxdoc, pxstream_t *pxs, int datablocknr, TDataBl
 
 	pxh = pxdoc->px_head;
 	position = pxh->px_headersize+(datablocknr-1)*pxh->px_maxtablesize*0x400;
-	fprintf(stderr, "datablock position = %d\n", position);
 	if((ret = pxdoc->seek(pxdoc, pxs, position, SEEK_SET)) < 0) {
 		return -1;
 	}
