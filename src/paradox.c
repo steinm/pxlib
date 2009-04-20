@@ -2545,7 +2545,7 @@ PX_close(pxdoc_t *pxdoc) {
 		pxdoc->px_stream = NULL;
 	}
 
-	pxdoc->px_head = NULL;
+//	pxdoc->px_head = NULL;
 }
 /* }}} */
 
@@ -4299,7 +4299,7 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 
 	value = value / 1000.0;
 	days = (int) (value / 86400);
-	secs = ((long) value) % 86400;
+	secs = (int) fmod(value, 86400);
 	PX_SdnToGregorian(days+1721425, &ta.tm_year, &ta.tm_mon, &ta.tm_mday);
 	ta.tm_mon--;
 	ta.tm_hour = secs/3600;
