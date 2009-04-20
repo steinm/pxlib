@@ -1,3 +1,11 @@
+pxlib (0.6.4-1) unstable; urgency=low
+
+  * New upstream release.
+  * PX_timestamp2string() did not calculate the seconds correctly
+    due to an long overflow (Closes: #524374)
+
+ -- Uwe Steinmann <steinm@debian.org>  Fri, 27 Apr 2009 08:05:06 +0200
+
 pxlib (0.6.3-1) unstable; urgency=low
 
   * New upstream release.
