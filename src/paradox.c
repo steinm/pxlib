@@ -563,7 +563,7 @@ PX_create_fp(pxdoc_t *pxdoc, pxfield_t *fields, int numfields, FILE *fp, int typ
 		px_error(pxdoc, PX_Warning, _("Database has %d auto increment fields. The automatic incrementation works only with one field of that type."), c);
 	}
 	if((pxh = (pxhead_t *) pxdoc->malloc(pxdoc, sizeof(pxhead_t), _("Allocate memory for database header."))) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for databae header."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for database header."));
 		return -1;
 	}
 	pxh->px_filetype = type; //pxfFileTypNonIndexDB;
@@ -728,7 +728,7 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 
 	if(strcmp(name, "numprimkeys") == 0) {
 		if(value < 0) {
-			px_error(pxdoc, PX_Warning, _("Number of primary keys must be greater or equal 0."), name);
+			px_error(pxdoc, PX_Warning, _("Number of primary keys must be greater than or equal to 0."), name);
 			return -1;
 		}
 		pxdoc->px_head->px_primarykeyfields = (int) value;
@@ -745,7 +745,7 @@ PX_set_value(pxdoc_t *pxdoc, const char *name, float value) {
 		}
 	} else if(strcmp(name, "codepage") == 0) {
 		if(value <= 0) {
-			px_error(pxdoc, PX_Warning, _("codepage must be greater 0."), name);
+			px_error(pxdoc, PX_Warning, _("codepage must be greater than 0."), name);
 			return -1;
 		}
 		pxdoc->px_head->px_doscodepage = (int) value;
@@ -990,7 +990,7 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
 	}
 
 	if(pindex->px_head->px_numfields != pxdoc->px_head->px_primarykeyfields) {
-		px_error(pxdoc, PX_RuntimeError, _("Number of primay index fields in database and and number fields in primary index differ."));
+		px_error(pxdoc, PX_RuntimeError, _("Number of primary index fields in database and and number fields in primary index differ."));
 		return -1;
 	}
 
@@ -998,11 +998,11 @@ PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex) {
 		pfielddb = PX_get_field(pxdoc, i);
 		pfieldpx = PX_get_field(pindex, i);
 		if(pfielddb->px_ftype != pfieldpx->px_ftype) {
-			px_error(pxdoc, PX_RuntimeError, _("Type of primay key field '%s' in database differs from index file."), pfielddb->px_fname);
+			px_error(pxdoc, PX_RuntimeError, _("Type of primary key field '%s' in database differs from index file."), pfielddb->px_fname);
 			return -1;
 		}
 		if(pfielddb->px_flen != pfieldpx->px_flen) {
-			px_error(pxdoc, PX_RuntimeError, _("Length of primay key field '%s' in database differs from index file."), pfielddb->px_fname);
+			px_error(pxdoc, PX_RuntimeError, _("Length of primary key field '%s' in database differs from index file."), pfielddb->px_fname);
 			return -1;
 		}
 	}
@@ -4080,7 +4080,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			/* FIXME: need to add code which reuses free blocks for blocks of type 2*/
 //			fprintf(stderr, "Blob goes into type 2 block\n");
 			if(pxblob->seek(pxblob, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
+				px_error(pxdoc, PX_RuntimeError, _("Could not go to the beginning of the first free block in the blob file."));
 				return -1;
 			}
 			/* Calculate how many blocks of 4K this blob will need */
@@ -4120,7 +4120,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 				int i, nullint=0;
 
 				if(pxblob->seek(pxblob, pxs, (pxblob->used_datablocks+1)*4096, SEEK_SET) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the first free block in the blob file."));
+					px_error(pxdoc, PX_RuntimeError, _("Could not go to the beginning of the first free block in the blob file."));
 					return -1;
 				}
 
@@ -4191,7 +4191,7 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 			}
 			/* Write the blob itself */
 			if(pxblob->seek(pxblob, pxs, pxblob->subblockoffset*4096+mbbhtab.offset*16, SEEK_SET) < 0) {
-				px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining of the slot for the blob."));
+				px_error(pxdoc, PX_RuntimeError, _("Could not go to the beginning of the slot for the blob."));
 				return -1;
 			}
 			if(pxblob->write(pxblob, pxs, valuelen, value) < 1) {
