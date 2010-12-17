@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 #if defined(WIN32) || defined(OS2)
 #include <fcntl.h>
 #endif
