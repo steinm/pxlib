@@ -4,32 +4,31 @@ Version: @PACKAGE_VERSION@
 Release: 1
 License: see doc/COPYING
 Group: Applications/Utils
-Url: http://@PACKAGE@.sourceforge.net/
+URL: http://%{name}.sourceforge.net/
 Packager: Uwe Steinmann <uwe@steinmann.cx>
-Source: http://prdownloads.sourceforge.net/@PACKAGE@/@PACKAGE@-%{PACKAGE_VERSION}.tar.gz
-BuildRoot: /var/tmp/rpm/@PACKAGE@-root
-Prefix: @prefix@
+Source: http://prdownloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
+BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %description
-@PACKAGE@ is a simply and still small C library to read Paradox DB files. It
+%{name} is a simply and still small C library to read Paradox DB files. It
 supports all versions starting from 3.0. It currently has a very limited set of
 functions like to open a DB file, read its header and read every single record.
 
 %package devel
 Summary: A library to read Paradox DB files (Development)
 Group: Development/Libraries
-Requires: @PACKAGE@ = %{version}
+Requires: %{name} = %{version}
 
 %description devel
-pxlib is a simply and still small C library to read Paradox DB files. It
+%{name}pxlib is a simply and still small C library to read Paradox DB files. It
 supports all versions starting from 3.0. It currently has a very limited set of
 functions like to open a DB file, read its header and read every single record.
 
 %prep
-%setup
+%setup -q
 
 %build
-./configure --prefix=%prefix --with-sqlite --with-gsf --mandir=%prefix/share/man --infodir=%prefix/share/info
+%configure --with-sqlite --with-gsf
 make
 
 %install
@@ -46,13 +45,22 @@ rm -rf ${RPM_BUILD_ROOT}
 
 %files
 %attr(-,root,root) %doc README AUTHORS ChangeLog COPYING INSTALL
-%attr(-,root,root) %{prefix}/lib/lib*.so.*
-%attr(-,root,root) %{prefix}/share/locale/*/LC_MESSAGES/*
+%attr(-,root,root) %{_libdir}/lib*.so.*
+%attr(-,root,root) %{_datadir}/locale/*/LC_MESSAGES/*
 
 %files devel
-%attr(-,root,root) %{prefix}/lib/lib*.so
-%attr(-,root,root) %{prefix}/lib/*.a
-%attr(-,root,root) %{prefix}/lib/*.la
-%attr(-,root,root) %{prefix}/lib/pkgconfig/*
-%attr(-,root,root) %{prefix}/include/*
-%attr(-,root,root) %{prefix}/share/man/man3/*
+%attr(-,root,root) %{_libdir}/lib*.so
+%attr(-,root,root) %{_libdir}/*.a
+%attr(-,root,root) %{_libdir}/*.la
+%attr(-,root,root) %{_libdir}/pkgconfig/*
+%attr(-,root,root) %{_includedir}/*
+
+%changelog
+* Sun May 15 2011 Mihai T. Lazarescu <mihai@lazarescu.org> - 0.6.3-1
+- use macros in preamble and description
+- use system default prefix
+- fixed package %version reference
+- set BuildRoot to system-defined directory
+- quiet archive expansion in %setup
+- use system %configure macro for default system setup
+- removed man pages from the %files section
