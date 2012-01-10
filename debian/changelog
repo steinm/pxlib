@@ -1,3 +1,10 @@
+pxlib (0.6.5-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fixed some lintian warnings
+
+ -- Uwe Steinmann <steinm@debian.org>  Tue, 10 Jan 2012 16:09:28 +0100
+
 pxlib (0.6.4-1) unstable; urgency=low
 
   * New upstream release.

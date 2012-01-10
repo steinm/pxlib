@@ -1,5 +1,6 @@
 Source: pxlib
 Priority: optional
+Section: libs
 Maintainer: Uwe Steinmann <steinm@debian.org>
 Build-Depends: debhelper (>> 4.0.0), intltool (>= 0.30), docbook-utils, docbook-to-man, libgsf-1-dev (>= 1.13.2)
 Standards-Version: 3.6.1
@@ -7,7 +8,7 @@ Standards-Version: 3.6.1
 Package: pxlib-dev
 Section: libdevel
 Architecture: any
-Depends: pxlib1 (= ${binary:Version}), libgsf-1-dev (>= 1.13.2)
+Depends: ${misc:Depends}, pxlib1 (= ${binary:Version}), libgsf-1-dev (>= 1.13.2)
 Description: library to read/write Paradox database files
  Library to read and write Paradox DB files. This package
  contains the development files.
@@ -15,7 +16,7 @@ Description: library to read/write Paradox database files
 Package: pxlib1
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: library to read/write Paradox database files
  Library to read and write Paradox DB files. All versions
  of Paradox are supported. Binary large objects can only be
