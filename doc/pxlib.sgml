@@ -263,7 +263,7 @@ struct px_field {
 		  This is much like in other formats, e.g. dBase or a relational database
 			system. Fields can be of 17 different data types as listed below.
 			Field values are stored in
-			sequencial order in a record. A complete record is read by one of the
+			sequential order in a record. A complete record is read by one of the
 			functions
 		</para>
     <funcsynopsis>
