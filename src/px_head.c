@@ -395,9 +395,9 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		}
 	}
 
-	/* Goto the begining of the file */
+	/* Goto the beginning of the file */
 	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining paradox file."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to the beginning paradox file."));
 		return -1;
 	}
 
@@ -1139,7 +1139,7 @@ int put_mb_head(pxblob_t *pxblob, mbhead_t *mbh, pxstream_t *pxs) {
 	}
 
 	if(pxblob->seek(pxblob, pxs, 0, SEEK_SET) < 0) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not go to the begining paradox file."));
+		px_error(pxdoc, PX_RuntimeError, _("Could not go to the beginning paradox file."));
 		return -1;
 	}
 
