@@ -117,13 +117,13 @@ if test "x$withval" = xno; then
 	PX_HAVE_GSF=0
 else
 	if test -r ${withval}/include/libgsf-1/gsf/gsf-input.h ; then
-		GSF_LIBDIR=-L${withval}/lib
-		GSF_INCLUDEDIR="-I${withval}/include/libgsf-1 -I${withval}/include/glib-2.0 -I${withval}/lib/glib-2.0/include"
+		GSF_LIBDIR="-L${withval}/lib $(pkg-config --libs glib-2.0)"
+		GSF_INCLUDEDIR="-I${withval}/include/libgsf-1 -I${withval}/include/glib-2.0 -I${withval}/lib/glib-2.0/include $(pkg-config --cflags glib-2.0)"
 		try_gsf=true
 	else
 		if test -r /usr/include/libgsf-1/gsf/gsf-input.h ; then
-			GSF_LIBDIR=-L/usr
-			GSF_INCLUDEDIR="-I/usr/include/libgsf-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
+			GSF_LIBDIR="-L/usr $(pkg-config --libs glib-2.0)"
+			GSF_INCLUDEDIR="-I/usr/include/libgsf-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include $(pkg-config --cflags glib-2.0)"
 			try_gsf=true
 		else
 			try_gsf=false
