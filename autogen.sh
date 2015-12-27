@@ -35,7 +35,7 @@ test -d debian && {
 	# for whatever reason.
 	echo Generating list of executable files...
 	rm -f debian/executable.files
-	find -type f -perm +111 ! -name '.*' -fprint debian/executable.files
+	find -type f -perm /111 ! -name '.*' -fprint debian/executable.files
 
 	# link these in Debian builds
 #	rm -f config.sub config.guess
