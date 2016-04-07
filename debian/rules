@@ -23,6 +23,9 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	INSTALL_PROGRAM += -s
 endif
 
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
@@ -32,8 +35,9 @@ configure-stamp:
 	# generate POT file for translators
 	cd po; /usr/bin/intltool-update -p --verbose
 
-build: build-stamp
-
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
 build-stamp:  configure-stamp
 	dh_testdir
 
@@ -63,7 +67,7 @@ endif
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 	dh_installdirs
 
 	# Add here commands to install the package into debian/tmp
