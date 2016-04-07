@@ -1,3 +1,9 @@
+Version 0.6.6
+	- fix various typos in documentation and code
+
+Version 0.6.5
+	???
+
 Version 0.6.4
 	- fixed bug in PX_timestamp2string()
 
