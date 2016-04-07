@@ -103,7 +103,7 @@ size_t px_read(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		blockpos = (curpos - pxh->px_headersize) % blocksize; 
 //		fprintf(stderr, "reading from block %d:%d\n", blocknr, blockpos);
 		if(blockpos+len > blocksize) {
-			px_error(p, PX_RuntimeError, _("Trying to read data from file exceeds block boundry."));
+			px_error(p, PX_RuntimeError, _("Trying to read data from file exceeds block boundary."));
 			return(0);
 		}
 		if(p->curblock == NULL) {
@@ -176,7 +176,7 @@ size_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		blockpos = (curpos - pxh->px_headersize) % blocksize; 
 //		fprintf(stderr, "writing to block %d:%d\n", blocknr, blockpos);
 		if(blockpos+len > blocksize) {
-			px_error(p, PX_RuntimeError, _("Trying to write data to file exceeds block boundry: %d + %d > %d."), blockpos, len, blocksize);
+			px_error(p, PX_RuntimeError, _("Trying to write data to file exceeds block boundary: %d + %d > %d."), blockpos, len, blocksize);
 			return(0);
 		}
 		if(p->curblock == NULL) {
