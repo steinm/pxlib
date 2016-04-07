@@ -1,3 +1,13 @@
+pxlib (0.6.6-1) unstable; urgency=low
+
+  * Set compat level to 5 (Closes: #817634)
+  * Fix various lintian warnings
+  * Set Standards Version to 3.97
+  * use dpkg-buildflags, don't use dh_clean anymore
+  * New upstream release.
+
+ -- Uwe Steinmann <steinm@debian.org>  Tue, 22 Mar 2016 11:08:21 +0100
+
 pxlib (0.6.5-1) unstable; urgency=low
 
   * New upstream release.
