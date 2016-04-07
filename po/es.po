@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-01-10 16:32+0100\n"
+"POT-Creation-Date: 2016-04-07 08:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: José Candelario Rodríguez Rodríguez <jrodriguez@innox.com."
 "mx>\n"
@@ -976,7 +976,7 @@ msgstr "No se puede asignar memoria para la cadena."
 
 #: ../src/px_io.c:106
 #, fuzzy
-msgid "Trying to read data from file exceeds block boundry."
+msgid "Trying to read data from file exceeds block boundary."
 msgstr "Intentado leer datos blob de un bloque 'libre' (free)."
 
 #. fprintf(stderr, "Allocate memory for cache block.\n");
@@ -987,7 +987,7 @@ msgstr "Asignar memoria para flujo de entrada/salida (e/s)."
 
 #: ../src/px_io.c:179
 #, c-format
-msgid "Trying to write data to file exceeds block boundry: %d + %d > %d."
+msgid "Trying to write data to file exceeds block boundary: %d + %d > %d."
 msgstr ""
 
 #~ msgid "Tablename is empty."

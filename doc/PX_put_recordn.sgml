@@ -76,7 +76,7 @@ manpage.1: manpage.sgml
 			recalculated to make sure the new record will be stored in the
 			first free slot of the datablock. For example, if a datablock contains
 			10 records and the first call of <function>&funcname;</function> wants
-			to store a record at postion 11, then this will be corrected to position
+			to store a record at position 11, then this will be corrected to position
 			10. <function>&funcname;</function> will also add an empty data block
 			and store the record as the first record of the second data block.
 			Storing a second record at position 11 again, will be executed

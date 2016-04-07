@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pxlib\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-01-10 16:32+0100\n"
+"POT-Creation-Date: 2016-04-07 08:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: French <fr@li.org>\n"
@@ -936,7 +936,7 @@ msgid "Could not allocate memory for io stream."
 msgstr "Impossible d'allouer de la mémoire pour le flux io du fichier blob."
 
 #: ../src/px_io.c:106
-msgid "Trying to read data from file exceeds block boundry."
+msgid "Trying to read data from file exceeds block boundary."
 msgstr ""
 
 #. fprintf(stderr, "Allocate memory for cache block.\n");
@@ -947,7 +947,7 @@ msgstr "Allouer de la mémoire pour le flux io."
 
 #: ../src/px_io.c:179
 #, c-format
-msgid "Trying to write data to file exceeds block boundry: %d + %d > %d."
+msgid "Trying to write data to file exceeds block boundary: %d + %d > %d."
 msgstr ""
 
 #~ msgid "Allocate memory for io stream of blob file."

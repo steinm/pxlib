@@ -231,7 +231,7 @@ main(int argc, char *argv[]) {
 			file type, e.g. pxfFileTypNonIndexDB. The function can be used to create
 			both databases and primary index files. Secondary index files are not
 			supported before version &lt;= 0.6.0 due to several bugs in pxlib.
-			Since the format of a secondary index file is indentical to a database
+			Since the format of a secondary index file is identical to a database
 			file there is actually no need for special support of secondary indexes.
 			It is left to the application to create them itself.
 			pxlib &gt;= 0.6.0 can open databases for reading and writing
@@ -288,7 +288,7 @@ struct px_field {
 	  </funcsynopsis>
     <para>The second function returns additional data about the internal
 		  location
-			of the record within the file, which is mostly valueable for debuging
+			of the record within the file, which is mostly valueable for debugging
 			or creating a seconday index.
 			Both functions need a record number starting at 0 for the first record
 			and a memory area large enough for the record. The size of that area
@@ -807,7 +807,7 @@ main(int argc, char *argv[]) {
     <title>ENCODING</title>
 
 		<para>Exchanging text is not problem as long as both parties use the same
-		  encoding or stipulate to use plain 7 bit ascii. Paradox allows to use
+		  encoding or stipulate to use plain 7 bit ascii. Paradox allows one to use
 			any encoding with a know dos code page and saves the corresponding
 			code page number in the
 			header of the database. You can request this number with
@@ -858,7 +858,7 @@ main(int argc, char *argv[]) {
 		 </funcsynopsis>
 		</para>
 		<para>The second function must be used for fields of type
-		  <literal>pxfGraphic</literal>, the first function can be savely
+		  <literal>pxfGraphic</literal>, the first function can be safely
 			use for fields of type <literal>pxfBLOb</literal>,
 			<literal>pxfMemoBLOb</literal>, and <literal>pxfFmtMemoBLOb</literal>.
 		</para>
@@ -903,7 +903,7 @@ main(int argc, char *argv[]) {
       </funcprototype>
 	  </funcsynopsis>
 		<para>The errorhandler and the last parameter
-			<parameter>errorhandler_user_data</parameter> allow to pass arbitrary
+			<parameter>errorhandler_user_data</parameter> allows one to pass arbitrary
 			data as the last parameter to its own errorhandler. This is quite often
 			used if errors are being output in a widget of a graphical toolkit. The
 			pointer to that widget can be passed as
@@ -919,7 +919,7 @@ main(int argc, char *argv[]) {
 			static tables with 256 bytes each and a long integer generated
 			from a password. The integer is called the checksum of the password.
 			The checksum is stored in the header of the .db file which makes
-			it feasable to decrypt a file even without knowing the password.
+			it feasible to decrypt a file even without knowing the password.
 			pxlib reads encrypted files silently without asking for additional
 			information. Writing an encrypted file requires to supply a password
 			for calculating the checksum. The password can be set with

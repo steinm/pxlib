@@ -92,7 +92,7 @@ dataptr[0]->value.lval = 45;
 dataptr[1]->type = pxfAlpha;
 dataptr[1]->value.str.val = "test";
 dataptr[1]->value.str.len = 4;
-...
+
 PX_insert_record(pxdoc, dataptr);
 free(dataptr[0]);
 free(dataptr[1]);

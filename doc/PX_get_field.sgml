@@ -102,11 +102,11 @@ manpage.1: manpage.sgml
 				</row>
 			  <row>
 				 <entry>pxfShort</entry>
-				 <entry>Short interger (16 Bit)</entry>
+				 <entry>Short integer (16 Bit)</entry>
 				</row>
 			  <row>
 				 <entry>pxfLong</entry>
-				 <entry>Long Integer (32 Bit)</entry>
+				 <entry>Long integer (32 Bit)</entry>
 				</row>
 			  <row>
 				 <entry>pxfCurrency</entry>
