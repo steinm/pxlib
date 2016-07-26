@@ -53,7 +53,7 @@ AC_STRUCT_TM
 dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h unistd.h ctype.h dirent.h errno.h malloc.h)
+AC_CHECK_HEADERS(iconv.h fcntl.h unistd.h ctype.h dirent.h errno.h malloc.h)
 AC_CHECK_HEADERS(stdbool.h stdarg.h sys/stat.h sys/types.h time.h)
 AC_CHECK_HEADERS(ieeefp.h nan.h math.h fp_class.h float.h)
 AC_CHECK_HEADERS(stdlib.h sys/socket.h netinet/in.h arpa/inet.h)
@@ -84,6 +84,8 @@ PX_CFLAGS=""
 
 PX_HAVE_ICONV=0
 PX_HAVE_RECODE=0
+
+AM_ICONV
 
 dnl AM_ICONV_LINK
 
