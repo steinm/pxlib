@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "px_intern.h"
-#include "paradox.h"
+#include "paradox-gsf.h"
 #include "px_error.h"
 
 void *_px_malloc(pxdoc_t *p, size_t len, const char *caller) {
