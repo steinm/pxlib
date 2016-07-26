@@ -7,6 +7,6 @@ Name: libpx
 Description: A library for reading Paradox files
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lpx @RECODE_LIBDIR@ @RECODE_LIBS@ @LIBICONV@
+Libs: -L${libdir} -lpx @RECODE_LIBDIR@ @RECODE_LIBS@
 Cflags: 
 
