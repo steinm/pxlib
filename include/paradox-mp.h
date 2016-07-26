@@ -1,7 +1,7 @@
 #ifndef __PARADOX_MP_H__
 #define __PARADOX_MP_H__
 
-#include <paradox.h>
+#include <paradox-gsf.h>
 
 PXLIB_API void PXLIB_CALL
 PX_mp_init(void);
