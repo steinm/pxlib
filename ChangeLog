@@ -1,3 +1,6 @@
+Version 0.6.7
+	- support for reproducible builds in debian
+
 Version 0.6.6
 	- fix various typos in documentation and code
 

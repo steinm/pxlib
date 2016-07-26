@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(pxlib, 0.6.6)
+AC_INIT(pxlib, 0.6.7)
 AC_CONFIG_SRCDIR(src/paradox.c)
 AM_INIT_AUTOMAKE()
 
@@ -23,7 +23,11 @@ AC_SUBST(PXLIB_VERSION_INFO)
 
 dnl VERSION=${PXLIB_VERSION}
 
-PXLIB_BUILD_DATE=`date '+%Y-%m-%d'`
+if test -n "$SOURCE_DATE_EPOCH"; then
+	PXLIB_BUILD_DATE=`date --utc --date="@$SOURCE_DATE_EPOCH" '+%Y-%m-%d'`
+else
+	PXLIB_BUILD_DATE=`date '+%Y-%m-%d'`
+fi
 AC_DEFINE_UNQUOTED(PXLIB_BUILD_DATE,"$PXLIB_BUILD_DATE",[pxlib build date])
 AC_SUBST(PXLIB_BUILD_DATE)
 
