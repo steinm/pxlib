@@ -100,8 +100,7 @@ if test "$am_cv_func_iconv" != "yes" ; then
 	fi
 
 	AC_CHECK_LIB(recode, recode_new_outer,
-		[
-		RECODE_LIBDIR="$RECODE_LIBDIR -lrecode";
+		[ RECODE_LIBDIR="$RECODE_LIBDIR -lrecode";
 		RECODE_LIBS=-lrecode;
 		PX_HAVE_RECODE=1;
 		AC_DEFINE(HAVE_RECODE, 1, [Define if you have the recode library.])
@@ -115,39 +114,23 @@ else
 	AC_MSG_RESULT([not needed, using iconv])
 fi
 
-PX_HAVE_GSF=0
-
-AC_ARG_WITH(gsf, [  --with-gsf=DIR           Path to gsf library (/usr)],
-if test "x$withval" = xno; then
-	AC_MSG_RESULT("disable by user")
-	PX_HAVE_GSF=0
+AC_ARG_WITH(gsf, [  --with-gsf=DIR           Path to gsf library (/usr)])
+if test "x$withval" != xno; then
+	PKG_CHECK_MODULES(GSF_DEPS, libgsf-1, [
+			AM_CONDITIONAL(HAVE_GSF, true)
+			AC_DEFINE(HAVE_GSF, [1], [Define to 1 if we can use gsf libraries])
+			PX_CFLAGS="$PX_CFLAGS $GSF_DEPS_CFLAGS"
+			GSF_LIBS="$GSF_DEPS_LIBS"
+			use_gsf=yes
+		],[
+			AM_CONDITIONAL(HAVE_GSF, false)
+			use_gsf=no
+		]
+	)
 else
-	if test -r ${withval}/include/libgsf-1/gsf/gsf-input.h ; then
-		GSF_LIBDIR="-L${withval}/lib $(pkg-config --libs glib-2.0)"
-		GSF_INCLUDEDIR="-I${withval}/include/libgsf-1 -I${withval}/include/glib-2.0 -I${withval}/lib/glib-2.0/include $(pkg-config --cflags glib-2.0)"
-		try_gsf=true
-	else
-		if test -r /usr/include/libgsf-1/gsf/gsf-input.h ; then
-			GSF_LIBDIR="-L/usr $(pkg-config --libs glib-2.0)"
-			GSF_INCLUDEDIR="-I/usr/include/libgsf-1 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include $(pkg-config --cflags glib-2.0)"
-			try_gsf=true
-		else
-			try_gsf=false
-		fi
-	fi
-
-	if test "$try_gsf" = "true"; then
-		AC_CHECK_LIB(gsf-1, gsf_input_read,
-			GSF_LIBDIR="$GSF_LIBDIR -lgsf-1",
-			AC_MSG_RESULT([libgsf-1 not found]),
-			"$GSF_LIBDIR")
-
-		GSF_LIBS=-lgsf-1
-		AC_DEFINE(HAVE_GSF, 1, [Define if you have the gsf library.])
-		PX_HAVE_GSF=1
-	fi
+	AM_CONDITIONAL(HAVE_GSF, false)
+	use_gsf=no
 fi
-)
 
 AC_CHECK_PROG(DOC_TO_MAN, docbook-to-man, docbook-to-man)
 if test ! "$DOC_TO_MAN" ; then
@@ -183,11 +166,12 @@ AC_SUBST(RECODE_INCLUDEDIR)
 AC_SUBST(PX_HAVE_RECODE)
 AC_SUBST(PX_HAVE_ICONV)
 
-AC_SUBST(GSF_LIBDIR)
+dnl AC_SUBST(GSF_LIBDIR)
 AC_SUBST(GSF_LIBS)
-AC_SUBST(GSF_INCLUDEDIR)
+dnl AC_SUBST(GSF_INCLUDEDIR)
+AC_SUBST(GSF_DEPS_CFLAGS)
 
-AC_SUBST(PX_HAVE_GSF)
+AC_SUBST(HAVE_GSF)
 
 AC_SUBST(M_LIBS)
 

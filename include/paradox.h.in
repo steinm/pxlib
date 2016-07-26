@@ -150,7 +150,7 @@ struct px_stream {
 	union {
 		FILE *fp;
 		void *stream;
-#if PX_HAVE_GSF
+#if HAVE_GSF
 		GsfInput *gsfin;
 		GsfOutput *gsfout;
 #endif

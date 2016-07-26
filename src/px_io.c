@@ -32,7 +32,7 @@ pxstream_t *px_stream_new(pxdoc_t *pxdoc) {
 }
 /* }}} */
 
-#if PX_HAVE_GSF
+#if HAVE_GSF
 /* px_stream_new_gsf() {{{
  *
  * Create a gsf stream
@@ -399,7 +399,7 @@ size_t px_fwrite(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
 /* }}} */
 
 /* gsf */
-#if PX_HAVE_GSF
+#if HAVE_GSF
 /* px_gsfread() {{{
  */
 size_t px_gsfread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {

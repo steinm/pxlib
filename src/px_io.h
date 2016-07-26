@@ -1,7 +1,7 @@
 #ifndef __PX_IO_H__
 #define __PX_IO_H__
 pxstream_t *px_stream_new(pxdoc_t *pxdoc);
-#if PX_HAVE_GSF
+#if HAVE_GSF
 pxstream_t *px_stream_new_gsf(pxdoc_t *pxdoc, int mode, int close, GsfInput *gsf);
 #endif
 pxstream_t *px_stream_new_file(pxdoc_t *pxdoc, int mode, int close, FILE *fp);

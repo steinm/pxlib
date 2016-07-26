@@ -96,7 +96,7 @@ PX_has_recode_support(void) {
  */
 PXLIB_API int PXLIB_CALL
 PX_has_gsf_support(void) {
-#if PX_HAVE_GSF
+#if HAVE_GSF
 	return(1);
 #endif
 	return(0);
@@ -415,7 +415,7 @@ PX_open_stream(pxdoc_t *pxdoc, void *stream) {
 }
 /* }}} */
 
-#if PX_HAVE_GSF
+#if HAVE_GSF
 /* PX_open_gsf() {{{
  * Read from a Paradox DB file, which has already been opened with gsf.
  */
@@ -462,7 +462,7 @@ PX_open_gsf(pxdoc_t *pxdoc, GsfInput *gsf) {
 	return 0;
 }
 /* }}} */
-#endif /* PX_HAVE_GSF */
+#endif /* HAVE_GSF */
 
 /* PX_open_fp() {{{
  * Read from a Paradox DB file, which has already been opend with fopen.
