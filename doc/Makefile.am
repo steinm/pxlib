@@ -2,10 +2,12 @@ pxlib.3: pxlib.sgml
 	docbook2man $<
 	mv PXLIB.3 pxlib.3
 
-%.3: %.sgml
+#%.3: %.sgml
+.sgml.3:
 	$(DOC_TO_MAN) $< > $@
 
-%.html: %.sgml
+#%.html: %.sgml
+.sgml.html:
 	docbook2html $<
 	mv index.html $@
 
@@ -13,7 +15,7 @@ distclean: clean
 	rm -f Makefile
 
 clean:
-	rm -f ${man_MANS} ${man_HTMLS}
+	rm -f ${man_MANS} ${man_HTMLS} manpage.links manpage.refs
 
 SGML_FILES = PX_get_majorversion.sgml \
              PX_get_minorversion.sgml \
