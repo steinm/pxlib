@@ -1,6 +1,17 @@
+pxlib (0.6.8-1) unstable; urgency=low
+
+  * New upstream release (Closes: #918125)
+  * Switch to automatic dbgsym packages.                                       
+  * Bump standards-version                                                     
+  * Use debhelper 11 compat, which uses autoreconf and --parallel by default. 
+
+ -- Uwe Steinmann <steinm@debian.org>  Fri, 22 Nov 2019 08:15:15 +0100
+
 pxlib (0.6.7-1) unstable; urgency=low
 
   * Set Standards Version to 3.9.8
+  * turn on support for gsf again (upstream has fixed checking for gsf)
+    (Closes: #821268)
   * New upstream release (Closes: #832288)
 
  -- Uwe Steinmann <steinm@debian.org>  Tue, 26 Jul 2016 12:34:53 +0200
