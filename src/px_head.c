@@ -6,8 +6,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include "paradox-gsf.h"
+#include "pxversion.h"
 #include "px_intern.h"
+#include "paradox-gsf.h"
 #include "px_memory.h"
 #include "px_io.h"
 #include "px_error.h"

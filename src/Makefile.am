@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = -I@srcdir@/../include -I./include -DPACKAGE_LOCALE_DIR=\""$(datadir)/locale"\" @RECODE_INCLUDEDIR@ @GSF_DEPS_CFLAGS@
+AM_CPPFLAGS = -I@srcdir@/../include -I./include -DPACKAGE_LOCALE_DIR=\""$(datadir)/locale"\" @RECODE_INCLUDEDIR@ @GSF_DEPS_CFLAGS@
 
 noinst_HEADERS = fileformat.h \
                  px_error.h \

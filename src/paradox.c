@@ -163,7 +163,7 @@ PX_new3(void  (*errorhandler)(pxdoc_t *p, int type, const char *msg, void *data)
 	pxdoc_t *pxdoc;
 
 	if (errorhandler == NULL)
-		errorhandler = px_errorhandler; 
+		errorhandler = px_errorhandler;
 
 	if(allocproc == NULL) {
 		allocproc = _px_malloc;
@@ -246,8 +246,8 @@ PX_get_opaque(pxdoc_t *pxdoc) {
  */
 PXLIB_API int PXLIB_CALL
 PX_set_io_stream(pxdoc_t *pxdoc,
-                 size_t (*readproc)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer),
-                 size_t (*writeproc)(pxdoc_t *p, pxstream_t *stream, size_t len, void *data),
+                 ssize_t (*readproc)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer),
+                 ssize_t (*writeproc)(pxdoc_t *p, pxstream_t *stream, size_t len, void *data),
                  int (*seekproc)(pxdoc_t *p, pxstream_t *stream, long offset, int whence),
                  long (*tellproc)(pxdoc_t *p, pxstream_t *stream)
 				 ) {
@@ -2495,7 +2495,7 @@ PX_pack(pxdoc_t *pxdoc) {
 				recordpos = blockpos + sizeof(TDataBlock) + i*pxh->px_recordsize;
 				recordoutpos = blockoutpos + sizeof(TDataBlock) + nout*pxh->px_recordsize;
 				if(recordpos != recordoutpos)
-					fprintf(stdout, "copy record from 0x%X (block %d) to 0x%X (block %d)\n", recordpos, j, recordoutpos, jout);
+					fprintf(stdout, "copy record from 0x%lX (block %d) to 0x%lX (block %d)\n", recordpos, j, recordoutpos, jout);
 				nout++;
 				if(nout > recsperblock) {
 					jout++;
@@ -2532,7 +2532,7 @@ PX_close(pxdoc_t *pxdoc) {
 	px_flush(pxdoc, pxdoc->px_stream);
 
 	if(pxdoc->px_blob) {
-		PX_close_blob(pxdoc->px_blob);
+		PX_delete_blob(pxdoc->px_blob);
 		pxdoc->px_blob = NULL;
 	}
 
@@ -2912,6 +2912,7 @@ static int build_mb_block_list(pxblob_t *pxblob) {
 				TMbBlockHeader3Table mbbhtab;
 				if(pxblob->read(pxblob, pxs, sizeof(TMbBlockHeader3Table), &mbbhtab) < 0) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not read blob pointer."));
+					pxdoc->free(pxdoc, blocklist);
 					return -1;
 				}
 				if(mbbhtab.offset != 0) {
@@ -3125,6 +3126,8 @@ PX_delete_blob(pxblob_t *pxblob) {
 	PX_close_blob(pxblob);
 	if(pxblob->blockcache.data)
 		pxblob->pxdoc->free(pxblob->pxdoc, pxblob->blockcache.data);
+	if(pxblob->blocklist)
+		pxblob->pxdoc->free(pxblob->pxdoc, pxblob->blocklist);
 	pxblob->pxdoc->free(pxblob->pxdoc, pxblob);
 }
 /* }}} */
@@ -3688,7 +3691,7 @@ _px_get_data_blob(pxdoc_t *pxdoc, const char *data, int len, int hsize, int *mod
 		memcpy(blobdata, data, *blobsize);
 		*value = blobdata;
 		return(1);
-	} 
+	}
 
 	/* Since the blob data is not in the record we will need a blob file */
 	if(!pxblob || !pxblob->mb_stream) {
@@ -4404,7 +4407,7 @@ PX_timestamp2string(pxdoc_t *pxdoc, double value, const char *format) {
 				strcat(str, tmp_buff);
 				break;
 			case 's':		/* seconds, numeric */
-				sprintf(tmp_buff, "%02d", ta.tm_sec);  /* SAFE */ 
+				sprintf(tmp_buff, "%02d", ta.tm_sec);  /* SAFE */
 				strcat(str, tmp_buff);
 				break;
 			case 'A':		/* AM/PM */

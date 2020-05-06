@@ -57,6 +57,7 @@ int px_set_targetencoding(pxdoc_t *pxdoc) {
 	} else {
 		return -1;
 	}
+	return 0;
 }
 /* }}} */
 
@@ -83,6 +84,7 @@ int px_set_inputencoding(pxdoc_t *pxdoc) {
 	} else {
 		return -1;
 	}
+	return 0;
 }
 /* }}} */
 
