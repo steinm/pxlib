@@ -2,8 +2,8 @@ Source: pxlib
 Priority: optional
 Section: libs
 Maintainer: Uwe Steinmann <steinm@debian.org>
-Build-Depends: debhelper (>> 5.0.0), intltool (>= 0.30), docbook-utils, docbook-to-man, libgsf-1-dev (>= 1.13.2)
-Standards-Version: 3.9.8
+Build-Depends: debhelper (>= 11), quilt, intltool (>= 0.30), docbook-utils, docbook-to-man, libgsf-1-dev (>= 1.13.2)
+Standards-Version: 4.4.0
 Homepage: http://pxlib.sourceforge.net/
 
 Package: pxlib-dev
