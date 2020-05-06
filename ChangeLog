@@ -1,3 +1,7 @@
+Version 0.6.8
+	- fix some possible memory leaks, use ssize_t instead of size_t
+	  (thanks to Coolman for the patch)
+
 Version 0.6.7
 	- support for reproducible builds in debian
 
