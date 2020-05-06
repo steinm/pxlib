@@ -8,9 +8,9 @@ set -e
 
 # Refresh GNU autotools toolchain.
 for i in config.guess config.sub missing install-sh mkinstalldirs ; do
-	test -r /usr/share/automake/${i} && {
+	test -r /usr/share/automake-1.16/${i} && {
 		rm -f ${i}
-		cp /usr/share/automake/${i} .
+		cp /usr/share/automake-1.16/${i} .
 	}
 	chmod 755 ${i}
 done
