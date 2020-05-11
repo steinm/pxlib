@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.12)
+
 project(pxlib)
 
 option(ENABLE_GSF "Build with gsf support" OFF)
@@ -55,8 +57,6 @@ else()
     set(PX_HAVE_GSF 0)
 endif()
 
-set(WITH_DEBUG 0)
-
 set(SOURCES
     src/gregor.c
     src/paradox.c
@@ -90,7 +90,7 @@ add_definitions(-DPXLIB_EXPORTS)
 # Versioning
 set(PXLIB_MAJOR_VERSION "0")
 set(PXLIB_MINOR_VERSION "6")
-set(PXLIB_MICRO_VERSION "6")
+set(PXLIB_MICRO_VERSION "8")
 set(PXLIB_DOTTED_VERSION "${PXLIB_MAJOR_VERSION}.${PXLIB_MINOR_VERSION}.${PXLIB_MICRO_VERSION}")
 
 # Packaging
