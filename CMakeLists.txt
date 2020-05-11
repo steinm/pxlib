@@ -1,16 +1,18 @@
-option(ENABLE_GSF   "Build with gsf support" OFF)
+project(pxlib)
+
+option(ENABLE_GSF "Build with gsf support" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-  add_definitions(
-    -DHAVE_CONFIG_H
-    -Wall -Wpointer-arith -W
-    ${PXLIB_EXTRA_GCC_FLAGS}
-  )
-else(CMAKE_COMPILER_IS_GNUCC)
-  add_definitions(-DHAVE_CONFIG_H)
-endif(CMAKE_COMPILER_IS_GNUCC)
+    add_definitions(
+        -DHAVE_CONFIG_H
+        -Wall -Wpointer-arith -W
+        ${PXLIB_EXTRA_GCC_FLAGS}
+    )
+else()
+    add_definitions(-DHAVE_CONFIG_H)
+endif()
 
-#check system for includes
+# Check system for includes
 include(CheckIncludeFile)
 check_include_file("fcntl.h"           HAVE_FCNTL_H)
 check_include_file("iconv.h"           HAVE_ICONV_H)
@@ -28,78 +30,93 @@ check_include_file("sys/time.h"        HAVE_SYS_TIME_H)
 check_include_file("sys/types.h"       HAVE_SYS_TYPES_H)
 check_include_file("gsf/gsf-input-stdio.h" HAVE_GSF_GSFINPUTSTDIO_H)
 
-#Functions
+# Functions
 include(CheckFunctionExists)
 
-#Big or little endian ?
+# Endianess
 include(TestBigEndian)
 test_big_endian(WORDS_BIGENDIAN)
 
 if(HAVE_ICONV_H)
-	set(PX_HAVE_ICONV 1)
-	set(PX_HAVE_RECODE 0)
-else(HAVE_ICONV_H)
-	if(HAVE_RECODE_H)
-		set(PX_HAVE_RECODE 1)
-	endif(HAVE_RECODE_H)
-endif(HAVE_ICONV_H)
+    set(PX_HAVE_ICONV 1)
+    set(PX_HAVE_RECODE 0)
+else()
+    set(PX_HAVE_ICONV 0)
+    if(HAVE_RECODE_H)
+        set(PX_HAVE_RECODE 1)
+    else()
+        set(PX_HAVE_RECODE 0)
+    endif()
+endif()
 
 if(HAVE_GSF_GSFINPUTSTDIO_H)
-	set(PX_HAVE_GSF 1)
-else(HAVE_GSF_GSFINPUTSTDIO_H)
-	set(PX_HAVE_GSF 0)
-endif(HAVE_GSF_GSFINPUTSTDIO_H)
+    set(PX_HAVE_GSF 1)
+else()
+    set(PX_HAVE_GSF 0)
+endif()
 
-SUBDIRS( src )
-SET(SOURCES
-	src/gregor.c
-	src/paradox.c
-	src/px_crypt.c
-	src/px_encode.c
-	src/px_error.c
-	src/px_head.c
-	src/px_io.c
-	src/px_memory.c
-	src/px_memprof.c
-	src/px_misc.c
-	src/fileformat.h
-	src/px_crypt.h
-	src/px_encode.h
-	src/px_error.h
-	src/px_head.h
-	src/px_intern.h
-	src/px_io.h
-	src/px_memory.h
-	src/px_misc.h
-	src/sdncal.h
-	include/paradox-gsf.h
-	include/paradox.h
-	include/paradox-mp.h
-	include/pxversion.h
-  )
+set(WITH_DEBUG 0)
 
-INCLUDE_DIRECTORIES( include . )
+set(SOURCES
+    src/gregor.c
+    src/paradox.c
+    src/px_crypt.c
+    src/px_encode.c
+    src/px_error.c
+    src/px_head.c
+    src/px_io.c
+    src/px_memory.c
+    src/px_memprof.c
+    src/px_misc.c
+    src/fileformat.h
+    src/px_crypt.h
+    src/px_encode.h
+    src/px_error.h
+    src/px_head.h
+    src/px_intern.h
+    src/px_io.h
+    src/px_memory.h
+    src/px_misc.h
+    src/sdncal.h
+    include/paradox-gsf.h
+    include/paradox.h
+    include/paradox-mp.h
+    include/pxversion.h
+)
 
-ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
-ADD_DEFINITIONS(-DPXLIB_EXPORTS)
+add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+add_definitions(-DPXLIB_EXPORTS)
 
-#packaging
+# Versioning
+set(PXLIB_MAJOR_VERSION "0")
+set(PXLIB_MINOR_VERSION "6")
+set(PXLIB_MICRO_VERSION "6")
+set(PXLIB_DOTTED_VERSION "${PXLIB_MAJOR_VERSION}.${PXLIB_MINOR_VERSION}.${PXLIB_MICRO_VERSION}")
+
+# Packaging
 set(CPACK_PACKAGE_NAME pxlib)
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Reading and writing paradox databases")
 set(CPACK_PACKAGE_VENDOR "pxlib")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "6")
-set(CPACK_PACKAGE_VERSION_PATCH "6")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PXLIB_MAJOR_VERSION})
+set(CPACK_PACKAGE_VERSION_MINOR ${PXLIB_MINOR_VERSION})
+set(CPACK_PACKAGE_VERSION_PATCH ${PXLIB_MICRO_VERSION})
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "/usr")
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_SOURCE_GENERATOR "TGZ")
 
 configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
+configure_file(${CMAKE_SOURCE_DIR}/include/pxversion.h.in ${CMAKE_BINARY_DIR}/pxversion.h)
+
 configure_file(${CMAKE_SOURCE_DIR}/include/paradox.h.in ${CMAKE_BINARY_DIR}/include/paradox.h)
 configure_file(${CMAKE_SOURCE_DIR}/include/paradox-gsf.h.in ${CMAKE_BINARY_DIR}/include/paradox-gsf.h)
-ADD_LIBRARY(pxlib SHARED ${SOURCES})
+
+add_library(pxlib SHARED ${SOURCES})
+
+target_include_directories(pxlib
+    PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}
+    PUBLIC ${CMAKE_BINARY_DIR}/include
+)
