@@ -32,8 +32,8 @@
 #include <time.h>
 
 #ifdef WIN32
-#include <windows.h>
-#include <winbase.h>
+#include <Windows.h>
+#include <Winbase.h>
 #endif
 
 #include "pxversion.h"
@@ -281,7 +281,8 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	pxhead_t *pxh;
 	pxstream_t *pxs;
 	pxpindex_t *pindex;
-	int blockcount, blocknumber, numrecords;
+	int blocknumber, numrecords;
+	unsigned blockcount;
 
 	pxh = pxdoc->px_head;
 	pxs = pxdoc->px_stream;
@@ -796,7 +797,7 @@ PX_get_value(pxdoc_t *pxdoc, const char *name, float *value) {
 		*value = (float) (pxdoc->px_head->px_maxtablesize*0x400-sizeof(TDataBlock)) / pxdoc->px_head->px_recordsize;
 		return(0);
 	} else if(strcmp(name, "fileversion") == 0) {
-		*value = (float) pxdoc->px_head->px_fileversion/10.0;
+		*value = (float) pxdoc->px_head->px_fileversion/10.0f;
 		return(0);
 	} else if(strcmp(name, "headersize") == 0) {
 		*value = (float) pxdoc->px_head->px_headersize;
@@ -885,7 +886,7 @@ PX_set_parameter(pxdoc_t *pxdoc, const char *name, const char *value) {
 		px_error(pxdoc, PX_RuntimeError, _("Library has not been compiled with support for reencoding."));
 #endif
 		if(sscanf(value, "CP%d", &codepage)) {
-			PX_set_value(pxdoc, "codepage", codepage);
+			PX_set_value(pxdoc, "codepage", (float)codepage);
 		}
 	} else if(strcmp(name, "inputencoding") == 0) {
 #if PX_USE_RECODE || PX_USE_ICONV
@@ -1330,7 +1331,8 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
  */
 int
 px_get_record_pos(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
-	int found, blockcount, blocknumber;
+	int found, blocknumber;
+	unsigned blockcount;
 	TDataBlock datablock;
 	pxhead_t *pxh;
 
@@ -1498,7 +1500,8 @@ px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
  */
 int
 px_find_slot(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
-	int found, blockcount, blocknumber;
+	int found, blocknumber;
+	unsigned blockcount;
 	TDataBlock datablock;
 	pxhead_t *pxh;
 
@@ -1827,8 +1830,8 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 PXLIB_API int PXLIB_CALL
 PX_put_recordn(pxdoc_t *pxdoc, char *data, int recpos) {
 	pxhead_t *pxh;
-	int recsperdatablock, datablocknr, recdatablocknr;
-	int itmp;
+	unsigned itmp, datablocknr;
+	int recsperdatablock, recdatablocknr;
 	int update; /* Will be set by px_add_data_to_block() if an existing
 				   record is updated */
 
@@ -2487,7 +2490,6 @@ PX_pack(pxdoc_t *pxdoc) {
 	blockoutpos = pxh->px_headersize + (blockoutnumber-1)*pxh->px_maxtablesize*0x400;
 	for(j=0; j<pxdoc->px_indexdatalen; j++) {
 		if(pindex_data[j].level == 1) {
-			int n;
 			blocknumber = pindex_data[j].blocknumber;
 			blockpos = pxh->px_headersize + (blocknumber-1)*pxh->px_maxtablesize*0x400;
 			n = pindex_data[j].numrecords;
@@ -2778,7 +2780,7 @@ PX_set_targetencoding(pxdoc_t *pxdoc, const char *encoding) {
 	return -2;
 #endif
 	if(sscanf(encoding, "CP%d", &codepage)) {
-		PX_set_value(pxdoc, "codepage", codepage);
+		PX_set_value(pxdoc, "codepage", (float)codepage);
 	}
 	return 0;
 }
@@ -3402,7 +3404,6 @@ PXLIB_API int PXLIB_CALL
 PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	char *buffer, *obuf = NULL;
 	size_t olen;
-	int res;
 
 	if(data[0] == '\0') {
 		*value = NULL;
@@ -3412,7 +3413,7 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	if(pxdoc->targetencoding != NULL) {
 #if PX_USE_RECODE
 		int oallocated = 0;
-		res = recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
+		int res = recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
 		size_t ilen;
@@ -3583,7 +3584,6 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 	unsigned char nibble;
 	int size;
 	int lz;   /* 1 as long as leading zeros are found */
-	struct lconv *lc;
 	char *buffer;
 
 	if(data[0] == '\0') {
@@ -3622,7 +3622,7 @@ PX_get_data_bcd(pxdoc_t *pxdoc, unsigned char *data, int len, char **value) {
 	if(lz)
 		buffer[j++] = '0';
 #ifdef HAVE_LOCALE_H
-	lc = localeconv();
+	struct lconv *lc = localeconv();
 	if(lc)
 		buffer[j++] = lc->decimal_point[0];
 	else
@@ -3841,7 +3841,6 @@ PXLIB_API void PXLIB_CALL
 PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	char *obuf = NULL;
 	size_t olen;
-	int res;
 
 	memset(data, 0, len);
 	if((value == NULL) || (value[0] == '\0')) {
@@ -3851,7 +3850,7 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	if(pxdoc->targetencoding != NULL) {
 #if PX_USE_RECODE
 		int oallocated = 0;
-		res = recode_buffer_to_buffer(pxdoc->in_recode_request, value, strlen(value), &obuf, &olen, &oallocated);
+		int res = recode_buffer_to_buffer(pxdoc->in_recode_request, value, strlen(value), &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
 		size_t ilen = strlen(value);
@@ -3985,7 +3984,6 @@ PXLIB_API void PXLIB_CALL
 PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 	unsigned char obuf[17];
 	unsigned char sign;
-	struct lconv *lc;
 	char *dpptr;
 	int i, j;
 
@@ -4000,7 +3998,7 @@ PX_put_data_bcd(pxdoc_t *pxdoc, char *data, int len, char *value) {
 			memset(obuf+1, 255, 16);
 		} 
 #ifdef HAVE_LOCALE_H
-		lc = localeconv();
+		struct lconv *lc = localeconv();
 		if(lc)
 			dpptr = strchr(value, lc->decimal_point[0]);
 		else
