@@ -17,10 +17,10 @@ extern "C" {
  * use those to be sure nothing nasty will happen if
  * your library and includes mismatch
  */
-#define PXLIB_DOTTED_VERSION "@VERSION@"
-#define PXLIB_MAJOR_VERSION @PXLIB_MAJOR_VERSION@
-#define PXLIB_MINOR_VERSION @PXLIB_MINOR_VERSION@
-#define PXLIB_MICRO_VERSION @PXLIB_MICRO_VERSION@
+#define PXLIB_DOTTED_VERSION "@CPACK_PACKAGE_VERSION@"
+#define PXLIB_MAJOR_VERSION @CPACK_PACKAGE_VERSION_MAJOR@
+#define PXLIB_MINOR_VERSION @CPACK_PACKAGE_VERSION_MINOR@
+#define PXLIB_MICRO_VERSION @CPACK_PACKAGE_VERSION_PATCH@
 
 /*
  * Whether Debugging module is configured in
