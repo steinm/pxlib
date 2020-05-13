@@ -40,7 +40,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	memset(pxh, 0, sizeof(pxhead_t));
 	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0)
 		return NULL;
-	if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxHeader), &pxhead)) < 0) {
+	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TPxHeader), &pxhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -126,7 +126,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
           (pxh->px_filetype == pxfFileTypNonIncSecIndexG) ||
 		  (pxh->px_filetype == pxfFileTypIncSecIndexG)) &&
 		  (pxh->px_fileversion >= 40)) {
-		if((ret = pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) < 0) {
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
@@ -156,7 +156,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
-		if((ret = pxdoc->read(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo)) < 0) {
 			pxdoc->free(pxdoc, pxh->px_fields);
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
@@ -173,7 +173,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	}
 
 	/* skip the tableNamePtr */
-	if((ret = pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
+	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -184,7 +184,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	   pxhead.fileType == 3 || pxhead.fileType == 5 ||
 	   pxhead.fileType == 6 || pxhead.fileType == 8) {
 		for(i=0; i<pxh->px_numfields; i++) {
-			if((ret = pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
+			if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
 				pxdoc->free(pxdoc, pxh->px_fields);
 				pxdoc->free(pxdoc, pxh);
 				return NULL;
@@ -193,7 +193,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	}
 
 	/* read the tableName */
-	ret = pxdoc->read(pxdoc, pxs, tablenamelen, dummy);
+	ret = (int)pxdoc->read(pxdoc, pxs, tablenamelen, dummy);
 	if(ret < 0) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
@@ -206,7 +206,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
 		j=0;
-		while((j < TMPBUFFSIZE-1) && ((ret = pxdoc->read(pxdoc, pxs, 1, &c)) >= 0) && (c != '\0')) {
+		while((j < TMPBUFFSIZE-1) && ((ret = (int)pxdoc->read(pxdoc, pxs, 1, &c)) >= 0) && (c != '\0')) {
 			dummy[j++] = c;
 		}
 		if(ret < 0) {
@@ -288,8 +288,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 			 * In several files it was just 12 in .DB and 17 in .PX files. */
 			put_short_le((char *)&pxhead.unknown12x13, 12);
 			put_short_le((char *)&pxhead.primaryKeyFields, pxh->px_primarykeyfields);
-			put_long_le((char *)&pxhead.primaryIndexWorkspace, (int) (basehead-100));  /* just to set a value */
-			put_long_le((char *)&pxhead.unknownPtr1A, (int) (basehead-500));  /* just to set a value */
+			put_long_le((char *)&pxhead.primaryIndexWorkspace, (long) ((size_t)basehead-100));  /* just to set a value */
+			put_long_le((char *)&pxhead.unknownPtr1A, (long) ((size_t)basehead-500));  /* just to set a value */
 			break;
 		case pxfFileTypPrimIndex:
 			put_short_le((char *)&pxhead.unknown12x13, 17);
@@ -322,8 +322,8 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		dataheadoffset = 0x58;
 	}
 	/* All the pointers, though we probably don't need them for a valid file */
-	put_long_le((char *)&pxhead.fldInfoPtr, (int) (basehead+dataheadoffset));
-	put_long_le((char *)&pxhead.tableNamePtrPtr, (int) (basehead+dataheadoffset+pxh->px_numfields*2));
+	put_long_le((char *)&pxhead.fldInfoPtr, (long) ((size_t)basehead+dataheadoffset));
+	put_long_le((char *)&pxhead.tableNamePtrPtr, (long) ((size_t)basehead+dataheadoffset+pxh->px_numfields*2));
 	switch(pxh->px_fileversion) {
 		case 70:
 			pxhead.fileVersionID = 0x0C;
@@ -338,7 +338,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	sumfieldlen = 0;
 	for(i=0; i<pxh->px_numfields; i++, pxf++) {
 		if(pxf->px_fname)
-			sumfieldlen += strlen(pxf->px_fname)+1;
+			sumfieldlen += (int)strlen(pxf->px_fname)+1;
 		else
 			sumfieldlen += 1;
 	}
@@ -434,7 +434,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	 * with numfields fields specifications (each 2 Bytes), followed
 	 * by this pointer (tableNamePtr) and numfield pointers to the
 	 * field names. */
-	put_long_le((char *)&ptr, (int) (basehead+dataheadoffset+pxh->px_numfields*(2+4)+4));
+	put_long_le((char *)&ptr, (long) ((size_t)basehead+dataheadoffset+pxh->px_numfields*(2+4)+4));
 	if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not write pointer to tablename."));
 		return -1;
@@ -444,12 +444,12 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 	 * numfields sizeof(* Fieldname) + sizeof(* Tablename) + strlen(tablename)
 	 */
 	if(!isindex) {
-		base = (int) basehead+dataheadoffset+pxh->px_numfields*(2+4)+4+tablenamelen;
+		base = (int) (size_t)basehead+dataheadoffset+pxh->px_numfields*(2+4)+4+tablenamelen;
 		pxf = pxh->px_fields;
 		offset = 0;
 		for(i=0; i<pxh->px_numfields; i++, pxf++) {
 			put_long_le((char *)&ptr, base+offset);
-			offset += strlen(pxf->px_fname)+1;
+			offset += (int)strlen(pxf->px_fname)+1;
 			if(pxdoc->write(pxdoc, pxs, 4, &ptr) < 1) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write pointers to field names."));
 				return -1;
@@ -462,7 +462,7 @@ int put_px_head(pxdoc_t *pxdoc, pxhead_t *pxh, pxstream_t *pxs) {
 		len = 0;
 //		px_error(pxdoc, PX_Warning, _("Tablename is empty."));
 	} else {
-		len = strlen(pxh->px_tablename);
+		len = (int)strlen(pxh->px_tablename);
 		if(pxdoc->write(pxdoc, pxs, len, pxh->px_tablename) < 1) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write tablename."));
 			return -1;
@@ -540,7 +540,7 @@ int get_datablock_head(pxdoc_t *pxdoc, pxstream_t *pxs, int datablocknr, TDataBl
 		return -1;
 	}
 
-	if((ret = pxdoc->read(pxdoc, pxs, sizeof(TDataBlock), datablockhead)) < 0) {
+	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TDataBlock), datablockhead)) < 0) {
 		return -1;
 	}
 
@@ -561,7 +561,7 @@ int put_datablock_head(pxdoc_t *pxdoc, pxstream_t *pxs, int datablocknr, TDataBl
 		return -1;
 	}
 
-	if((ret = pxdoc->write(pxdoc, pxs, sizeof(TDataBlock), datablockhead)) < 0) {
+	if((ret = (int)pxdoc->write(pxdoc, pxs, sizeof(TDataBlock), datablockhead)) < 0) {
 		return -1;
 	}
 
@@ -581,7 +581,7 @@ int put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int after, pxstream_t *pxs) 
 	TDataBlock newdatablockhead, prevdatablockhead, nextdatablockhead;
 	int i, next, ret, nullint = 0;
 
-	if(after > pxh->px_fileblocks) {
+	if(after > (int)pxh->px_fileblocks) {
 		px_error(pxdoc, PX_RuntimeError, _("Trying to insert data block after block number %d, but file has only %d blocks."), after, pxh->px_fileblocks);
 		return -1;
 	}
@@ -772,7 +772,7 @@ int _put_px_datablock(pxdoc_t *pxdoc, pxhead_t *pxh, int prev, int next, int rec
 	TDataBlock newdatablockhead;
 	int i, nullint = 0;
 
-	if(next > pxh->px_fileblocks) {
+	if(next > (int)pxh->px_fileblocks) {
 		px_error(pxdoc, PX_RuntimeError, _("Trying to insert data block after block number %d, but file has only %d blocks."), next, pxh->px_fileblocks);
 		return -1;
 	}
@@ -946,7 +946,7 @@ int px_delete_data_from_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, in
 		}
 
 		/* Read data of next record */
-		if((ret = pxdoc->read(pxdoc, pxs, pxh->px_recordsize, data)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxs, pxh->px_recordsize, data)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read next record."));
 			pxdoc->free(pxdoc, data);
 			return -9;
@@ -988,7 +988,7 @@ int px_delete_blob_data(pxblob_t *pxblob, int hsize, int size, int bloboffset, i
 	}
 
 	/* Just read the first 3 Bytes because they are common for all block */
-	if((ret = pxblob->read(pxblob, pxblob->mb_stream, 3, head)) < 0) {
+	if((ret = (int)pxblob->read(pxblob, pxblob->mb_stream, 3, head)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read head of blob data."));
 		return -1;
 	}
@@ -1009,7 +1009,7 @@ int px_delete_blob_data(pxblob_t *pxblob, int hsize, int size, int bloboffset, i
 			return -1;
 		}
 		/* Read the remaining 6/14 bytes from the header */
-		if((ret = pxblob->read(pxblob, pxblob->mb_stream, hsize-3, head)) < 0) {
+		if((ret = (int)pxblob->read(pxblob, pxblob->mb_stream, hsize-3, head)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining head of single data block."));
 			return -1;
 		}
@@ -1026,7 +1026,7 @@ int px_delete_blob_data(pxblob_t *pxblob, int hsize, int size, int bloboffset, i
 				px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
 				return -1;
 			}
-			if((ret = pxblob->write(pxblob, pxblob->mb_stream, 1, &head)) < 0) {
+			if((ret = (int)pxblob->write(pxblob, pxblob->mb_stream, 1, &head)) < 0) {
 				px_error(pxdoc, PX_RuntimeError, _("Could not write blob type."));
 				return -1;
 			}
@@ -1046,7 +1046,7 @@ int px_delete_blob_data(pxblob_t *pxblob, int hsize, int size, int bloboffset, i
 		memcpy(tmpblock1, head, 3);
 
 		/* Read the the rest of the block */
-		if((ret = pxblob->read(pxblob, pxblob->mb_stream, 4096-3, &tmpblock1[3])) < 0) {
+		if((ret = (int)pxblob->read(pxblob, pxblob->mb_stream, 4096-3, &tmpblock1[3])) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read remaining data of suballocated block."));
 			return -1;
 		}
@@ -1076,7 +1076,7 @@ int px_delete_blob_data(pxblob_t *pxblob, int hsize, int size, int bloboffset, i
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of blob."));
 			return -1;
 		}
-		if((ret = pxblob->write(pxblob, pxblob->mb_stream, 4096, tmpblock1)) < 0) {
+		if((ret = (int)pxblob->write(pxblob, pxblob->mb_stream, 4096, tmpblock1)) < 0) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not write data of suballocated block."));
 			return -1;
 		}
@@ -1114,7 +1114,7 @@ mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not go to start of blob file."));
 		return NULL;
 	}
-	if((ret = pxblob->read(pxblob, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
+	if((ret = (int)pxblob->read(pxblob, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, mbh);
 		return NULL;

@@ -136,7 +136,7 @@ ssize_t px_read(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 //			fprintf(stderr, "block %d already in cache.\n", blocknr);
 		}
 		memcpy(buffer, p->curblock+blockpos, len);
-		pxs->seek(p, pxs, curpos+len, SEEK_SET);
+		pxs->seek(p, pxs, curpos + (long)len, SEEK_SET);
 		ret = len;
 	} else {
 		ret = pxs->read(p, pxs, len, buffer);
@@ -215,7 +215,7 @@ ssize_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		p->curblocknr = blocknr;
 		p->curblockdirty = px_true;
 		memcpy(p->curblock+blockpos, buffer, len);
-		pxs->seek(p, pxs, curpos+len, SEEK_SET);
+		pxs->seek(p, pxs, curpos + (long)len, SEEK_SET);
 		ret = len;
 	} else {
 		ret = pxs->write(p, pxs, len, buffer);
@@ -288,7 +288,7 @@ ssize_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 	 * e.g. if we want to read 20 bytes starting at position 300 in the
 	 * file, we will need to read 44+20 bytes starting at position 256. 
 	 */
-	blockslen = len + pos - blockoffset;
+	blockslen = (unsigned)len + pos - blockoffset;
 	/* Check if the end of the data is within a 2^BLOCKSIZEEXP bytes block.
 	 * If that is the case, we will need to read the remainder of the
 	 * 2^BLOCKSIZEEXP bytes block as well. In the above example, we
@@ -312,7 +312,7 @@ ssize_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 		if(blockoffset == p->blockcache.start && blockslen <= p->blockcache.size) {
 //			fprintf(stderr, "Reading block at position 0x%X from cache.\n", blockoffset);
 			memcpy(buffer, p->blockcache.data + (pos - blockoffset), len);
-			ret = pxs->seek(pxdoc, pxs, pos + len, SEEK_SET);
+			ret = pxs->seek(pxdoc, pxs, pos + (long)len, SEEK_SET);
 			if (ret < 0) {
 				return ret;
 			}
@@ -326,7 +326,7 @@ ssize_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 //	fprintf(stderr, "Reading block at position 0x%X from file.\n", blockoffset);
 	tmpbuf = p->blockcache.data;
 
-	ret = pxs->read(pxdoc, pxs, blockslen, tmpbuf);
+	ret = (int)pxs->read(pxdoc, pxs, blockslen, tmpbuf);
 	if (ret <= 0) {
 		free(tmpbuf);
 		p->blockcache.data = NULL;
@@ -338,7 +338,7 @@ ssize_t px_mb_read(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 	p->blockcache.size = blockslen;
 //	free(tmpbuf);
 
-	ret = pxs->seek(pxdoc, pxs, pos + len, SEEK_SET);
+	ret = pxs->seek(pxdoc, pxs, pos + (long)len, SEEK_SET);
 	if (ret < 0) {
 		return ret;
 	}
