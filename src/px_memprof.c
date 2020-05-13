@@ -39,10 +39,10 @@ PX_mp_malloc(pxdoc_t *p, size_t size, const char *caller) {
 		fprintf(stderr, "\n");
 	}
 	memlist[i].ptr = a;
-	memlist[i].size = size;
-	summem += size;
+	memlist[i].size = (int)size;
+	summem += (int)size;
 	peakmem = (summem > peakmem) ? summem : peakmem;
-	memlist[i].caller = strdup(caller);
+	memlist[i].caller = _strdup(caller);
 	return(a);
 }
 
@@ -55,10 +55,10 @@ PX_mp_realloc(pxdoc_t *p, void *mem, size_t size, const char *caller) {
 		if(memlist[i].ptr == mem) {
 			memlist[i].ptr = a;
 			summem -= memlist[i].size;
-			summem += size;
-			memlist[i].size = size;
+			summem += (int)size;
+			memlist[i].size = (int)size;
 			free(memlist[i].caller);
-			memlist[i].caller = strdup(caller);
+			memlist[i].caller = _strdup(caller);
 		}
 	}
 	if(i == MAXMEM) {

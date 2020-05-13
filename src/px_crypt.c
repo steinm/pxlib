@@ -168,7 +168,7 @@ void px_encrypt_db_block(unsigned char *src, unsigned char *dest,
 	blocksize >>= 8;
 
 	for (chunk = 0; chunk < blocksize; ++chunk) {
-		px_encrypt_chunk(src + (chunk << 8), dest + (chunk << 8), a, b, chunk, blockno);
+		px_encrypt_chunk(src + (chunk << 8), dest + (chunk << 8), a, b, chunk, (unsigned char)blockno);
 	}
 }
 /* }}} */
@@ -226,7 +226,7 @@ void px_decrypt_db_block(unsigned char *src, unsigned char *dest,
 	blocksize >>= 8;
 
 	for (chunk = 0; chunk < blocksize; ++chunk) {
-		px_decrypt_chunk(src + (chunk << 8), dest + (chunk << 8), a, b, chunk, blockno);
+		px_decrypt_chunk(src + (chunk << 8), dest + (chunk << 8), a, b, chunk, (unsigned char)blockno);
 	}
 }
 /* }}} */
@@ -299,7 +299,7 @@ long px_passwd_checksum(const char *aPsw) {
 
 	if(aPsw == NULL || aPsw[0] == '\0')
 		return 0;
-	len = strlen(aPsw);
+	len = (long)strlen(aPsw);
 	count = 256;
 	while(count >= len) {
 		memcpy(&buff[256-count], aPsw, len);
