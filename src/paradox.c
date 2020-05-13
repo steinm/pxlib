@@ -3414,11 +3414,12 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 	if(pxdoc->targetencoding != NULL) {
 #if PX_USE_RECODE
 		int oallocated = 0;
-		int res = recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
+		recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
 		size_t ilen;
 		char *iptr, *optr;
+		int res;
 		/* Worst case for length of output buffer. If conversion from 1 byte
 		 * to 2 byte chars takes place
 		 */
