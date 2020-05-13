@@ -160,10 +160,10 @@ struct px_stream {
 		GsfOutput *gsfout;
 #endif
 	} s;
-	size_t (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	ssize_t (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
 	long (*tell)(pxdoc_t *p, pxstream_t *stream);
-	size_t (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	ssize_t (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 };
 
 struct px_doc {
@@ -208,10 +208,10 @@ struct px_doc {
 	void  (*free)(pxdoc_t *p, void *mem);
 
 	/* input stream functions */
-	size_t (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	ssize_t (*read)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 	int (*seek)(pxdoc_t *p, pxstream_t *stream, long offset, int whence);
 	long (*tell)(pxdoc_t *p, pxstream_t *stream);
-	size_t (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	ssize_t (*write)(pxdoc_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 
 	char *targetencoding;
 	char *inputencoding;
@@ -258,10 +258,10 @@ struct px_blob {
 	int subblockfree;
 	int subblockblobcount;
 	/* input stream functions */
-	size_t (*read)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	ssize_t (*read)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 	int (*seek)(pxblob_t *p, pxstream_t *stream, long offset, int whence);
 	long (*tell)(pxblob_t *p, pxstream_t *stream);
-	size_t (*write)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
+	ssize_t (*write)(pxblob_t *p, pxstream_t *stream, size_t numbytes, void *buffer);
 	/* Cache for the last read block */
 	pxblockcache_t blockcache;
 	/* Index of all blocks in the blob file */
