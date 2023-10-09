@@ -1,3 +1,4 @@
+# From .cvsignore
 Makefile
 Makefile.in
 aclocal.m4
@@ -35,8 +36,51 @@ mkinstalldirs
 depcomp
 CMakeCache.txt
 
+# From ./debian/.cvsignore
+/debian/executable.files
+/debian/files
+/debian/pxlib-dev
+/debian/pxlib.doc-base.EX
+/debian/pxlib1
+/debian/pxlib1.postinst.debhelper
+/debian/pxlib1.postrm.debhelper
+/debian/pxlib1.substvars
+/debian/tmp
+
+# From ./doc/.cvsignore
+/doc/Makefile
+/doc/Makefile.in
+/doc/*.3
+/doc/*.html
+
+# From ./include/.cvsignore
+/include/Makefile
+/include/Makefile.in
+/include/paradox-gsf.h
+/include/paradox.h
+/include/pxversion.h
+
+# From ./po/.cvsignore
+/po/Makefile
+/po/Makefile.in
+/po/Makefile.in.in
+/po/POTFILES
+/po/*.gmo
+/po/*.pot
+
+# From ./src/.cvsignore
+/src/*.lo
+/src/*.la
+/src/Makefile
+/src/Makefile.in
+/src/.libs
+/src/.deps
+
+# Other exclusions
 /build
 /autom4te.cache/*
+/po/stamp-it
+
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/c,c++,cmake,linux,macos,windows,autotools,visualstudio,visualstudiocode,jetbrains
