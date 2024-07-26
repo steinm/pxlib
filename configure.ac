@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.52)
-AC_INIT([pxlib], [0.6.8], http://sourceforge.net/projects/pxlib)
+AC_INIT([pxlib], [0.6.9], http://sourceforge.net/projects/pxlib)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/paradox.c])
 AM_INIT_AUTOMAKE()
@@ -19,7 +19,7 @@ AC_PROG_INTLTOOL
 dnl the following sets the soname version
 PXLIB_MAJOR_VERSION=0
 PXLIB_MINOR_VERSION=6
-PXLIB_MICRO_VERSION=8
+PXLIB_MICRO_VERSION=9
 PXLIB_VERSION=$PXLIB_MAJOR_VERSION.$PXLIB_MINOR_VERSION.$PXLIB_MICRO_VERSION
 PXLIB_VERSION_INFO=`expr $PXLIB_MAJOR_VERSION + $PXLIB_MINOR_VERSION`:$PXLIB_MICRO_VERSION:$PXLIB_MINOR_VERSION
 

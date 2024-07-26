@@ -1,3 +1,6 @@
+Version 0.6.9
+	- use strdup() instead of _strdup() to make it compile with gcc 14
+
 Version 0.6.8
 	- fix some possible memory leaks, use ssize_t instead of size_t
 	  (thanks to Coolman for the patch)
