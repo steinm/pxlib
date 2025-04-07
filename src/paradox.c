@@ -2864,7 +2864,7 @@ static int build_mb_block_list(pxblob_t *pxblob) {
 	size_t filesize;
 	int numblocks;
 	pxmbblockinfo_t *blocklist;
-	TMbBlockHeader2 mbblockhead;
+	TMbBlockHeader3 mbblockhead;
 
 	pxdoc = pxblob->pxdoc;
 	pxs = pxblob->mb_stream;
