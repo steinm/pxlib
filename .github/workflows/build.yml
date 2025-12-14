@@ -1,0 +1,105 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master, main, develop, copilot/** ]
+  pull_request:
+    branches: [ master, main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+    
+    - name: Configure CMake (GCC)
+      if: matrix.compiler == 'gcc'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Configure CMake (Clang)
+      if: matrix.compiler == 'clang'
+      run: |
+        mkdir build
+        cd build
+        CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pxlib-linux-${{ matrix.compiler }}
+        path: build/libpxlib.so
+        retention-days: 7
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pxlib-windows
+        path: build/Release/pxlib.dll
+        retention-days: 7
+        if-no-files-found: warn
+
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        brew install cmake
+    
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pxlib-macos
+        path: build/libpxlib.dylib
+        retention-days: 7
