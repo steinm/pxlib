@@ -45,7 +45,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: pxlib-linux-${{ matrix.compiler }}
-        path: build/libpxlib.so
+        path: build/libpxlib.*
         retention-days: 7
 
   build-windows:
@@ -72,7 +72,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: pxlib-windows
-        path: build/Release/pxlib.dll
+        path: |
+          build/Release/*.dll
+          build/*.dll
         retention-days: 7
         if-no-files-found: warn
 
@@ -101,5 +103,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: pxlib-macos
-        path: build/libpxlib.dylib
+        path: build/libpxlib.*
         retention-days: 7
