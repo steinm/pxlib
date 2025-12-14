@@ -21,9 +21,7 @@ jobs:
     - uses: actions/checkout@v6
     
     - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential
+      run: sudo apt-get update && sudo apt-get install -y cmake build-essential
     
     - name: Configure CMake (GCC)
       if: matrix.compiler == 'gcc'
