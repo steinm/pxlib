@@ -1,8 +1,8 @@
 # CI/CD Workflows
 
-This directory contains GitHub Actions workflows for automated building and testing of pxlib.
+This directory contains GitHub Actions workflows for automated building of pxlib.
 
-## Build and Test Workflow
+## Build Workflow
 
 The `build.yml` workflow automatically builds pxlib on multiple platforms:
 
