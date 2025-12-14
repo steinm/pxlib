@@ -823,3 +823,4 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,cmake,linux,macos,windows,autotools,visualstudio,visualstudiocode,jetbrains
+_codeql_*
