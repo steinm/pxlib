@@ -3857,6 +3857,7 @@ PX_put_data_alpha(pxdoc_t *pxdoc, char *data, int len, char *value) {
 #else
 #if PX_USE_ICONV
 		size_t ilen = strlen(value);
+		size_t res;
 		char *iptr, *optr;
 		olen = len + 1;
 		/* Do not pxdoc->malloc because the memory is freed with free
