@@ -27,22 +27,14 @@ jobs:
     
     - name: Configure CMake (GCC)
       if: matrix.compiler == 'gcc'
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
     
     - name: Configure CMake (Clang)
       if: matrix.compiler == 'clang'
-      run: |
-        mkdir build
-        cd build
-        CC=clang CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Release
+      run: CC=clang CXX=clang++ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
     
     - name: Build
-      run: |
-        cd build
-        cmake --build . --config Release
+      run: cmake --build build --config Release
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v6.0.0
@@ -61,15 +53,10 @@ jobs:
       uses: microsoft/setup-msbuild@v2
     
     - name: Configure CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
     
     - name: Build
-      run: |
-        cd build
-        cmake --build . --config Release
+      run: cmake --build build --config Release
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v6.0.0
@@ -92,15 +79,10 @@ jobs:
         brew install cmake
     
     - name: Configure CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
     
     - name: Build
-      run: |
-        cd build
-        cmake --build . --config Release
+      run: cmake --build build --config Release
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v6.0.0
