@@ -701,7 +701,7 @@ int px_add_data_to_block(pxdoc_t *pxdoc, pxhead_t *pxh, int datablocknr, int rec
 //	fprintf(stderr, "Hexdump des alten datablock headers: ");
 //	hex_dump(stderr, &datablockhead, sizeof(TDataBlock));
 //	fprintf(stderr, "\n");
-//	fprintf(stderr, "Gr��e des Datenblocks: %d\n", get_short_le_s((char *) &datablockhead.addDataSize));
+//	fprintf(stderr, "Größe des Datenblocks: %d\n", get_short_le_s((char *) &datablockhead.addDataSize));
 //	fprintf(stderr, "Datablock %d has %d records\n", datablocknr, n);
 //	fprintf(stderr, "Adding new record at postion %d in block\n", recnr);
 
