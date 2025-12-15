@@ -130,7 +130,17 @@ configure_file(${CMAKE_SOURCE_DIR}/include/pxversion.h.in ${CMAKE_BINARY_DIR}/px
 configure_file(${CMAKE_SOURCE_DIR}/include/paradox.h.in ${CMAKE_BINARY_DIR}/include/paradox.h)
 configure_file(${CMAKE_SOURCE_DIR}/include/paradox-gsf.h.in ${CMAKE_BINARY_DIR}/include/paradox-gsf.h)
 
+# Configure Windows resource file
+if(WIN32)
+    configure_file(${CMAKE_SOURCE_DIR}/pxlib.rc.in ${CMAKE_BINARY_DIR}/pxlib.rc)
+endif()
+
 add_library(pxlib SHARED ${SOURCES})
+
+# Add Windows resource file to the library
+if(WIN32)
+    target_sources(pxlib PRIVATE ${CMAKE_BINARY_DIR}/pxlib.rc)
+endif()
 
 target_include_directories(pxlib
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}
