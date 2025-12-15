@@ -34,12 +34,31 @@ check_include_file("gsf/gsf-input-stdio.h" HAVE_GSF_GSFINPUTSTDIO_H)
 
 # Functions
 include(CheckFunctionExists)
+include(CheckLibraryExists)
+
+# Check for iconv
+if(HAVE_ICONV_H)
+    # First check if iconv is in libc
+    check_function_exists(iconv ICONV_IN_LIBC)
+    
+    if(NOT ICONV_IN_LIBC)
+        # Check if iconv is in a separate library
+        check_library_exists(iconv iconv "" HAVE_ICONV_LIB)
+        if(HAVE_ICONV_LIB)
+            set(ICONV_LIBRARIES iconv)
+        endif()
+    endif()
+    
+    if(ICONV_IN_LIBC OR HAVE_ICONV_LIB)
+        set(HAVE_ICONV 1)
+    endif()
+endif()
 
 # Endianess
 include(TestBigEndian)
 test_big_endian(WORDS_BIGENDIAN)
 
-if(HAVE_ICONV_H)
+if(HAVE_ICONV)
     set(PX_HAVE_ICONV 1)
     set(PX_HAVE_RECODE 0)
 else()
@@ -78,10 +97,7 @@ set(SOURCES
     src/px_memory.h
     src/px_misc.h
     src/sdncal.h
-    include/paradox-gsf.h
-    include/paradox.h
     include/paradox-mp.h
-    include/pxversion.h
 )
 
 add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
@@ -114,9 +130,24 @@ configure_file(${CMAKE_SOURCE_DIR}/include/pxversion.h.in ${CMAKE_BINARY_DIR}/px
 configure_file(${CMAKE_SOURCE_DIR}/include/paradox.h.in ${CMAKE_BINARY_DIR}/include/paradox.h)
 configure_file(${CMAKE_SOURCE_DIR}/include/paradox-gsf.h.in ${CMAKE_BINARY_DIR}/include/paradox-gsf.h)
 
+# Configure Windows resource file
+if(WIN32)
+    configure_file(${CMAKE_SOURCE_DIR}/pxlib.rc.in ${CMAKE_BINARY_DIR}/pxlib.rc)
+endif()
+
 add_library(pxlib SHARED ${SOURCES})
+
+# Add Windows resource file to the library
+if(WIN32)
+    target_sources(pxlib PRIVATE ${CMAKE_BINARY_DIR}/pxlib.rc)
+endif()
 
 target_include_directories(pxlib
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}
     PUBLIC ${CMAKE_BINARY_DIR}/include
 )
+
+# Link iconv library if needed
+if(ICONV_LIBRARIES)
+    target_link_libraries(pxlib PRIVATE ${ICONV_LIBRARIES})
+endif()
