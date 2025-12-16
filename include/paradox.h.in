@@ -193,7 +193,7 @@ struct px_doc {
 	int warnings;      /* Turn of/off output of warnings */
 
 	/* output function */
-	size_t (*writeproc)(pxdoc_t *p, void *data, size_t size);
+	ssize_t (*writeproc)(pxdoc_t *p, void *data, size_t size);
 
 	/* error handler function */
 	void (*errorhandler)(pxdoc_t *p, int level, const char* msg, void *data);

@@ -30,6 +30,9 @@
 #include <fcntl.h>
 #endif
 #include <time.h>
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #ifdef WIN32
 #include <Windows.h>
@@ -2582,9 +2585,9 @@ PX_delete(pxdoc_t *pxdoc) {
 		recode_delete_request(pxdoc->in_recode_request);
 #else
 #if PX_USE_ICONV
-	if((int) pxdoc->out_iconvcd > 0)
+	if(pxdoc->out_iconvcd != (iconv_t) -1)
 		iconv_close(pxdoc->out_iconvcd);
-	if((int) pxdoc->in_iconvcd > 0)
+	if(pxdoc->in_iconvcd != (iconv_t) -1)
 		iconv_close(pxdoc->in_iconvcd);
 #endif
 #endif
@@ -3504,12 +3507,12 @@ PX_get_data_double(pxdoc_t *pxdoc, char *data, int len, double *value) {
 	memcpy(&tmp, data, 8);
 	if(tmp[0] & 0x80) {
 		tmp[0] &= 0x7f;
-	} else if(*((long int *)tmp) != 0) {
+	} else if(*((int32_t *)tmp) != 0) {
 		int k;
 		for(k=0; k<len; k++)
 			tmp[k] = ~tmp[k];
 	} else {
-		*value = 0;
+		*value = 0.0;
 		return 0;
 	}
 	*value = get_double_be(tmp); // *((double *)tmp);
@@ -3526,7 +3529,7 @@ PX_get_data_long(pxdoc_t *pxdoc, char *data, int len, long *value) {
 	memcpy(&tmp, data, 4);
 	if(tmp[0] & 0x80) {
 		tmp[0] &= 0x7f;
-	} else if(*((long int *)tmp) != 0) {
+	} else if(*((int32_t *)tmp) != 0) {
 		tmp[0] |= 0x80;
 	} else {
 		*value = 0;

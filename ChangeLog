@@ -1,3 +1,12 @@
+Version 0.6.10 (unreleased)
+	- complete remaining x64 compatibility fixes from Kenneth Porter's patches:
+	  * fix writeproc return type (size_t to ssize_t)
+	  * fix iconv_close validation for proper iconv_t handling
+	  * fix pointer arithmetic in px_head.c to avoid UB on 64-bit systems
+	  * use int32_t instead of long int for portable 64-bit compatibility
+	  * properly initialize double values
+	  (see https://sourceforge.net/p/pxlib/bugs/15/)
+
 Version 0.6.9
 	- use strdup() instead of _strdup() to make it compile with gcc 14
 
