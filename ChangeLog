@@ -1,4 +1,4 @@
-Version 0.6.10 (unreleased)
+Version 0.6.10
 	- complete remaining x64 compatibility fixes from Kenneth Porter's patches:
 	  * fix writeproc return type (size_t to ssize_t)
 	  * fix iconv_close validation for proper iconv_t handling
