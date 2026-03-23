@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "px_intern.h"
+#include "paradox-gsf.h"
 #include "paradox.h"
 
 /* px_errorhandler() {{{

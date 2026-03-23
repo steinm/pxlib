@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "paradox-gsf.h"
 #include "paradox.h"
 #include "px_crypt.h"
 
