@@ -35,7 +35,7 @@ jobs:
       run: cmake --build build --config Release
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: pxlib-linux-${{ matrix.compiler }}
         path: build/libpxlib.*
@@ -57,7 +57,7 @@ jobs:
       run: cmake --build build --config Release
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: pxlib-windows
         path: |
@@ -83,7 +83,7 @@ jobs:
       run: cmake --build build --config Release
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: pxlib-macos
         path: build/libpxlib.*
