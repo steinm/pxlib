@@ -78,6 +78,7 @@ CMakeCache.txt
 
 # Other exclusions
 /build
+/build-*/
 /autom4te.cache/*
 /po/stamp-it
 

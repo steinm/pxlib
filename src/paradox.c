@@ -2047,28 +2047,38 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 							if((pxf->px_ftype == pxfMemoBLOb || pxf->px_ftype == pxfFmtMemoBLOb)
 							   && pxdoc->targetencoding != NULL
 							   && pxdoc->out_iconvcd != (iconv_t)-1 && size > 0) {
-								char *obuf, *iptr = blobdata, *optr;
-								size_t olen = 2*(size_t)size + 1, ilen = (size_t)size;
-								int res;
-								optr = obuf = (char *) malloc(olen);
-								if(obuf != NULL) {
+								char *obuf = NULL, *iptr, *optr;
+								size_t cap = 2*(size_t)size + 1, olen, ilen;
+								int res = -1, retries;
+								for(retries = 0; retries < 4; retries++) {
+									char *tmp = (char *) realloc(obuf, cap);
+									if(!tmp) break;
+									obuf = tmp;
+									iptr = blobdata;
+									ilen = (size_t)size;
+									optr = obuf;
+									olen = cap;
+									iconv(pxdoc->out_iconvcd, NULL, NULL, NULL, NULL);
 									res = (int)iconv(pxdoc->out_iconvcd, &iptr, &ilen, &optr, &olen);
-									if(0 <= res) {
-										char *nb;
-										*optr = '\0';
-										olen = optr - obuf;
-										nb = (char *) pxdoc->malloc(pxdoc, olen+1,
-											_("Allocate memory for re-encoded memo data."));
-										if(nb) {
-											memcpy(nb, obuf, olen);
-											nb[olen] = '\0';
-											pxdoc->free(pxdoc, blobdata);
-											blobdata = nb;
-											size = (int)olen;
-										}
-									}
-									free(obuf);
+									if(res >= 0) break;
+									if(errno != E2BIG) break;
+									cap *= 2;
 								}
+								if(res >= 0) {
+									char *nb;
+									*optr = '\0';
+									olen = optr - obuf;
+									nb = (char *) pxdoc->malloc(pxdoc, olen+1,
+										_("Allocate memory for re-encoded memo data."));
+									if(nb) {
+										memcpy(nb, obuf, olen);
+										nb[olen] = '\0';
+										pxdoc->free(pxdoc, blobdata);
+										blobdata = nb;
+										size = (int)olen;
+									}
+								}
+								free(obuf);
 							}
 #endif
 							dataptr[i]->value.str.val = blobdata;
@@ -3454,32 +3464,36 @@ PX_get_data_alpha(pxdoc_t *pxdoc, char *data, int len, char **value) {
 		recode_buffer_to_buffer(pxdoc->out_recode_request, data, len, &obuf, &olen, &oallocated);
 #else
 #if PX_USE_ICONV
-		size_t ilen;
+		size_t slen, ilen, cap;
 		char *iptr, *optr;
-		int res;
-		/* Worst case for length of output buffer. If conversion from 1 byte
-		 * to 2 byte chars takes place
-		 */
-		olen = 2*len + 1;
-		/* Do not pxdoc->malloc because the memory is freed with free
-		 * We use free because the memory allocated by recode_buffer_to_buffer()
-		 * is requested with malloc and must be freed with free.
-		 */
-		optr = obuf = (char *) malloc(olen);
-		iptr = data;
-		ilen = 0;
-		while(iptr[ilen] != '\0' && ilen < (size_t) len)
-			ilen++;
-//		printf("data(%d) = '%s'\n", ilen, data);
-//		printf("obuf(%d) = '%s'\n", olen, obuf);
-		if(0 > (res = iconv(pxdoc->out_iconvcd, &iptr, &ilen, &optr, &olen))) {
+		int res, retries;
+		slen = 0;
+		while(data[slen] != '\0' && slen < (size_t) len)
+			slen++;
+		/* Start at 2x; retry up to 4 times (max 16x) on E2BIG.
+		 * CP437/CP850 box-drawing glyphs expand to 3 bytes in UTF-8. */
+		cap = 2 * slen + 1;
+		res = -1;
+		for(retries = 0; retries < 4; retries++) {
+			char *tmp = (char *) realloc(obuf, cap);
+			if(!tmp) break;
+			obuf = tmp;
+			iptr = data;
+			ilen = slen;
+			optr = obuf;
+			olen = cap;
+			iconv(pxdoc->out_iconvcd, NULL, NULL, NULL, NULL);
+			res = (int) iconv(pxdoc->out_iconvcd, &iptr, &ilen, &optr, &olen);
+			if(res >= 0) break;
+			if(errno != E2BIG) break;
+			cap *= 2;
+		}
+		if(res < 0) {
 			*value = NULL;
 			free(obuf);
 			return -1;
 		}
 		*optr = '\0';
-//		printf("data(%d) = '%s'\n", ilen, data);
-//		printf("obuf(%d) = '%s'\n", olen, obuf);
 		olen = optr-obuf;
 #endif
 #endif
