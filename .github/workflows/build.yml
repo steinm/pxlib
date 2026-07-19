@@ -48,7 +48,7 @@ jobs:
         compiler: [gcc, clang]
     
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     
     - name: Install dependencies (32-bit multilib)
       run: |
