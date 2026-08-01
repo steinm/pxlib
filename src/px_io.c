@@ -5,12 +5,89 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 #include <string.h>
+#if defined(_WIN32)
+#include <io.h>
+#include <windows.h>
+#else
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 #include "px_intern.h"
 #include "paradox-gsf.h"
 #include "px_error.h"
 #include "px_crypt.h"
 #include "px_io.h"
+
+typedef struct {
+	pxstream_t stream;
+	unsigned char *map;
+	size_t size;
+	size_t pos;
+#if defined(_WIN32)
+	HANDLE mapping;
+#endif
+} pxfilestream_t;
+
+static void px_file_map(pxfilestream_t *file) {
+	FILE *fp = file->stream.s.fp;
+
+	if(file->stream.mode != pxfFileRead || fp == NULL)
+		return;
+
+#if defined(_WIN32)
+	{
+		HANDLE handle = (HANDLE)_get_osfhandle(_fileno(fp));
+		LARGE_INTEGER size;
+		if(handle == INVALID_HANDLE_VALUE || !GetFileSizeEx(handle, &size) ||
+		   size.QuadPart <= 0 || size.QuadPart > LONG_MAX)
+			return;
+		file->mapping = CreateFileMapping(handle, NULL, PAGE_READONLY, 0, 0, NULL);
+		if(file->mapping == NULL)
+			return;
+		file->map = MapViewOfFile(file->mapping, FILE_MAP_READ, 0, 0, 0);
+		if(file->map == NULL) {
+			CloseHandle(file->mapping);
+			file->mapping = NULL;
+			return;
+		}
+		file->size = (size_t)size.QuadPart;
+	}
+#else
+	{
+		struct stat st;
+		int fd = fileno(fp);
+		if(fd < 0 || fstat(fd, &st) < 0 || !S_ISREG(st.st_mode) ||
+		   st.st_size <= 0 || st.st_size > LONG_MAX)
+			return;
+		file->size = (size_t)st.st_size;
+		file->map = mmap(NULL, file->size, PROT_READ, MAP_PRIVATE, fd, 0);
+		if(file->map == MAP_FAILED) {
+			file->map = NULL;
+			file->size = 0;
+		}
+	}
+#endif
+}
+
+static void px_file_unmap(pxfilestream_t *file) {
+	if(file->map == NULL)
+		return;
+
+	if(file->stream.s.fp != NULL)
+		fseek(file->stream.s.fp, (long)file->pos, SEEK_SET);
+#if defined(_WIN32)
+	UnmapViewOfFile(file->map);
+	CloseHandle(file->mapping);
+	file->mapping = NULL;
+#else
+	munmap(file->map, file->size);
+#endif
+	file->map = NULL;
+	file->size = 0;
+}
 
 /* px_stream_new() {{{
  *
@@ -27,6 +104,7 @@ pxstream_t *px_stream_new(pxdoc_t *pxdoc) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for io stream."));
 		return NULL;
 	}
+	memset(pxs, 0, sizeof(pxstream_t));
 	
 	return(pxs);
 }
@@ -62,10 +140,20 @@ pxstream_t *px_stream_new_gsf(pxdoc_t *pxdoc, int mode, int close, GsfInput *gsf
  * Create a file stream
  */
 pxstream_t *px_stream_new_file(pxdoc_t *pxdoc, int mode, int close, FILE *fp) {
+	pxfilestream_t *file;
 	pxstream_t *pxs;
 
-	if(NULL == (pxs = px_stream_new(pxdoc)))
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return NULL;
+	}
+	file = pxdoc->malloc(pxdoc, sizeof(pxfilestream_t), _("Allocate memory for file io stream."));
+	if(file == NULL) {
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for file io stream."));
 		return(NULL);
+	}
+	memset(file, 0, sizeof(pxfilestream_t));
+	pxs = &file->stream;
 
 	pxs->type = pxfIOFile;
 	pxs->mode = mode;
@@ -76,9 +164,26 @@ pxstream_t *px_stream_new_file(pxdoc_t *pxdoc, int mode, int close, FILE *fp) {
 	pxs->seek = px_fseek;
 	pxs->tell = px_ftell;
 	pxs->write = px_fwrite;
+	px_file_map(file);
 	return(pxs);
 }
 /* }}} */
+
+void px_stream_free(pxdoc_t *pxdoc, pxstream_t *stream) {
+	if(stream == NULL)
+		return;
+	if(stream->type == pxfIOFile) {
+		px_file_unmap((pxfilestream_t *)stream);
+		if(stream->close && stream->s.fp != NULL)
+			fclose(stream->s.fp);
+	}
+	pxdoc->free(pxdoc, stream);
+}
+
+int px_stream_is_mapped(pxstream_t *stream) {
+	return stream != NULL && stream->type == pxfIOFile &&
+	       ((pxfilestream_t *)stream)->map != NULL;
+}
 
 /* Generic file access functions for .db and .px files */
 /* px_read() {{{
@@ -95,6 +200,8 @@ ssize_t px_read(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 
 	pxh = p->px_head;
 	pxs = p->px_stream;
+	if(px_stream_is_mapped(pxs) && (pxh == NULL || pxh->px_encryption == 0))
+		return pxs->read(p, pxs, len, buffer);
 
 	curpos = pxs->tell(p, pxs);
 	if(pxh != NULL && curpos >= pxh->px_headersize) {
@@ -186,15 +293,10 @@ ssize_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 				return(0);
 			}
 		}
-		/* Write last accessed block to disk if the write operation modifies
-		 * a new block.
-		 * No need to write, if this is the first time a write operation
-		 * modifies a block. Blocks will be written to the file, when
-		 * a new block is accessed.
-		 */
-		if(p->curblocknr != blocknr && p->curblocknr != 0) {
+		/* Write the previous block and load the block being modified. */
+		if(p->curblocknr != blocknr) {
 //			fprintf(stderr, "Write block %d from cache into file.\n", p->curblocknr);
-			if(p->curblockdirty == px_true) {
+			if(p->curblocknr != 0 && p->curblockdirty == px_true) {
 				pxs->seek(p, pxs, pxh->px_headersize + ((p->curblocknr-1)*blocksize), SEEK_SET);
 				if(pxh->px_encryption != 0) {
 	//				fprintf(stderr, "Encrypting block %d\n", p->curblocknr);
@@ -209,8 +311,6 @@ ssize_t px_write(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 			if(pxh->px_encryption != 0) {
 				px_decrypt_db_block(p->curblock, p->curblock, pxh->px_encryption, blocksize, blocknr);
 			}
-		} else {
-//			fprintf(stderr, "block %d already in cache.\n", blocknr);
 		}
 		p->curblocknr = blocknr;
 		p->curblockdirty = px_true;
@@ -373,6 +473,14 @@ ssize_t px_mb_write(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 /* px_fread() {{{
  */
 ssize_t px_fread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
+	pxfilestream_t *file = (pxfilestream_t *)stream;
+	if(file->map != NULL) {
+		if(len > file->size-file->pos)
+			len = file->size-file->pos;
+		memcpy(buffer, file->map+file->pos, len);
+		file->pos += len;
+		return len;
+	}
 	return(fread(buffer, 1, len, stream->s.fp));
 }
 /* }}} */
@@ -380,6 +488,20 @@ ssize_t px_fread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
 /* px_fseek() {{{
  */
 int px_fseek(pxdoc_t *p, pxstream_t *stream, long offset, int whence) {
+	pxfilestream_t *file = (pxfilestream_t *)stream;
+	if(file->map != NULL) {
+		long base;
+		switch(whence) {
+			case SEEK_SET: base = 0; break;
+			case SEEK_CUR: base = (long)file->pos; break;
+			case SEEK_END: base = (long)file->size; break;
+			default: return -1;
+		}
+		if(offset < -base || offset > (long)file->size-base)
+			return -1;
+		file->pos = (size_t)(base+offset);
+		return 0;
+	}
 	return(fseek(stream->s.fp, offset, whence));
 }
 /* }}} */
@@ -387,6 +509,9 @@ int px_fseek(pxdoc_t *p, pxstream_t *stream, long offset, int whence) {
 /* px_ftell() {{{
  */
 long px_ftell(pxdoc_t *p, pxstream_t *stream) {
+	pxfilestream_t *file = (pxfilestream_t *)stream;
+	if(file->map != NULL)
+		return (long)file->pos;
 	return(ftell(stream->s.fp));
 }
 /* }}} */
@@ -394,6 +519,9 @@ long px_ftell(pxdoc_t *p, pxstream_t *stream) {
 /* px_fwrite() {{{
  */
 ssize_t px_fwrite(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
+	pxfilestream_t *file = (pxfilestream_t *)stream;
+	if(file->map != NULL)
+		px_file_unmap(file);
 	return(fwrite(buffer, 1, len, stream->s.fp));
 }
 /* }}} */

@@ -95,7 +95,7 @@ add_definitions(-DPXLIB_EXPORTS)
 # Versioning
 set(PXLIB_MAJOR_VERSION "0")
 set(PXLIB_MINOR_VERSION "6")
-set(PXLIB_MICRO_VERSION "8")
+set(PXLIB_MICRO_VERSION "10")
 set(PXLIB_DOTTED_VERSION "${PXLIB_MAJOR_VERSION}.${PXLIB_MINOR_VERSION}.${PXLIB_MICRO_VERSION}")
 
 # Packaging
@@ -126,6 +126,10 @@ endif()
 
 add_library(pxlib SHARED ${SOURCES})
 
+if(UNIX)
+    target_link_libraries(pxlib PRIVATE m)
+endif()
+
 # Add Windows resource file to the library
 if(WIN32)
     target_sources(pxlib PRIVATE ${CMAKE_BINARY_DIR}/pxlib.rc)
@@ -135,6 +139,13 @@ target_include_directories(pxlib
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}
     PUBLIC ${CMAKE_BINARY_DIR}/include
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(fast_read_test tests/fast_read.c)
+    target_link_libraries(fast_read_test PRIVATE pxlib)
+    add_test(NAME fast_read COMMAND fast_read_test)
+endif()
 
 # Link iconv library if needed
 if(ICONV_LIBRARIES)

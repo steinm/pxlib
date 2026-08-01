@@ -277,6 +277,39 @@ PX_set_io_stream(pxdoc_t *pxdoc,
 }
 /* }}} */
 
+typedef struct {
+	int offset;
+	int entry;
+} pxindexlookup_t;
+
+static size_t px_index_alloc_size(int count) {
+	return (size_t)count*sizeof(pxpindex_t)+
+	       (size_t)(count+1)*sizeof(pxindexlookup_t);
+}
+
+static pxindexlookup_t *px_index_lookup(void *data, int count) {
+	return (pxindexlookup_t *)((pxpindex_t *)data+count);
+}
+
+static void px_rebuild_index_offsets(void *data, int count) {
+	pxpindex_t *index = data;
+	pxindexlookup_t *lookup;
+	int i, n = 0, total = 0;
+
+	if(index == NULL)
+		return;
+	lookup = px_index_lookup(data, count);
+	for(i=0; i<count; i++) {
+		if(index[i].level == 1) {
+			lookup[n+1].offset = total;
+			lookup[n+1].entry = i;
+			n++;
+			total += index[i].numrecords;
+		}
+	}
+	lookup[0].entry = n;
+}
+
 /* build_primary_index() {{{
  * Build a primary index.
  */
@@ -303,7 +336,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 	}
 	/* Allocate memory for internal list of index entries */
 //	fprintf(stderr, "fileblocks = %d\n", pxh->px_fileblocks);
-	if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
+	if(NULL == (pindex = pxdoc->malloc(pxdoc, px_index_alloc_size(pxh->px_fileblocks), _("Allocate memory for self build internal primary index.")))) {
 		px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
 		return -1;
 	}
@@ -368,6 +401,7 @@ static int build_primary_index(pxdoc_t *pxdoc) {
 			blockcount++;
 		}
 	}
+	px_rebuild_index_offsets(pxdoc->px_indexdata, pxdoc->px_indexdatalen);
 	return 0;
 }
 /* }}} */
@@ -530,7 +564,8 @@ PX_open_file(pxdoc_t *pxdoc, const char *filename) {
 		return -1;
 	}
 
-	if((fp = fopen(filename, "rb+")) == NULL) {
+	if((fp = fopen(filename, "rb+")) == NULL &&
+	   (fp = fopen(filename, "rb")) == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database: %s"), strerror(errno));
 		return -1;
 	}
@@ -1058,7 +1093,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 	}
 
 	pxh = pindex->px_head;
-	pindex->px_data = pindex->malloc(pindex, pxh->px_numrecords*sizeof(pxpindex_t), _("Allocate memory for primary index data."));
+	pindex->px_data = pindex->malloc(pindex, px_index_alloc_size(pxh->px_numrecords), _("Allocate memory for primary index data."));
 	if(!pindex->px_data) {
 		px_error(pindex, PX_RuntimeError, _("Could not allocate memory for primary index data."));
 		return -1;
@@ -1149,6 +1184,7 @@ PX_read_primary_index(pxdoc_t *pindex) {
 			px_error(pindex, PX_Warning, _("The number of records coverd by index level 2 is unequal to level 1."));
 		}
 	}
+	px_rebuild_index_offsets(pindex->px_data, pxh->px_numrecords);
 //	for(j=0; j<pxh->px_numrecords-1; j++) {
 //		printf("%d\t%d\n", pindex_data[j].myblocknumber, pindex_data[j].level);
 //	}
@@ -1253,9 +1289,8 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
 
 /* px_get_record_pos_with_index() {{{
  * Locates a database record by using the primary index.
- * The index is used by adding the number of records per block
- * until the block is found where the record with the given number
- * is stored. The function still disregards any sorting within the
+ * A cumulative record count locates the data block with a binary
+ * search. The function still disregards any sorting within the
  * index. The record number is not an absolut value. Accessing a
  * database file with and without the index may result in different
  * record numbers for the same record.
@@ -1263,15 +1298,13 @@ PX_write_primary_index(pxdoc_t *pxdoc, pxdoc_t *pxindex) {
  */
 int
 px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatablockinfo_t *pxdbinfo) {
-	int j, numrecords, n, recsperdatablock;
-//	pxdoc_t *pindexdoc;
-	pxhead_t *pxh; //, *pxih;
+	int j, lo, hi, mid, blocksize, ret;
+	pxindexlookup_t *lookup;
+	pxhead_t *pxh;
 	pxpindex_t *pindex_data;
+	TDataBlock datablock;
 
 	pxh = pxdoc->px_head;
-//	pindexdoc = pxdoc->px_pindex;
-//	pxih = pindexdoc->px_head;
-//	pindex_data = pindexdoc->px_data;
 	pindex_data = pxdoc->px_indexdata;
 
 	if(!pindex_data) {
@@ -1279,48 +1312,47 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 		return 0;
 	}
 
-	numrecords = 0 ;
-	recsperdatablock = (pxh->px_maxtablesize*0x400-sizeof(TDataBlock))/pxh->px_recordsize;
-	for(j=0; j<pxdoc->px_indexdatalen; j++) {
-		/* We currently just take level 1 index blocks into account.
-		 * This is only for large databases a speed disadvantage.
-		 */
-		if(pindex_data[j].level == 1) {
-			n = pindex_data[j].numrecords;
-			numrecords += n;
-			if(recno >= n) {
-				recno -= n;
-			} else {
-				int blocksize, ret;
-				TDataBlock datablock;
+	lookup = px_index_lookup(pxdoc->px_indexdata, pxdoc->px_indexdatalen);
+	lo = 0;
+	hi = lookup[0].entry;
+	while(lo < hi) {
+		mid = lo+(hi-lo)/2;
+		if(lookup[mid+1].offset <= recno)
+			lo = mid+1;
+		else
+			hi = mid;
+	}
+	if(lo > 0) {
+		j = lookup[lo].entry;
+		if(recno >= lookup[lo].offset+pindex_data[j].numrecords)
+			return 0;
+		recno -= lookup[lo].offset;
 
-				pxdbinfo->number = pindex_data[j].blocknumber;
-				pxdbinfo->recno = recno;
-				pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
-				pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
+		pxdbinfo->number = pindex_data[j].blocknumber;
+		pxdbinfo->recno = recno;
+		pxdbinfo->blockpos = pxh->px_headersize + (pxdbinfo->number-1)*pxh->px_maxtablesize*0x400;
+		pxdbinfo->recordpos = pxdbinfo->blockpos + sizeof(TDataBlock) + recno*pxh->px_recordsize;
 
-				/* Go to the start of the data block (skip the header) */
-				if((ret = pxdoc->seek(pxdoc, pxdoc->px_stream, pxdbinfo->blockpos, SEEK_SET)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block."));
-					return 0;
-				}
-
-				/* Get the info about this data block */
-				if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
-					px_error(pxdoc, PX_RuntimeError, _("Could not read datablock header."));
-					return 0;
-				}
-
-				blocksize = get_short_le((char *) &datablock.addDataSize);
-
-				pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
-				pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
-				pxdbinfo->size = blocksize+pxh->px_recordsize;
-				pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
-				deleted = 0;
-				return 1;
-			}
+		/* Go to the start of the data block (skip the header) */
+		if((ret = pxdoc->seek(pxdoc, pxdoc->px_stream, pxdbinfo->blockpos, SEEK_SET)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of first data block."));
+			return 0;
 		}
+
+		/* Get the info about this data block */
+		if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not read datablock header."));
+			return 0;
+		}
+
+		blocksize = get_short_le((char *) &datablock.addDataSize);
+
+		pxdbinfo->prev = get_short_le((char *) &datablock.prevBlock);
+		pxdbinfo->next = get_short_le((char *) &datablock.nextBlock);
+		pxdbinfo->size = blocksize+pxh->px_recordsize;
+		pxdbinfo->numrecords = pxdbinfo->size/pxh->px_recordsize;
+		*deleted = 0;
+		return 1;
 	}
 	return 0;
 }
@@ -1928,14 +1960,11 @@ PX_put_record(pxdoc_t *pxdoc, char *data) {
 }
 /* }}} */
 
-/* PX_retrieve_record() {{{
- * Get a record from the paradox file.
- * Returns an array of *pxval_t or NULL in case of an error.
- */
-PXLIB_API pxval_t ** PXLIB_CALL
-PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
+static pxval_t **
+px_retrieve_record_internal(pxdoc_t *pxdoc, int recno, pxval_t *storage,
+	pxval_t **dataptr, char *data) {
 	pxhead_t *pxh;
-	char *data;
+	int own_data = 0;
 
 	if(pxdoc == NULL) {
 		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
@@ -1948,27 +1977,35 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 	}
 	pxh = pxdoc->px_head;
 
-	/* Allocate memory for record */
-	if((data = (char *) pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for temporary record."))) == NULL) {
-		px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary record."));
-		return NULL;
+	if(data == NULL) {
+		if((data = (char *) pxdoc->malloc(pxdoc, pxh->px_recordsize, _("Allocate memory for temporary record."))) == NULL) {
+			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for temporary record."));
+			return NULL;
+		}
+		own_data = 1;
 	}
 
 	if(NULL != PX_get_record(pxdoc, recno, data)) {
 		int i, offset;
-		pxval_t **dataptr;
 		pxfield_t *pxf;
 
-		/* Allocate memory for return record */
-		if(NULL == (dataptr = (pxval_t **) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxval_t *), _("Allocate memory for array of pointers to field values.")))) {
-			px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for array of pointers to field values."));
-			pxdoc->free(pxdoc, data);
-			return NULL;
+		if(dataptr == NULL) {
+			if(NULL == (dataptr = (pxval_t **) pxdoc->malloc(pxdoc, pxh->px_numfields*sizeof(pxval_t *), _("Allocate memory for array of pointers to field values.")))) {
+				px_error(pxdoc, PX_RuntimeError, _("Could not allocate memory for array of pointers to field values."));
+				if(own_data)
+					pxdoc->free(pxdoc, data);
+				return NULL;
+			}
 		}
 		pxf = PX_get_fields(pxdoc);
 		offset = 0;
 		for(i=0; i<PX_get_num_fields(pxdoc); i++) {
-			MAKE_PXVAL(pxdoc, dataptr[i]);
+			if(storage != NULL) {
+				dataptr[i] = &storage[i];
+				memset(dataptr[i], 0, sizeof(pxval_t));
+			} else {
+				MAKE_PXVAL(pxdoc, dataptr[i]);
+			}
 			dataptr[i]->type = pxf->px_ftype;
 			switch(pxf->px_ftype) {
 				case pxfAlpha: {
@@ -2133,15 +2170,136 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
 			fprintf(outfp, "%d", isdeleted);
 		}
 */
-		pxdoc->free(pxdoc, data);
+		if(own_data)
+			pxdoc->free(pxdoc, data);
 		return(dataptr);
 	} else {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read data for record with number %d."), recno);
-		pxdoc->free(pxdoc, data);
+		if(own_data)
+			pxdoc->free(pxdoc, data);
 		return NULL;
 	}
 }
+
+/* PX_retrieve_record() {{{
+ * Get a record from the paradox file.
+ * Returns an array of *pxval_t or NULL in case of an error.
+ */
+PXLIB_API pxval_t ** PXLIB_CALL
+PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
+	return px_retrieve_record_internal(pxdoc, recno, NULL, NULL, NULL);
+}
 /* }}} */
+
+/* PX_retrieve_records() {{{
+ * Get a contiguous, row-major batch of records.
+ * Returns the number of records retrieved or -1 in case of an error.
+ */
+PXLIB_API int PXLIB_CALL
+PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records) {
+	pxhead_t *pxh;
+	pxval_t *values;
+	pxval_t **dataptr;
+	char *data;
+	int actual, i, j, numfields;
+
+	if(records == NULL)
+		return -1;
+	*records = NULL;
+	if(pxdoc == NULL || pxdoc->px_head == NULL || start < 0 || count < 0) {
+		px_error(pxdoc, PX_RuntimeError, _("Invalid record batch."));
+		return -1;
+	}
+	pxh = pxdoc->px_head;
+	if(count == 0 || start >= pxh->px_numrecords)
+		return 0;
+	actual = min(count, pxh->px_numrecords-start);
+	numfields = pxh->px_numfields;
+	if(numfields <= 0 || (size_t)actual > (size_t)-1 / (size_t)numfields / sizeof(pxval_t)) {
+		px_error(pxdoc, PX_MemoryError, _("Record batch is too large."));
+		return -1;
+	}
+	values = (pxval_t *) pxdoc->malloc(pxdoc,
+		(size_t)actual*(size_t)numfields*sizeof(pxval_t), _("Allocate record batch."));
+	dataptr = (pxval_t **) pxdoc->malloc(pxdoc, (size_t)numfields*sizeof(pxval_t *),
+		_("Allocate record batch pointers."));
+	data = (char *) pxdoc->malloc(pxdoc, pxh->px_recordsize,
+		_("Allocate record batch buffer."));
+	if(values == NULL || dataptr == NULL || data == NULL) {
+		if(values != NULL)
+			pxdoc->free(pxdoc, values);
+		if(dataptr != NULL)
+			pxdoc->free(pxdoc, dataptr);
+		if(data != NULL)
+			pxdoc->free(pxdoc, data);
+		px_error(pxdoc, PX_MemoryError, _("Could not allocate record batch."));
+		return -1;
+	}
+	memset(values, 0, (size_t)actual*(size_t)numfields*sizeof(pxval_t));
+	for(i=0; i<actual; i++) {
+		for(j=0; j<numfields; j++)
+			dataptr[j] = &values[i*numfields+j];
+		if(px_retrieve_record_internal(pxdoc, start+i, &values[i*numfields], dataptr, data) == NULL) {
+			pxdoc->free(pxdoc, dataptr);
+			pxdoc->free(pxdoc, data);
+			PX_free_records(pxdoc, values, actual);
+			return -1;
+		}
+	}
+	pxdoc->free(pxdoc, dataptr);
+	pxdoc->free(pxdoc, data);
+	*records = values;
+	return actual;
+}
+/* }}} */
+
+static void
+px_free_value_contents(pxdoc_t *pxdoc, pxval_t *value) {
+	switch(value->type) {
+		case pxfAlpha:
+		case pxfGraphic:
+		case pxfBLOb:
+		case pxfFmtMemoBLOb:
+		case pxfMemoBLOb:
+		case pxfOLE:
+		case pxfBytes:
+		case pxfBCD:
+			if(value->value.str.val != NULL)
+				pxdoc->free(pxdoc, value->value.str.val);
+			break;
+	}
+}
+
+/* PX_free_record() {{{
+ * Free a record returned by PX_retrieve_record().
+ */
+PXLIB_API void PXLIB_CALL
+PX_free_record(pxdoc_t *pxdoc, pxval_t **record) {
+	int i;
+
+	if(pxdoc == NULL || record == NULL)
+		return;
+	for(i=0; i<PX_get_num_fields(pxdoc); i++) {
+		if(record[i] == NULL)
+			continue;
+		px_free_value_contents(pxdoc, record[i]);
+		pxdoc->free(pxdoc, record[i]);
+	}
+	pxdoc->free(pxdoc, record);
+}
+/* }}} */
+
+PXLIB_API void PXLIB_CALL
+PX_free_records(pxdoc_t *pxdoc, pxval_t *records, int count) {
+	size_t i, total;
+
+	if(pxdoc == NULL || records == NULL || count <= 0)
+		return;
+	total = (size_t)count*(size_t)PX_get_num_fields(pxdoc);
+	for(i=0; i<total; i++)
+		px_free_value_contents(pxdoc, &records[i]);
+	pxdoc->free(pxdoc, records);
+}
 
 /* PX_insert_record() {{{
  * Add a record to the paradox file. The record is saved in the first
@@ -2194,7 +2352,7 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 		recno = 0;
 		/* Rebuild the index */
 		/* Allocate memory for internal list of index entries */
-		if(NULL == (pindex = pxdoc->malloc(pxdoc, pxh->px_fileblocks*sizeof(pxpindex_t), _("Allocate memory for self build internal primary index.")))) {
+		if(NULL == (pindex = pxdoc->malloc(pxdoc, px_index_alloc_size(pxh->px_fileblocks), _("Allocate memory for self build internal primary index.")))) {
 			px_error(pxdoc, PX_MemoryError, _("Could not allocate memory for self build internal index."));
 			return -1;
 		}
@@ -2221,6 +2379,7 @@ PX_insert_record(pxdoc_t *pxdoc, pxval_t **dataptr) {
 		recno = tmppxdbinfo.recno;
 		newrecpos = found-1;
 	}
+	px_rebuild_index_offsets(pxdoc->px_indexdata, pxdoc->px_indexdatalen);
 	/* The datablock number return by px_put_datablock() should be
 	 * the same as the calculated datablocknr after all datablocks
 	 * has been added.
@@ -2478,6 +2637,7 @@ PX_delete_record(pxdoc_t *pxdoc, int recno) {
 			if(pxdoc->px_indexdata) {
 				pxpindex_t *pindex = pxdoc->px_indexdata;
 				pindex[datablocknr-1].numrecords = ret;
+				px_rebuild_index_offsets(pxdoc->px_indexdata, pxdoc->px_indexdatalen);
 			}
 
 		} else {
@@ -2575,13 +2735,9 @@ PX_close(pxdoc_t *pxdoc) {
 		pxdoc->px_blob = NULL;
 	}
 
-	if(pxdoc->px_stream && pxdoc->px_stream->close && (pxdoc->px_stream->s.fp != NULL)){
-		fclose(pxdoc->px_stream->s.fp);
-	}
-
 	/* Free memory for io stream */
 	if(pxdoc->px_stream) {
-		pxdoc->free(pxdoc, pxdoc->px_stream);
+		px_stream_free(pxdoc, pxdoc->px_stream);
 		pxdoc->px_stream = NULL;
 	}
 
@@ -3043,7 +3199,8 @@ PX_open_blob_file(pxblob_t *pxblob, const char *filename) {
 		return(-1);
 	}
 
-	if((fp = fopen(filename, "rb+")) == NULL) {
+	if((fp = fopen(filename, "rb+")) == NULL &&
+	   (fp = fopen(filename, "rb")) == NULL) {
 		return -1;
 	}
 
@@ -3145,12 +3302,15 @@ PX_close_blob(pxblob_t *pxblob) {
 		px_error(pxdoc, PX_RuntimeError, _("No paradox document associated with blob file."));
 	}
 
-	if(pxblob->mb_stream && pxblob->mb_stream->close && (pxblob->mb_stream->s.fp != NULL)){
-		fclose(pxblob->mb_stream->s.fp);
-		pxdoc->free(pxdoc, pxblob->mb_stream);
+	if(pxblob->mb_stream) {
+		px_stream_free(pxdoc, pxblob->mb_stream);
 		pxblob->mb_stream = NULL;
+	}
+	if(pxblob->mb_name) {
 		pxdoc->free(pxdoc, pxblob->mb_name);
 		pxblob->mb_name = NULL;
+	}
+	if(pxblob->mb_head) {
 		pxdoc->free(pxdoc, pxblob->mb_head);
 		pxblob->mb_head = NULL;
 	}
