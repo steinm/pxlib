@@ -128,6 +128,7 @@
  *
  **************************************************************************/
 
+#include "paradox.h"
 #include "sdncal.h"
 
 #define SDN_OFFSET         32045
@@ -135,7 +136,7 @@
 #define DAYS_PER_4_YEARS   1461
 #define DAYS_PER_400_YEARS 146097
 
-void
+PXLIB_API void PXLIB_CALL
 SdnToGregorian(
     long int  sdn,
     int      *pYear,
@@ -188,7 +189,7 @@ SdnToGregorian(
 	*pDay = day;
 }
 
-long int
+PXLIB_API long int PXLIB_CALL
 GregorianToSdn(
     int inputYear,
     int inputMonth,

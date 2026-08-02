@@ -5,11 +5,8 @@ project(pxlib)
 option(ENABLE_GSF "Build with gsf support" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    add_definitions(
-        -DHAVE_CONFIG_H
-        -Wall -Wpointer-arith -W
-        ${PXLIB_EXTRA_GCC_FLAGS}
-    )
+    add_definitions(-DHAVE_CONFIG_H)
+    set(PXLIB_GCC_WARNING_FLAGS -Wall -Wpointer-arith -W ${PXLIB_EXTRA_GCC_FLAGS})
 else()
     add_definitions(-DHAVE_CONFIG_H)
 endif()
@@ -125,6 +122,16 @@ if(WIN32)
 endif()
 
 add_library(pxlib SHARED ${SOURCES})
+
+if(WIN32)
+    set_target_properties(pxlib PROPERTIES PREFIX "")
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC)
+    foreach(PXLIB_GCC_WARNING_FLAG IN LISTS PXLIB_GCC_WARNING_FLAGS)
+        target_compile_options(pxlib PRIVATE $<$<COMPILE_LANGUAGE:C>:${PXLIB_GCC_WARNING_FLAG}>)
+    endforeach()
+endif()
 
 if(UNIX)
     target_link_libraries(pxlib PRIVATE m)
