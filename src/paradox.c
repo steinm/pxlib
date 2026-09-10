@@ -582,6 +582,37 @@ PX_open_file(pxdoc_t *pxdoc, const char *filename) {
 }
 /* }}} */
 
+/* PX_open_file_readonly() {{{
+ * Open a Paradox database without requesting write access. This is useful for
+ * readers attached to live databases where a writable handle may participate
+ * in application or network-share locking.
+ */
+PXLIB_API int PXLIB_CALL
+PX_open_file_readonly(pxdoc_t *pxdoc, const char *filename) {
+	FILE *fp;
+
+	if(pxdoc == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Did not pass a paradox database."));
+		return -1;
+	}
+
+	if((fp = fopen(filename, "rb")) == NULL) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open file of paradox database: %s"), strerror(errno));
+		return -1;
+	}
+
+	if(0 > PX_open_fp(pxdoc, fp)) {
+		px_error(pxdoc, PX_RuntimeError, _("Could not open paradox database."));
+		fclose(fp);
+		return -1;
+	}
+
+	pxdoc->px_name = px_strdup(pxdoc, filename);
+	pxdoc->px_stream->close = px_true;
+	return 0;
+}
+/* }}} */
+
 /* PX_create_fp() {{{
  * Create a new paradox database.
  */
@@ -1340,7 +1371,7 @@ px_get_record_pos_with_index(pxdoc_t *pxdoc, int recno, int *deleted, pxdatabloc
 		}
 
 		/* Get the info about this data block */
-		if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) != sizeof(TDataBlock)) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read datablock header."));
 			return 0;
 		}
@@ -1497,7 +1528,7 @@ px_find_slot_with_index(pxdoc_t *pxdoc, pxdatablockinfo_t *pxdbinfo) {
 				}
 
 				/* Get the info about this data block */
-				if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) < 0) {
+				if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, sizeof(TDataBlock), &datablock)) != sizeof(TDataBlock)) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not read datablock header."));
 					return -1;
 				}
@@ -1839,7 +1870,7 @@ PX_get_record2(pxdoc_t *pxdoc, int recno, char *data, int *deleted, pxdatablocki
 			px_error(pxdoc, PX_RuntimeError, _("Could not fseek start of record data."));
 			return NULL;
 		}
-		if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, pxh->px_recordsize, data)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxdoc->px_stream, pxh->px_recordsize, data)) != pxh->px_recordsize) {
 			px_error(pxdoc, PX_RuntimeError, _("Could not read data of record."));
 			return NULL;
 		}
@@ -2196,7 +2227,8 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno) {
  * Returns the number of records retrieved or -1 in case of an error.
  */
 PXLIB_API int PXLIB_CALL
-PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records) {
+PX_retrieve_records_ex(pxdoc_t *pxdoc, int start, int count, pxval_t **records,
+	int *failed_record) {
 	pxhead_t *pxh;
 	pxval_t *values;
 	pxval_t **dataptr;
@@ -2206,6 +2238,8 @@ PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records) {
 	if(records == NULL)
 		return -1;
 	*records = NULL;
+	if(failed_record != NULL)
+		*failed_record = -1;
 	if(pxdoc == NULL || pxdoc->px_head == NULL || start < 0 || count < 0) {
 		px_error(pxdoc, PX_RuntimeError, _("Invalid record batch."));
 		return -1;
@@ -2240,6 +2274,8 @@ PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records) {
 		for(j=0; j<numfields; j++)
 			dataptr[j] = &values[i*numfields+j];
 		if(px_retrieve_record_internal(pxdoc, start+i, &values[i*numfields], dataptr, data) == NULL) {
+			if(failed_record != NULL)
+				*failed_record = start+i;
 			pxdoc->free(pxdoc, dataptr);
 			pxdoc->free(pxdoc, data);
 			PX_free_records(pxdoc, values, actual);
@@ -2252,6 +2288,11 @@ PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records) {
 	return actual;
 }
 /* }}} */
+
+PXLIB_API int PXLIB_CALL
+PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records) {
+	return PX_retrieve_records_ex(pxdoc, start, count, records, NULL);
+}
 
 static void
 px_free_value_contents(pxdoc_t *pxdoc, pxval_t *value) {

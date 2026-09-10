@@ -475,6 +475,8 @@ ssize_t px_mb_write(pxblob_t *p, pxstream_t *dummy, size_t len, void *buffer) {
 ssize_t px_fread(pxdoc_t *p, pxstream_t *stream, size_t len, void *buffer) {
 	pxfilestream_t *file = (pxfilestream_t *)stream;
 	if(file->map != NULL) {
+		if(file->pos > file->size)
+			return -1;
 		if(len > file->size-file->pos)
 			len = file->size-file->pos;
 		memcpy(buffer, file->map+file->pos, len);
@@ -497,8 +499,14 @@ int px_fseek(pxdoc_t *p, pxstream_t *stream, long offset, int whence) {
 			case SEEK_END: base = (long)file->size; break;
 			default: return -1;
 		}
-		if(offset < -base || offset > (long)file->size-base)
-			return -1;
+		if(offset < -base || offset > (long)file->size-base) {
+			/* A live file can grow after its original view was mapped. Keep
+			 * mmap as the fast path, but fall back to stdio so the current
+			 * file size is consulted instead of treating the mapping as an
+			 * immutable snapshot. */
+			px_file_unmap(file);
+			return fseek(stream->s.fp, offset, whence);
+		}
 		file->pos = (size_t)(base+offset);
 		return 0;
 	}

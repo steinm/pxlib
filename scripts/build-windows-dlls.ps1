@@ -71,7 +71,13 @@ if ([string]::IsNullOrWhiteSpace($Msys2Root)) {
 $BuildRoot = [System.IO.Path]::GetFullPath($BuildRoot)
 $ArtifactsRoot = [System.IO.Path]::GetFullPath($ArtifactsRoot)
 $Msys2Root = [System.IO.Path]::GetFullPath($Msys2Root)
-$RequiredExports = @("PX_retrieve_records", "PX_free_record", "PX_free_records")
+$RequiredExports = @(
+    "PX_open_file_readonly",
+    "PX_retrieve_records",
+    "PX_retrieve_records_ex",
+    "PX_free_record",
+    "PX_free_records"
+)
 
 function Write-Step {
     param([Parameter(Mandatory = $true)][string]$Message)

@@ -351,6 +351,9 @@ PXLIB_API int PXLIB_CALL
 PX_open_file(pxdoc_t *pxdoc, const char *filename);
 
 PXLIB_API int PXLIB_CALL
+PX_open_file_readonly(pxdoc_t *pxdoc, const char *filename);
+
+PXLIB_API int PXLIB_CALL
 PX_create_file(pxdoc_t *pxdoc, pxfield_t *pxf, int numfields, const char *filename, int type);
 
 PXLIB_API int PXLIB_CALL
@@ -394,6 +397,10 @@ PX_retrieve_record(pxdoc_t *pxdoc, int recno);
 
 PXLIB_API int PXLIB_CALL
 PX_retrieve_records(pxdoc_t *pxdoc, int start, int count, pxval_t **records);
+
+PXLIB_API int PXLIB_CALL
+PX_retrieve_records_ex(pxdoc_t *pxdoc, int start, int count, pxval_t **records,
+	int *failed_record);
 
 PXLIB_API void PXLIB_CALL
 PX_free_record(pxdoc_t *pxdoc, pxval_t **record);

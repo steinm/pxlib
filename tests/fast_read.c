@@ -17,7 +17,7 @@ int main(void) {
 	pxval_t *batch;
 	FILE *file;
 	char expected[record_size], actual[record_size];
-	int i, count;
+	int i, count, failed_record;
 
 	file = tmpfile();
 	assert(file != NULL);
@@ -56,6 +56,11 @@ int main(void) {
 		assert(strcmp(batch[i*2].value.str.val, expected) == 0);
 		assert(batch[i*2+1].value.lval == 197+i);
 	}
+	PX_free_records(reader, batch, count);
+	failed_record = -2;
+	count = PX_retrieve_records_ex(reader, 197, 5, &batch, &failed_record);
+	assert(count == 5);
+	assert(failed_record == -1);
 	PX_free_records(reader, batch, count);
 	count = PX_retrieve_records(reader, record_count-2, 10, &batch);
 	assert(count == 2);
