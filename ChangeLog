@@ -1,4 +1,4 @@
-Version 0.6.10
+Version 0.6.11
 	- add read-only file opening and contiguous batch record retrieval APIs
 	  with explicit record cleanup functions
 	- use memory-mapped reads when a regular file can be mapped, while
@@ -7,6 +7,10 @@ Version 0.6.10
 	  build support for x86 and x64
 	- extend the GitHub Actions build matrix to Linux, Windows, and macOS
 	  x86/x64 configurations
+	- fix signed-shift undefined behavior in little-endian 32-bit decoding
+	  and signed backward blob seeks
+
+Version 0.6.10
 	- complete remaining x64 compatibility fixes from Kenneth Porter's patches:
 	  * fix writeproc return type (size_t to ssize_t)
 	  * fix iconv_close validation for proper iconv_t handling
