@@ -1,0 +1,24 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname "<surname>STEINMANN</surname>">
+  <!ENTITY dhdate "<date>October 19, 2026</date>">
+  <!ENTITY dhsection "<manvolnum>3</manvolnum>">
+  <!ENTITY dhemail "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_FREE_RECORD</refentrytitle>">
+  <!ENTITY funcname "PX_free_record">
+]>
+<refentry>
+  <refentryinfo><address>&dhemail;</address><author>&dhfirstname;&dhsurname;</author>&dhdate;</refentryinfo>
+  <refmeta>&dhucpackage;&dhsection;</refmeta>
+  <refnamediv><refname>&funcname;</refname><refpurpose>Free one record returned by PX_retrieve_record</refpurpose></refnamediv>
+  <refsynopsisdiv><para>#include &lt;paradox.h&gt;</para><para>void &funcname;(pxdoc_t *pxdoc, pxval_t **record)</para></refsynopsisdiv>
+  <refsect1><title>DESCRIPTION</title>
+    <para>Releases the pointer array, each field value, and each allocated string/blob owned by a record
+      returned from <function>PX_retrieve_record(3)</function>. Pass the same <parameter>pxdoc</parameter>
+      used for retrieval so that the configured allocator is used. The record must be released before
+      closing or deleting that object.</para>
+    <para>Passing NULL for either argument is a no-op.</para>
+  </refsect1>
+  <refsect1><title>RETURN VALUE</title><para>This function does not return a value.</para></refsect1>
+  <refsect1><title>SEE ALSO</title><para><function>PX_retrieve_record(3)</function>, <function>PX_free_records(3)</function></para></refsect1>
+</refentry>

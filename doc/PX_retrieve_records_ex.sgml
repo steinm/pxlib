@@ -1,0 +1,23 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname "<surname>STEINMANN</surname>">
+  <!ENTITY dhdate "<date>October 19, 2026</date>">
+  <!ENTITY dhsection "<manvolnum>3</manvolnum>">
+  <!ENTITY dhemail "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_RETRIEVE_RECORDS_EX</refentrytitle>">
+  <!ENTITY funcname "PX_retrieve_records_ex">
+]>
+<refentry>
+  <refentryinfo><address>&dhemail;</address><author>&dhfirstname;&dhsurname;</author>&dhdate;</refentryinfo>
+  <refmeta>&dhucpackage;&dhsection;</refmeta>
+  <refnamediv><refname>&funcname;</refname><refpurpose>Retrieve a batch of records and report a failed record</refpurpose></refnamediv>
+  <refsynopsisdiv><para>#include &lt;paradox.h&gt;</para><para>int &funcname;(pxdoc_t *pxdoc, int start, int count, pxval_t **records, int *failed_record)</para></refsynopsisdiv>
+  <refsect1><title>DESCRIPTION</title>
+    <para>This function has the same allocation, ordering, range, and ownership rules as
+      <function>PX_retrieve_records(3)</function>. If an individual record read fails,
+      <parameter>*failed_record</parameter> receives that zero-based record number. When no record
+      fails, it is set to -1. The pointer may be NULL when the caller does not need this detail.</para>
+  </refsect1>
+  <refsect1><title>RETURN VALUE</title><para>Returns the number of records retrieved, 0 for an empty range, or -1 on invalid arguments, allocation failure, or a read error. On failure, <parameter>*records</parameter> is NULL.</para></refsect1>
+  <refsect1><title>SEE ALSO</title><para><function>PX_retrieve_records(3)</function>, <function>PX_free_records(3)</function></para></refsect1>
+</refentry>

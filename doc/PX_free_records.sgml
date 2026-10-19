@@ -1,0 +1,26 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname "<surname>STEINMANN</surname>">
+  <!ENTITY dhdate "<date>October 19, 2026</date>">
+  <!ENTITY dhsection "<manvolnum>3</manvolnum>">
+  <!ENTITY dhemail "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhucpackage "<refentrytitle>PX_FREE_RECORDS</refentrytitle>">
+  <!ENTITY funcname "PX_free_records">
+]>
+<refentry>
+  <refentryinfo><address>&dhemail;</address><author>&dhfirstname;&dhsurname;</author>&dhdate;</refentryinfo>
+  <refmeta>&dhucpackage;&dhsection;</refmeta>
+  <refnamediv><refname>&funcname;</refname><refpurpose>Free a batch returned by PX_retrieve_records</refpurpose></refnamediv>
+  <refsynopsisdiv><para>#include &lt;paradox.h&gt;</para><para>void &funcname;(pxdoc_t *pxdoc, pxval_t *records, int count)</para></refsynopsisdiv>
+  <refsect1><title>DESCRIPTION</title>
+    <para>Releases a row-major batch and all allocated field values returned by
+      <function>PX_retrieve_records(3)</function> or <function>PX_retrieve_records_ex(3)</function>.
+      <parameter>count</parameter> must be the number of records returned by the retrieval call, not
+      the number of fields. Pass the same <parameter>pxdoc</parameter> used for retrieval and release
+      the batch before closing or deleting that object.</para>
+    <para>Passing NULL for <parameter>pxdoc</parameter> or <parameter>records</parameter>, or passing a
+      non-positive count, is a no-op.</para>
+  </refsect1>
+  <refsect1><title>RETURN VALUE</title><para>This function does not return a value.</para></refsect1>
+  <refsect1><title>SEE ALSO</title><para><function>PX_retrieve_records(3)</function>, <function>PX_retrieve_records_ex(3)</function>, <function>PX_free_record(3)</function></para></refsect1>
+</refentry>

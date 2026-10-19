@@ -1,4 +1,12 @@
 Version 0.6.10
+	- add read-only file opening and contiguous batch record retrieval APIs
+	  with explicit record cleanup functions
+	- use memory-mapped reads when a regular file can be mapped, while
+	  falling back to buffered reads when the mapping is not suitable
+	- add the fast_read CTest regression test and reproducible Windows DLL
+	  build support for x86 and x64
+	- extend the GitHub Actions build matrix to Linux, Windows, and macOS
+	  x86/x64 configurations
 	- complete remaining x64 compatibility fixes from Kenneth Porter's patches:
 	  * fix writeproc return type (size_t to ssize_t)
 	  * fix iconv_close validation for proper iconv_t handling

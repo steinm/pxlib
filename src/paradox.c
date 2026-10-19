@@ -4407,13 +4407,13 @@ _px_put_data_blob(pxdoc_t *pxdoc, const char *data, int len, char *value, int va
 					return -1;
 				}
 				if(mbbhtab.offset == 0) {
-					if(pxblob->seek(pxblob, pxs, -1*sizeof(TMbBlockHeader3Table), SEEK_CUR) < 0) {
+					if(pxblob->seek(pxblob, pxs, -(long)sizeof(TMbBlockHeader3Table), SEEK_CUR) < 0) {
 						px_error(pxdoc, PX_RuntimeError, _("Could not go to table entry for the blob data."));
 						return -1;
 					}
 					break;
 				}
-				if(pxblob->seek(pxblob, pxs, -2*sizeof(TMbBlockHeader3Table), SEEK_CUR) < 0) {
+				if(pxblob->seek(pxblob, pxs, -(long)(2*sizeof(TMbBlockHeader3Table)), SEEK_CUR) < 0) {
 					px_error(pxdoc, PX_RuntimeError, _("Could not go to table entry for the blob data."));
 					return -1;
 				}

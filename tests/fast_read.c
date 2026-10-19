@@ -70,6 +70,11 @@ int main(void) {
 	assert(PX_retrieve_records(reader, 0, 0, &batch) == 0);
 	assert(batch == NULL);
 	assert(PX_retrieve_records(reader, -1, 10, &batch) == -1);
+	assert(PX_retrieve_records(reader, 0, -1, &batch) == -1);
+	failed_record = -2;
+	assert(PX_retrieve_records_ex(reader, record_count, 1, &batch, &failed_record) == 0);
+	assert(batch == NULL);
+	assert(failed_record == -1);
 	for(i=record_count-1; i>=0; i--) {
 		memset(expected, 0, sizeof(expected));
 		snprintf(expected, 8, "r%06d", i);

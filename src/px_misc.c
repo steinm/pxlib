@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "px_misc.h"
@@ -29,18 +30,20 @@
  */
 long get_long_le(const char *cp)
 {
-	int ret;
+	uint32_t raw;
 	unsigned char *source = (unsigned char *)cp;
 
 	if(NULL == cp)
 		return 0;
 
-	ret = *source++;
-	ret += ((*source++)<<8);
-	ret += ((*source++)<<16);
-	ret += ((*source++)<<24);
+	raw = (uint32_t)source[0] |
+	      ((uint32_t)source[1] << 8) |
+	      ((uint32_t)source[2] << 16) |
+	      ((uint32_t)source[3] << 24);
 
-	return ret;
+	if(raw & UINT32_C(0x80000000))
+		return (long)((int64_t)raw - (INT64_C(1) << 32));
+	return (long)raw;
 }
 
 void put_long_le(char *cp, long lval)
@@ -338,4 +341,3 @@ void hex_dump(FILE *outfp, char *p, int len) {
  * vim600: sw=4 ts=4 fdm=marker
  * vim<600: sw=4 ts=4
  */
-

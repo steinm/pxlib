@@ -1,0 +1,29 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname "<surname>STEINMANN</surname>">
+  <!ENTITY dhdate "<date>October 19, 2026</date>">
+  <!ENTITY dhsection "<manvolnum>3</manvolnum>">
+  <!ENTITY dhemail "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhusername "Uwe Steinmann">
+  <!ENTITY dhucpackage "<refentrytitle>PX_RETRIEVE_RECORDS</refentrytitle>">
+  <!ENTITY funcname "PX_retrieve_records">
+]>
+<refentry>
+  <refentryinfo><address>&dhemail;</address><author>&dhfirstname;&dhsurname;</author>&dhdate;</refentryinfo>
+  <refmeta>&dhucpackage;&dhsection;</refmeta>
+  <refnamediv><refname>&funcname;</refname><refpurpose>Retrieve a contiguous batch of Paradox records</refpurpose></refnamediv>
+  <refsynopsisdiv><para>#include &lt;paradox.h&gt;</para><para>int &funcname;(pxdoc_t *pxdoc, int start, int count, pxval_t **records)</para></refsynopsisdiv>
+  <refsect1><title>DESCRIPTION</title>
+    <para>Retrieves up to <parameter>count</parameter> records beginning at zero-based record number
+      <parameter>start</parameter>. The returned values are stored in one row-major array containing
+      <literal>actual_count * PX_get_num_fields(pxdoc)</literal> <literal>pxval_t</literal> objects.
+      Field values are ordered by record and then field, so field <literal>j</literal> of record
+      <literal>i</literal> is at <literal>records[i * num_fields + j]</literal>.</para>
+    <para>The function may return fewer records when the requested range reaches the end of the file.
+      The caller owns the returned array and all allocated string/blob values and must release it with
+      <function>PX_free_records(3)</function> before closing or deleting <parameter>pxdoc</parameter>.
+      A count of zero is a successful no-op and sets <parameter>*records</parameter> to NULL.</para>
+  </refsect1>
+  <refsect1><title>RETURN VALUE</title><para>Returns the number of records retrieved, 0 for an empty range, or -1 for invalid arguments, allocation failure, or a read error. On failure, <parameter>*records</parameter> is set to NULL.</para></refsect1>
+  <refsect1><title>SEE ALSO</title><para><function>PX_retrieve_records_ex(3)</function>, <function>PX_retrieve_record(3)</function>, <function>PX_free_records(3)</function></para></refsect1>
+</refentry>

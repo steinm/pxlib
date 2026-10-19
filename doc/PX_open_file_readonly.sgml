@@ -1,0 +1,26 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+  <!ENTITY dhfirstname "<firstname>UWE</firstname>">
+  <!ENTITY dhsurname "<surname>STEINMANN</surname>">
+  <!ENTITY dhdate "<date>October 19, 2026</date>">
+  <!ENTITY dhsection "<manvolnum>3</manvolnum>">
+  <!ENTITY dhemail "<email>uwe@steinmann.cx</email>">
+  <!ENTITY dhusername "Uwe Steinmann">
+  <!ENTITY dhucpackage "<refentrytitle>PX_OPEN_FILE_READONLY</refentrytitle>">
+  <!ENTITY funcname "PX_open_file_readonly">
+]>
+<refentry>
+  <refentryinfo><address>&dhemail;</address><author>&dhfirstname;&dhsurname;</author>&dhdate;</refentryinfo>
+  <refmeta>&dhucpackage;&dhsection;</refmeta>
+  <refnamediv><refname>&funcname;</refname><refpurpose>Open a Paradox file for reading without requesting write access</refpurpose></refnamediv>
+  <refsynopsisdiv><para>#include &lt;paradox.h&gt;</para><para>int &funcname;(pxdoc_t *pxdoc, const char *filename)</para></refsynopsisdiv>
+  <refsect1><title>DESCRIPTION</title>
+    <para>Opens the file named by <parameter>filename</parameter> with read-only access and initializes the
+      <parameter>pxdoc</parameter> object. The object must have been created with
+      <function>PX_new(3)</function>. The file is closed by <function>PX_close(3)</function> and the
+      object is released by <function>PX_delete(3)</function>.</para>
+    <para>This function never requests write access. Use <function>PX_open_file(3)</function> when the
+      caller needs pxlib to open a writable file handle.</para>
+  </refsect1>
+  <refsect1><title>RETURN VALUE</title><para>Returns 0 on success and -1 on failure.</para></refsect1>
+  <refsect1><title>SEE ALSO</title><para><function>PX_new(3)</function>, <function>PX_open_file(3)</function>, <function>PX_close(3)</function>, <function>PX_delete(3)</function></para></refsect1>
+</refentry>
