@@ -5,6 +5,8 @@ pxstream_t *px_stream_new(pxdoc_t *pxdoc);
 pxstream_t *px_stream_new_gsf(pxdoc_t *pxdoc, int mode, int close, GsfInput *gsf);
 #endif
 pxstream_t *px_stream_new_file(pxdoc_t *pxdoc, int mode, int close, FILE *fp);
+void px_stream_free(pxdoc_t *pxdoc, pxstream_t *stream);
+int px_stream_is_mapped(pxstream_t *stream);
 
 ssize_t px_read(pxdoc_t *p, pxstream_t *dummy, size_t len, void *buffer);
 int px_seek(pxdoc_t *p, pxstream_t *dummy, long offset, int whence);

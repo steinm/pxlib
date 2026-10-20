@@ -5,11 +5,8 @@ project(pxlib)
 option(ENABLE_GSF "Build with gsf support" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    add_definitions(
-        -DHAVE_CONFIG_H
-        -Wall -Wpointer-arith -W
-        ${PXLIB_EXTRA_GCC_FLAGS}
-    )
+    add_definitions(-DHAVE_CONFIG_H)
+    set(PXLIB_GCC_WARNING_FLAGS -Wall -Wpointer-arith -W ${PXLIB_EXTRA_GCC_FLAGS})
 else()
     add_definitions(-DHAVE_CONFIG_H)
 endif()
@@ -95,7 +92,7 @@ add_definitions(-DPXLIB_EXPORTS)
 # Versioning
 set(PXLIB_MAJOR_VERSION "0")
 set(PXLIB_MINOR_VERSION "6")
-set(PXLIB_MICRO_VERSION "8")
+set(PXLIB_MICRO_VERSION "11")
 set(PXLIB_DOTTED_VERSION "${PXLIB_MAJOR_VERSION}.${PXLIB_MINOR_VERSION}.${PXLIB_MICRO_VERSION}")
 
 # Packaging
@@ -126,6 +123,20 @@ endif()
 
 add_library(pxlib SHARED ${SOURCES})
 
+if(WIN32)
+    set_target_properties(pxlib PROPERTIES PREFIX "")
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC)
+    foreach(PXLIB_GCC_WARNING_FLAG IN LISTS PXLIB_GCC_WARNING_FLAGS)
+        target_compile_options(pxlib PRIVATE $<$<COMPILE_LANGUAGE:C>:${PXLIB_GCC_WARNING_FLAG}>)
+    endforeach()
+endif()
+
+if(UNIX)
+    target_link_libraries(pxlib PRIVATE m)
+endif()
+
 # Add Windows resource file to the library
 if(WIN32)
     target_sources(pxlib PRIVATE ${CMAKE_BINARY_DIR}/pxlib.rc)
@@ -135,6 +146,13 @@ target_include_directories(pxlib
     PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}
     PUBLIC ${CMAKE_BINARY_DIR}/include
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(fast_read_test tests/fast_read.c)
+    target_link_libraries(fast_read_test PRIVATE pxlib)
+    add_test(NAME fast_read COMMAND fast_read_test)
+endif()
 
 # Link iconv library if needed
 if(ICONV_LIBRARIES)

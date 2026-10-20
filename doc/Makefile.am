@@ -24,6 +24,7 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_new2.sgml \
 						 PX_new.sgml \
 						 PX_open_file.sgml \
+						 PX_open_file_readonly.sgml \
 						 PX_open_fp.sgml \
 						 PX_open_gsf.sgml \
 						 PX_create_file.sgml \
@@ -54,6 +55,10 @@ SGML_FILES = PX_get_majorversion.sgml \
 						 PX_update_record.sgml \
 						 PX_delete_record.sgml \
 						 PX_retrieve_record.sgml \
+						 PX_retrieve_records.sgml \
+						 PX_retrieve_records_ex.sgml \
+						 PX_free_record.sgml \
+						 PX_free_records.sgml \
 						 PX_get_field.sgml \
 						 PX_get_fields.sgml \
 						 PX_get_num_fields.sgml \
@@ -90,4 +95,3 @@ man_HTMLS = $(SGML_FILES:.sgml=.html) pxlib.html
 html: $(SGML_FILES:.sgml=.html) pxlib.html
 
 .PHONY: html
-

@@ -11,55 +11,134 @@ permissions:
   contents: read
 
 jobs:
-  build-linux:
+  build-linux-x64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         compiler: [gcc, clang]
-    
+
     steps:
-    - uses: actions/checkout@v6
-    
+    - uses: actions/checkout@v7
+
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y cmake build-essential
-    
+
     - name: Configure CMake (GCC)
       if: matrix.compiler == 'gcc'
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    
+
     - name: Configure CMake (Clang)
       if: matrix.compiler == 'clang'
       run: CC=clang CXX=clang++ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    
+
     - name: Build
       run: cmake --build build --config Release
-    
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure -C Release
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: pxlib-linux-${{ matrix.compiler }}
+        name: pxlib-x64-linux-${{ matrix.compiler }}
         path: build/libpxlib.*
         retention-days: 7
 
-  build-windows:
-    runs-on: windows-latest
-    
+  build-linux-x32:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+
     steps:
-    - uses: actions/checkout@v6
-    
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v3
-    
-    - name: Configure CMake
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    
+    - uses: actions/checkout@v7
+
+    - name: Install dependencies (32-bit multilib)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential gcc-multilib g++-multilib libclang-rt-dev
+
+    - name: Configure CMake (GCC 32-bit)
+      if: matrix.compiler == 'gcc'
+      run: |
+        cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_FLAGS="-m32" \
+          -DCMAKE_CXX_FLAGS="-m32" \
+          -DCMAKE_SHARED_LINKER_FLAGS="-m32"
+
+    - name: Configure CMake (Clang 32-bit)
+      if: matrix.compiler == 'clang'
+      run: |
+        CC=clang CXX=clang++ cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_FLAGS="-m32" \
+          -DCMAKE_CXX_FLAGS="-m32" \
+          -DCMAKE_SHARED_LINKER_FLAGS="-m32"
+
     - name: Build
       run: cmake --build build --config Release
-    
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure -C Release
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: pxlib-windows
+        name: pxlib-x32-linux-${{ matrix.compiler }}
+        path: build/libpxlib.*
+        retention-days: 7
+
+  build-windows-x64:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v3
+
+    - name: Configure CMake
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure -C Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: pxlib-x64-windows
+        path: |
+          build/Release/*.dll
+          build/*.dll
+        retention-days: 7
+        if-no-files-found: warn
+
+  build-windows-x86:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v3
+
+    - name: Configure CMake
+      run: cmake -S . -B build -A Win32 -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure -C Release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: pxlib-x86-windows
         path: |
           build/Release/*.dll
           build/*.dll
@@ -68,23 +147,26 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    
+
     steps:
-    - uses: actions/checkout@v6
-    
+    - uses: actions/checkout@v7
+
     - name: Install dependencies
       run: |
         brew install cmake
-    
+
     - name: Configure CMake
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    
+
     - name: Build
       run: cmake --build build --config Release
-    
+
+    - name: Test
+      run: ctest --test-dir build --output-on-failure -C Release
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: pxlib-macos
+        name: pxlib-x64-macos
         path: build/libpxlib.*
         retention-days: 7
