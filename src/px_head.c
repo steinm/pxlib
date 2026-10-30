@@ -40,7 +40,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	memset(pxh, 0, sizeof(pxhead_t));
 	if(pxdoc->seek(pxdoc, pxs, 0, SEEK_SET) < 0)
 		return NULL;
-	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TPxHeader), &pxhead)) < 0) {
+	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TPxHeader), &pxhead)) != sizeof(TPxHeader)) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -126,13 +126,15 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
           (pxh->px_filetype == pxfFileTypNonIncSecIndexG) ||
 		  (pxh->px_filetype == pxfFileTypIncSecIndexG)) &&
 		  (pxh->px_fileversion >= 40)) {
-		if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TPxDataHeader), &pxdatahead)) != sizeof(TPxDataHeader)) {
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
 		}
 		pxh->px_doscodepage = get_short_le((const char *)&pxdatahead.dosCodePage);
+		pxh->px_fileupdatetime = get_long_le((const char *)&pxdatahead.fileUpdateTime);
+	} else {
+		pxh->px_fileupdatetime = 0;
 	}
-	pxh->px_fileupdatetime = get_long_le((const char *)&pxdatahead.fileUpdateTime);
 
 	pxh->px_maxtablesize = pxhead.maxTableSize;
 	pxh->px_sortorder = pxhead.sortOrder;
@@ -156,7 +158,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 
 	pfield = pxh->px_fields;
 	for(i=0; i<pxh->px_numfields; i++) {
-		if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo)) < 0) {
+		if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(TFldInfoRec), &pxinfo)) != sizeof(TFldInfoRec)) {
 			pxdoc->free(pxdoc, pxh->px_fields);
 			pxdoc->free(pxdoc, pxh);
 			return NULL;
@@ -173,7 +175,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	}
 
 	/* skip the tableNamePtr */
-	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
+	if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) != sizeof(int)) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -184,7 +186,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 	   pxhead.fileType == 3 || pxhead.fileType == 5 ||
 	   pxhead.fileType == 6 || pxhead.fileType == 8) {
 		for(i=0; i<pxh->px_numfields; i++) {
-			if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) < 0) {
+			if((ret = (int)pxdoc->read(pxdoc, pxs, sizeof(int), dummy)) != sizeof(int)) {
 				pxdoc->free(pxdoc, pxh->px_fields);
 				pxdoc->free(pxdoc, pxh);
 				return NULL;
@@ -194,7 +196,7 @@ pxhead_t *get_px_head(pxdoc_t *pxdoc, pxstream_t *pxs)
 
 	/* read the tableName */
 	ret = (int)pxdoc->read(pxdoc, pxs, tablenamelen, dummy);
-	if(ret < 0) {
+	if(ret != tablenamelen) {
 		pxdoc->free(pxdoc, pxh->px_fields);
 		pxdoc->free(pxdoc, pxh);
 		return NULL;
@@ -1111,7 +1113,7 @@ mbhead_t *get_mb_head(pxblob_t *pxblob, pxstream_t *pxs) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not go to start of blob file."));
 		return NULL;
 	}
-	if((ret = (int)pxblob->read(pxblob, pxs, sizeof(TMbHeader), &mbhead)) < 0) {
+	if((ret = (int)pxblob->read(pxblob, pxs, sizeof(TMbHeader), &mbhead)) != sizeof(TMbHeader)) {
 		px_error(pxdoc, PX_RuntimeError, _("Could not read header from paradox file."));
 		pxdoc->free(pxdoc, mbh);
 		return NULL;

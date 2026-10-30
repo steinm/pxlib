@@ -301,6 +301,8 @@ long px_passwd_checksum(const char *aPsw) {
 	if(aPsw == NULL || aPsw[0] == '\0')
 		return 0;
 	len = (long)strlen(aPsw);
+	if(len > 255)
+		len = 255;
 	count = 256;
 	while(count >= len) {
 		memcpy(&buff[256-count], aPsw, len);
