@@ -80,16 +80,16 @@ unsigned short int get_short_le(const char *cp)
  */
 short int get_short_le_s(const char *cp)
 {
-	short int ret;
+	unsigned short int ret = 0;
 	unsigned char *source = (unsigned char *)cp;
 
 	if(NULL == cp)
 		return 0;
 
 	ret = *source++;
-	ret += ((*source++)<<8);
+	ret |= ((unsigned short int)(*source++) << 8);
 
-	return ret;
+	return (short int)ret;
 }
 
 void put_short_le(char *cp, short int sval)
@@ -145,18 +145,23 @@ void put_double_le(char *cp, double fval)
  */
 long get_long_be(const char *cp)
 {
-	int ret;
+	uint32_t raw;
 	unsigned char *source = (unsigned char *)cp;
 
 	if(NULL == cp)
 		return 0;
 
-	ret = ((*source++)<<24);
-	ret += ((*source++)<<16);
-	ret += ((*source++)<<8);
-	ret += *source++;
+	raw = ((uint32_t)source[0] << 24) |
+	      ((uint32_t)source[1] << 16) |
+	      ((uint32_t)source[2] << 8) |
+	      (uint32_t)source[3];
 
-	return ret;
+	/* Preserve the signed interpretation of the 32-bit value, as the
+	 * previous int-based implementation did. PX_get_data_long() relies
+	 * on this sign extension. */
+	if(raw & UINT32_C(0x80000000))
+		return (long)((int64_t)raw - (INT64_C(1) << 32));
+	return (long)raw;
 }
 
 void put_long_be(char *cp, long lval)
@@ -172,16 +177,16 @@ void put_long_be(char *cp, long lval)
  */
 short int get_short_be(const char *cp)
 {
-	short int ret;
+	unsigned short int ret = 0;
 	unsigned char *source = (unsigned char *)cp;
 
 	if(NULL == cp)
 		return 0;
 
-	ret = ((*source++)<<8);
-	ret += *source++;
+	ret = ((unsigned short int)(*source++) << 8);
+	ret |= *source++;
 
-	return ret;
+	return (short int)ret;
 }
 
 void put_short_be(char *cp, short int sval)
